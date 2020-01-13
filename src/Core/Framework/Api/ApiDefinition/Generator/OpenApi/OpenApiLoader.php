@@ -4,6 +4,7 @@ namespace Shopware\Core\Framework\Api\ApiDefinition\Generator\OpenApi;
 
 use OpenApi\Annotations\OpenApi;
 use OpenApi\Annotations\Operation;
+use OpenApi\Annotations\UNDEFINED;
 use const OpenApi\Annotations\UNDEFINED;
 use function OpenApi\scan;
 
@@ -32,8 +33,8 @@ class OpenApiLoader
         $pathsToScan = [
             // project src
             $this->rootDir . '/src',
-            // platform
-            $this->rootDir . '/vendor/shopware/platform',
+            // platform or many repos
+            $this->rootDir . '/vendor/shopware',
             // plugins
             $this->rootDir . '/custom/plugins',
         ];

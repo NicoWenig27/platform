@@ -15,20 +15,20 @@ use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaDefinition;
 use Shopware\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Context\SystemSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\MissingTranslationLanguageException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
-use Shopware\Core\Framework\Language\LanguageDefinition;
 use Shopware\Core\Framework\Routing\Exception\LanguageNotFoundException;
 use Shopware\Core\Framework\Test\TestCaseBase\AssertArraySubsetBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Currency\Aggregate\CurrencyTranslation\CurrencyTranslationDefinition;
 use Shopware\Core\System\Currency\CurrencyDefinition;
+use Shopware\Core\System\Language\LanguageDefinition;
 use Shopware\Core\System\Tax\TaxDefinition;
 
 class TranslationTest extends TestCase
@@ -80,17 +80,17 @@ class TranslationTest extends TestCase
     public function testCurrencyWithTranslationViaLocale(): void
     {
         $name = 'US Dollar';
-        $shortName = 'USD';
+        $shortName = 'FOO';
 
         $data = [
             'factor' => 1,
             'symbol' => '$',
             'decimalPrecision' => 2,
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 'en-GB' => [
                     'name' => 'US Dollar',
-                    'shortName' => 'USD',
+                    'shortName' => 'FOO',
                 ],
             ],
         ];
@@ -113,19 +113,19 @@ class TranslationTest extends TestCase
     public function testCurrencyWithTranslationViaLanguageIdSimpleNotation(): void
     {
         $name = 'US Dollar';
-        $shortName = 'USD';
+        $shortName = 'FOO';
 
         $data = [
             'factor' => 1,
             'decimalPrecision' => 2,
             'symbol' => '$',
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 [
                     'languageId' => Defaults::LANGUAGE_SYSTEM,
                     'name' => 'US Dollar',
-                    'shortName' => 'USD',
-                    'isoCode' => 'USD',
+                    'shortName' => 'FOO',
+                    'isoCode' => 'FOO',
                 ],
             ],
         ];
@@ -148,13 +148,13 @@ class TranslationTest extends TestCase
     public function testCurrencyWithTranslationMergeViaLocaleAndLanguageId(): void
     {
         $name = 'US Dollar';
-        $shortName = 'USD';
+        $shortName = 'FOO';
 
         $data = [
             'factor' => 1,
             'decimalPrecision' => 2,
             'symbol' => '$',
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 'en-GB' => [
                     'name' => $name,
@@ -184,13 +184,13 @@ class TranslationTest extends TestCase
     public function testCurrencyWithTranslationMergeOverwriteViaLocaleAndLanguageId(): void
     {
         $name = 'US Dollar';
-        $shortName = 'USD';
+        $shortName = 'FOO';
 
         $data = [
             'factor' => 1,
             'decimalPrecision' => 2,
             'symbol' => '$',
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 'en-GB' => [
                     'name' => $name,
@@ -224,7 +224,7 @@ class TranslationTest extends TestCase
         $germanName = 'Amerikanischer Dollar';
         $germanShortName = 'US Dollar Deutsch';
         $englishName = 'US Dollar';
-        $englishShortName = 'USD';
+        $englishShortName = 'FOO';
 
         $this->languageRepository->create(
             [[
@@ -250,7 +250,7 @@ class TranslationTest extends TestCase
             'factor' => 1,
             'decimalPrecision' => 2,
             'symbol' => '$',
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 'en-GB' => [
                     'name' => $englishName,
@@ -298,13 +298,13 @@ class TranslationTest extends TestCase
     public function testCurrencyTranslationWithCachingAndInvalidation(): void
     {
         $englishName = 'US Dollar';
-        $englishShortName = 'USD';
+        $englishShortName = 'FOO';
 
         $data = [
             'factor' => 1,
             'symbol' => '$',
             'decimalPrecision' => 2,
-            'isoCode' => 'USD',
+            'isoCode' => 'FOO',
             'translations' => [
                 'en-GB' => [
                     'name' => $englishName,
@@ -348,7 +348,7 @@ class TranslationTest extends TestCase
             'factor' => 1,
             'symbol' => '$',
             'decimalPrecision' => 2,
-            'isoCode' => 'USD',
+            'isoCode' => 'BAR',
             'translations' => [
                 Defaults::LANGUAGE_SYSTEM => [
                     'name' => 'default',
@@ -388,7 +388,7 @@ class TranslationTest extends TestCase
             'translations' => [
                 'en-UK' => [
                     'name' => 'US Dollar',
-                    'shortName' => 'USD',
+                    'shortName' => 'FOO',
                 ],
             ],
         ];
@@ -620,6 +620,7 @@ class TranslationTest extends TestCase
         ];
         /* @var WriteException|null $exception */
         $exception = null;
+
         try {
             $categoryRepository->create([$cat], $this->context);
         } catch (WriteException $e) {

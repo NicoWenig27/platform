@@ -101,7 +101,7 @@
             <argument type="service" id="snippet_set.repository"/>
             <argument type="service" id="category.repository"/>
 
-            <tag name="console.command" command="sales-channel:create"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Entity\SalesChannelDefinitionInstanceRegistry" public="true">
@@ -112,9 +112,11 @@
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextValueResolver">
-            <argument type="service" id="request_stack"/>
-
             <tag name="controller.argument_value_resolver" priority="1000"/>
+        </service>
+
+        <service id="Shopware\Core\System\SalesChannel\SalesChannelExceptionHandler">
+            <tag name="shopware.dal.exception_handler"/>
         </service>
 
     </services>

@@ -3,7 +3,6 @@
 namespace Shopware\Core\Framework;
 
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\ExtensionRegistry;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\ActionEventCompilerPass;
 use Shopware\Core\Framework\DependencyInjection\CompilerPass\EntityCompilerPass;
@@ -70,6 +69,8 @@ class Framework extends Bundle
         $container->addCompilerPass(new MigrationCompilerPass(), PassConfig::TYPE_AFTER_REMOVING);
         $container->addCompilerPass(new ActionEventCompilerPass());
 
+        $this->addCoreMigrationPath($container, __DIR__ . '/../Migration', 'Shopware\Core\Migration');
+
         parent::build($container);
     }
 
@@ -84,12 +85,11 @@ class Framework extends Bundle
         );
     }
 
-    protected function registerMigrationPath(ContainerBuilder $container): void
+    protected function getCoreMigrationPaths(): array
     {
-        $directories = $container->getParameter('migration.directories');
-        $directories['Shopware\Core\Migration'] = __DIR__ . '/../Migration';
-
-        $container->setParameter('migration.directories', $directories);
+        return [
+            __DIR__ . '/../Migration' => 'Shopware\Core\Migration',
+        ];
     }
 
     private function buildConfig(ContainerBuilder $container, $environment): void
@@ -123,7 +123,6 @@ class Framework extends Bundle
             /** @var string $class */
             $class = $extension->getDefinitionClass();
 
-            /** @var EntityDefinition $definition */
             $definition = $definitionRegistry->get($class);
 
             $definition->addExtension($extension);

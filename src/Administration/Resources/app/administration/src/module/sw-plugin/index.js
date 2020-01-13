@@ -1,4 +1,3 @@
-import './mixin/plugin-error-handler.mixin';
 import './page/sw-plugin-manager';
 import './view/sw-plugin-list';
 import './view/sw-plugin-license-list';
@@ -12,11 +11,12 @@ import './component/sw-plugin-last-updates-grid';
 import './component/sw-plugin-table-entry';
 import './extension/sw-settings-index';
 import './component/sw-plugin-config';
+import './component/sw-plugin-description';
 
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
+import swPluginState from './state/plugin.store';
 
-const { Module } = Shopware;
+const { Module, State } = Shopware;
+State.registerModule('swPlugin', swPluginState);
 
 Module.register('sw-plugin', {
     type: 'core',
@@ -29,11 +29,6 @@ Module.register('sw-plugin', {
     icon: 'default-action-settings',
     favicon: 'icon-module-settings.png',
     entity: 'plugin',
-
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB
-    },
 
     routes: {
         index: {
@@ -80,6 +75,28 @@ Module.register('sw-plugin', {
             path: 'settings/:namespace',
             meta: {
                 parentPath: 'sw.plugin.index'
+            },
+
+            props: {
+                default(route) {
+                    return { namespace: route.params.namespace };
+                }
+            }
+        },
+        description: {
+            component: 'sw-plugin-description',
+            path: 'description/:namespace',
+            meta: {
+                parentPath: 'sw.plugin.index'
+            },
+
+            props: {
+                default(route) {
+                    return {
+                        namespace: route.params.namespace,
+                        description: route.params.description
+                    };
+                }
             }
         }
     }

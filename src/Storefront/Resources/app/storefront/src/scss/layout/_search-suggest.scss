@@ -11,7 +11,7 @@ Contains styles for the search suggest popover in the shop header.
     list-style: none;
     touch-action: manipulation;
     background: $white;
-    padding: $spacer-sm;
+    padding: $spacer;
     border: 1px solid $border-color;
     width: 100%;
     z-index: $search-suggest-zindex;
@@ -34,8 +34,6 @@ Contains styles for the search suggest popover in the shop header.
 }
 
 .search-suggest-product {
-    padding: $spacer-sm 0;
-
     &.is-active {
         .search-suggest-product-link {
             color: $primary;
@@ -50,19 +48,35 @@ Contains styles for the search suggest popover in the shop header.
     }
 }
 
+.search-suggest-product-link {
+    display: block;
+    padding: $spacer-sm 0;
+}
+
 .search-suggest-product-name {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
+.search-suggest-product-reference-price {
+    color: $gray-400;
+    display: block;
+}
+
 .search-suggest-product-image-container {
+    width: 35px;
+    height: 35px;
     margin: 0 $spacer-sm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .search-suggest-product-image {
     max-width: 35px;
     max-height: 35px;
+    display: block;
 }
 
 .search-suggest-total {
@@ -75,7 +89,7 @@ Contains styles for the search suggest popover in the shop header.
 
 @include media-breakpoint-up(md) {
     .search-suggest-container {
-        width: 450px;
+        width: 500px;
         left: 50%;
         transform: translateX(-50%);
     }

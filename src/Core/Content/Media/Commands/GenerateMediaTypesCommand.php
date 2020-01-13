@@ -5,7 +5,7 @@ namespace Shopware\Core\Content\Media\Commands;
 use Shopware\Core\Content\Media\File\MediaFile;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Media\TypeDetector\TypeDetector;
-use Shopware\Core\Framework\Console\ShopwareStyle;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -17,6 +17,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class GenerateMediaTypesCommand extends Command
 {
+    protected static $defaultName = 'media:generate-media-types';
+
     /**
      * @var SymfonyStyle
      */
@@ -51,7 +53,6 @@ class GenerateMediaTypesCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('media:generate-media-types')
             ->setDescription('Generates the media type for all media entities')
             ->addOption('batch-size', 'b', InputOption::VALUE_REQUIRED, 'Batch Size')
         ;
@@ -60,7 +61,7 @@ class GenerateMediaTypesCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new ShopwareStyle($input, $output);
 
@@ -74,7 +75,7 @@ class GenerateMediaTypesCommand extends Command
 
         $this->io->progressFinish();
 
-        return null;
+        return 0;
     }
 
     private function validateBatchSize(InputInterface $input): int
@@ -101,7 +102,7 @@ class GenerateMediaTypesCommand extends Command
         return $result->getTotal();
     }
 
-    private function detectMediaTypes($context): void
+    private function detectMediaTypes(Context $context): void
     {
         $criteria = $this->createCriteria();
 

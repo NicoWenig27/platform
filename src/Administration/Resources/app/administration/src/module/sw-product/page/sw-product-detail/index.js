@@ -46,6 +46,7 @@ Component.register('sw-product-detail', {
     computed: {
         ...mapState('swProductDetail', [
             'product',
+            'parentProduct',
             'localMode'
         ]),
 
@@ -59,16 +60,13 @@ Component.register('sw-product-detail', {
         ...mapPageErrors(errorConfiguration),
 
         identifier() {
-            return this.placeholder(this.product, 'name');
+            return this.productTitle;
         },
 
         productTitle() {
             // when product is variant
-            if (this.isChild && this.product && this.product.options && this.product.options.items) {
-                // return each option
-                return this.product.options.map(option => {
-                    return option.translated.name || option.name;
-                }).join(' – ');
+            if (this.isChild && this.product) {
+                return this.getInheritTitle();
             }
 
             // return name
@@ -122,6 +120,9 @@ Component.register('sw-product-detail', {
 
             criteria.getAssociation('seoUrls')
                 .addFilter(Criteria.equals('isCanonical', true));
+
+            criteria.getAssociation('crossSellings')
+                .addSorting(Criteria.sort('position', 'ASC'));
 
             criteria
                 .addAssociation('categories')
@@ -387,25 +388,28 @@ Component.register('sw-product-detail', {
         },
 
         onSaveFinished(response) {
-            const seoUrls = Shopware.State.getters['swSeoUrl/getNewOrModifiedUrls']();
-            const defaultSeoUrl = Shopware.State.get('swSeoUrl').defaultSeoUrl;
-
             const updatePromises = [];
-            if (seoUrls) {
-                seoUrls.forEach(seoUrl => {
-                    if (!seoUrl.seoPathInfo) {
-                        seoUrl.seoPathInfo = defaultSeoUrl.seoPathInfo;
-                        seoUrl.isModified = false;
-                    } else {
-                        seoUrl.isModified = true;
-                    }
 
-                    updatePromises.push(this.seoUrlService.updateCanonicalUrl(seoUrl, seoUrl.languageId));
-                });
-            }
+            if (Shopware.State.list().includes('swSeoUrl')) {
+                const seoUrls = Shopware.State.getters['swSeoUrl/getNewOrModifiedUrls']();
+                const defaultSeoUrl = Shopware.State.get('swSeoUrl').defaultSeoUrl;
 
-            if (response === 'empty' && seoUrls.length > 0) {
-                response = 'success';
+                if (seoUrls) {
+                    seoUrls.forEach(seoUrl => {
+                        if (!seoUrl.seoPathInfo) {
+                            seoUrl.seoPathInfo = defaultSeoUrl.seoPathInfo;
+                            seoUrl.isModified = false;
+                        } else {
+                            seoUrl.isModified = true;
+                        }
+
+                        updatePromises.push(this.seoUrlService.updateCanonicalUrl(seoUrl, seoUrl.languageId));
+                    });
+                }
+
+                if (response === 'empty' && seoUrls.length > 0) {
+                    response = 'success';
+                }
             }
 
             Promise.all(updatePromises).then(() => {
@@ -548,6 +552,24 @@ Component.register('sw-product-detail', {
             return this.product.media.some((productMedia) => {
                 return productMedia.mediaId === mediaId;
             });
+        },
+
+        getInheritTitle() {
+            if (
+                this.product.hasOwnProperty('translated') &&
+                this.product.translated.hasOwnProperty('name') &&
+                this.product.translated.name !== null
+            ) {
+                return this.product.translated.name;
+            }
+            if (this.product.name !== null) {
+                return this.product.name;
+            }
+            if (this.parentProduct && this.parentProduct.hasOwnProperty('translated')) {
+                const pProduct = this.parentProduct;
+                return pProduct.translated.hasOwnProperty('name') ? pProduct.translated.name : pProduct.name;
+            }
+            return '';
         }
     }
 });

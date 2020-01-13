@@ -2,20 +2,19 @@
 
 namespace Shopware\Core\Framework\Migration\Command;
 
+use Shopware\Core\Framework\Migration\MigrationCollection;
+
 class MigrationDestructiveCommand extends MigrationCommand
 {
-    protected function getMigrationCommandName(): string
+    protected static $defaultName = 'database:migrate-destructive';
+
+    protected function getMigrationGenerator(MigrationCollection $collection, ?int $until, ?int $limit): \Generator
     {
-        return 'database:migrate-destructive';
+        yield from $collection->migrateDestructiveInSteps($until, $limit);
     }
 
-    protected function getMigrationGenerator(?int $until, ?int $limit): \Generator
+    protected function getMigrationsCount(MigrationCollection $collection, ?int $until, ?int $limit): int
     {
-        yield from $this->runner->migrateDestructive($until, $limit);
-    }
-
-    protected function getMigrationsCount(?int $until, ?int $limit): int
-    {
-        return \count($this->runner->getExecutableDestructiveMigrations($until, $limit));
+        return \count($collection->getExecutableDestructiveMigrations($until, $limit));
     }
 }

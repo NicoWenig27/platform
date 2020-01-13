@@ -24,7 +24,7 @@
       "loggedIn": "Angemeldet als"
     },
     "errors": {
-      "messageToTheShopwareDocumentation": "Zur Shopware Dokumentation",
+      "messageToTheShopwareDocumentation": "<a href=\"{documentationLink}\" target=\"_blank\">Zur Shopware Dokumentation</a>",
       "titleGenericFailure": "Unbekannter Fehler aufgetreten",
       "messageGenericFailure": "Es ist ein unbekannter Fehler aufgetreten",
       "titleUploadFailure": "Hochladen fehlgeschlagen",
@@ -34,7 +34,21 @@
       "titleLoginDataInvalid": "Logindaten unvollständig",
       "messageLoginDataInvalid": "Logindaten wurden nicht vollständig angegeben",
       "titleStoreHostMissing": "Fehler",
-      "messageStoreLicenseDomainMissing": "Um Dich erfolgreich anmelden zu können, musst Du zunächst in \"Einstellungen/Shopware Account\" Deine Lizenzdomain angeben."
+      "messageStoreLicenseDomainMissing": "Um Dich erfolgreich anmelden zu können, musst Du zunächst in \"Einstellungen/Shopware Account\" Deine Lizenzdomain angeben.",
+      "titleStoreNotAvailable": "Verbindung gescheitert",
+      "messageStoreNotAvailable": "Der Shopware Store ist nicht erreichbar.",
+      "titlePluginBaseClassNotFound": "Fehler beim Laden des Plugins",
+      "messagePluginBaseClassNotFound": "Der Plugineinstiegspunkt konnte nicht geladen werden. Stelle sicher, dass die Basisklasse korrekt geladen werden kann.",
+      "titlePluginInstallationFailed": "Plugin Installation ist fehlgeschlagen",
+      "messagePluginInstallationFailed": "Plugin konnte auf Grund der Fehlermeldung \"{message}\" nicht installiert werden",
+      "titlePluginUninstallationFailed": "Plugin Deinstallation ist fehlgeschlagen",
+      "messagePluginUninstallationFailed": "Plugin konnte auf Grund der Fehlermeldung \"{message}\" nicht deinstalliert werden",
+      "titlePluginActivationFailed": "Plugin Aktivierung ist fehlgeschlagen",
+      "messagePluginActivationFailed": "Plugin konnte auf Grund der Fehlermeldung \"{message}\" nicht aktiviert werden",
+      "titlePluginDeactivationFailed": "Plugin Deaktivierung ist fehlgeschlagen",
+      "messagePluginDeactivationFailed": "Plugin konnte auf Grund der Fehlermeldung \"{message}\" nicht deaktiviert werden",
+      "titlePluginUpdateFailed": "Plugin Update ist fehlgeschlagen",
+      "messagePluginUpdateFailed": "Plugin konnte auf Grund der Fehlermeldung \"{message}\" nicht aktualisiert werden"
     },
     "fileUpload":{
       "buttonFileUpload":"Plugin hochladen",
@@ -99,7 +113,9 @@
       "messageDeleteConfirm":"Bist Du sicher, dass Du dieses Plugin löschen möchtest?",
       "deactivated": "Deaktiviert",
       "activated": "Aktiviert",
-      "config": "Konfiguration"
+      "config": "Konfiguration",
+      "description": "Beschreibung",
+      "tooltipActivationDisabled": "Du kannst nur installierte Plugins aktivieren."
     },
     "license-list":{
       "textMyPurchases":"Eingekaufte Lizenzen",
@@ -134,6 +150,9 @@
     "buttonCancel": "Abbrechen",
     "titleSaveSuccess": "Konfiguration gespeichert",
     "messageSaveSuccess": "Die Konfiguration wurde erfolgreich gespeichert.",
-    "titleSaveError": "Fehler beim Speichern der Konfiguration"
+    "titleSaveError": "Fehler beim Speichern der Konfiguration",
+  },
+  "sw-plugin-description": {
+    "buttonBack": "Zurück"
   }
 }

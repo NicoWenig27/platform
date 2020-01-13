@@ -25,10 +25,10 @@ use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethod
 use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethodPriceEntity;
 use Shopware\Core\Checkout\Shipping\Cart\Error\ShippingMethodBlockedError;
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
-use Shopware\Core\Content\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class DeliveryCalculatorTest extends TestCase
@@ -721,7 +721,7 @@ class DeliveryCalculatorTest extends TestCase
         $shippingMethod->setName(Uuid::randomHex());
         $shippingMethod->setId(Uuid::randomHex());
         $prices = new ShippingMethodPriceCollection();
-        foreach ([42, 23, 8, 10, 14] as $index => $price) {
+        foreach ([42, 23, 8, 10, 14] as $price) {
             $priceEntity = new ShippingMethodPriceEntity();
             $priceEntity->setUniqueIdentifier(Uuid::randomHex());
             $priceEntity->setPrice($price);

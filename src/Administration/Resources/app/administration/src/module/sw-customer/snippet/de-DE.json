@@ -8,7 +8,7 @@
       "mainMenuItemList": "Übersicht",
       "mainMenuItemAdd": "Kunden anlegen",
       "descriptionTextModule": "Verwaltung von Kunden.",
-      "placeholderSearchBar": "Durchsuchen aller Kunden",
+      "placeholderSearchBar": "Durchsuche alle Kunden",
       "newCustomer": "Neuer Kunde",
       "tooltipLanguageSwitch": "Die Sprachauswahl ist deaktiviert, da keine übersetzbaren Felder existieren."
     },
@@ -72,6 +72,11 @@
       "labelPassword": "Passwort",
       "helpTextPassword": "Das Passwort kann nach dem Speichern des Kunden nur direkt vom Kunden geändert werden.",
       "placeholderSalutation": "Anrede wählen ...",
+      "placeholderTitle": "Gib einen Namen ein ...",
+      "placeholderFirstName": "Gib einen Vorname ein ...",
+      "placeholderLastName": "Gib einen Nachname ein ...",
+      "placeholderEmail": "Gib einen E-Mail ein ...",
+      "placeholderCustomerNumber": "Gib einen Kundennummer ein ...",
       "placeholderCustomerGroup": "Bitte wähle eine Kundengruppe ...",
       "placeholderSalesChannel": "Bitte wähle einen Verkaufskanal ...",
       "placeholderPaymentMethod": "Bitte wähle eine Zahlungsart ...",
@@ -154,10 +159,12 @@
       "labelStreet": "Straße",
       "labelCity": "Stadt",
       "labelCountry": "Land",
+      "labelState": "Bundesland",
       "labelAdditionalAddressLine1": "Adresszusatz 1",
       "labelAdditionalAddressLine2": "Adresszusatz 2",
       "labelPhoneNumber": "Telefonnummer",
-      "labelVatId": "USt-ID"
+      "labelVatId": "USt-ID",
+      "labelSameBillingAddress": "Same as billing address"
     },
     "detail": {
       "buttonSave": "Speichern",

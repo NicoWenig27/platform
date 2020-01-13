@@ -8,9 +8,12 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 
 class ThemeCreateCommand extends Command
 {
+    protected static $defaultName = 'theme:create';
+
     /**
      * @var string
      */
@@ -24,30 +27,35 @@ class ThemeCreateCommand extends Command
 
     protected function configure(): void
     {
-        $this->setName('theme:create')
+        $this
             ->addArgument('theme-name', InputArgument::OPTIONAL, 'Theme name')
-            ->setDescription('Creates a plugin skeleton');
+            ->setDescription('Creates a theme skeleton');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $helper = $this->getHelper('question');
 
-        $name = $input->getArgument('theme-name');
+        $themeName = $input->getArgument('theme-name');
 
-        if (!$name) {
+        if (!$themeName) {
             $question = new Question('Please enter a theme name:');
-            $name = $helper->ask($input, $output, $question);
+            $themeName = $helper->ask($input, $output, $question);
         }
 
-        if (preg_match('/^[A-Z]\w{3,}$/', $name) !== 1) {
-            $io->error('Theme name is too short (min 4 characters), contains invalid characters or doesn\'t start with a uppercase character');
+        if (preg_match('/^[A-Za-z]\w{3,}$/', $themeName) !== 1) {
+            $io->error('Theme name is too short (min 4 characters), contains invalid characters');
 
             return 1;
         }
 
-        $directory = $this->projectDir . '/custom/plugins/' . $name;
+        $snakeCaseName = (new CamelCaseToSnakeCaseNameConverter())->normalize($themeName);
+        $snakeCaseName = str_replace('_', '-', $snakeCaseName);
+
+        $pluginName = ucfirst($themeName);
+
+        $directory = $this->projectDir . '/custom/plugins/' . $pluginName;
 
         if (file_exists($directory)) {
             $io->error(sprintf('Plugin directory %s already exists', $directory));
@@ -62,8 +70,10 @@ class ThemeCreateCommand extends Command
             $this->createDirectory($directory . '/src/Resources/app/storefront/');
             $this->createDirectory($directory . '/src/Resources/app/storefront/src/');
             $this->createDirectory($directory . '/src/Resources/app/storefront/src/scss');
-            $this->createDirectory($directory . '/src/Resources/app/storefront/src/asset');
-            $this->createDirectory($directory . '/src/Resources/app/storefront/dist/script');
+            $this->createDirectory($directory . '/src/Resources/app/storefront/src/assets');
+            $this->createDirectory($directory . '/src/Resources/app/storefront/dist');
+            $this->createDirectory($directory . '/src/Resources/app/storefront/dist/storefront');
+            $this->createDirectory($directory . '/src/Resources/app/storefront/dist/storefront/js');
         } catch (\RuntimeException $e) {
             $io->error($e->getMessage());
 
@@ -71,24 +81,24 @@ class ThemeCreateCommand extends Command
         }
 
         $composerFile = $directory . '/composer.json';
-        $bootstrapFile = $directory . '/src/' . $name . '.php';
-        $themeConfigFile = $directory . '/src/theme.json';
+        $bootstrapFile = $directory . '/src/' . $pluginName . '.php';
+        $themeConfigFile = $directory . '/src/Resources/theme.json';
 
         $composer = str_replace(
             ['#namespace#', '#class#'],
-            [$name, $name],
+            [$pluginName, $pluginName],
             $this->getComposerTemplate()
         );
 
         $bootstrap = str_replace(
             ['#namespace#', '#class#'],
-            [$name, $name],
+            [$pluginName, $pluginName],
             $this->getBootstrapTemplate()
         );
 
         $themeConfig = str_replace(
-            ['#name#'],
-            [$name],
+            ['#name#', '#snake-case#'],
+            [$themeName, $snakeCaseName],
             $this->getThemeConfigTemplate()
         );
 
@@ -96,10 +106,11 @@ class ThemeCreateCommand extends Command
         file_put_contents($bootstrapFile, $bootstrap);
         file_put_contents($themeConfigFile, $themeConfig);
 
-        touch($directory . '/src/Resources/app/storefront/dist/script/all.js');
         touch($directory . '/src/Resources/app/storefront/src/scss/base.scss');
+        touch($directory . '/src/Resources/app/storefront/src/main.js');
+        touch($directory . '/src/Resources/app/storefront/dist/storefront/js/' . $snakeCaseName . '.js');
 
-        return null;
+        return 0;
     }
 
     /**
@@ -162,16 +173,21 @@ EOL;
 {
   "name": "#name#",
   "author": "Shopware AG",
+  "views": [
+     "@Storefront",
+     "@Plugins",
+     "@#name#"
+  ],
   "style": [
     "@Storefront",
-    "Resources/app/storefront/scr/scss/base.scss"
+    "app/storefront/src/scss/base.scss"
   ],
   "script": [
     "@Storefront",
-    "Resources/storefront/dist/script/all.js"
+    "app/storefront/dist/storefront/js/#snake-case#.js"
   ],
   "asset": [
-    "Resources/app/storefront/src/asset"
+    "app/storefront/src/assets"
   ]
 }
 EOL;

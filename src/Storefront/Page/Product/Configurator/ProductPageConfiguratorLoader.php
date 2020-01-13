@@ -57,7 +57,6 @@ class ProductPageConfiguratorLoader
 
         $current = $this->buildCurrentOptions($product, $groups);
 
-        /** @var PropertyGroupEntity $group */
         foreach ($groups as $group) {
             $options = $group->getOptions();
             if ($group->getOptions() === null) {
@@ -68,6 +67,7 @@ class ProductPageConfiguratorLoader
                 $combinable = $this->isCombinable($option, $current, $combinations);
                 if ($combinable === null) {
                     $group->getOptions()->remove($option->getId());
+
                     continue;
                 }
 

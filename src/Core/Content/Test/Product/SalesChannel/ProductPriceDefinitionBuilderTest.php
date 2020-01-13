@@ -10,10 +10,10 @@ use Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceEntity;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilder;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Pricing\ListingPrice;
-use Shopware\Core\Framework\Pricing\ListingPriceCollection;
-use Shopware\Core\Framework\Pricing\Price;
-use Shopware\Core\Framework\Pricing\PriceCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\ListingPrice;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\ListingPriceCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -883,6 +883,38 @@ class ProductPriceDefinitionBuilderTest extends TestCase
         $definition = $this->priceDefinitionBuilder->build($product, $salesChannelContext, 20)->getQuantityPrice();
 
         $this->assertPriceDefinition($definition, 8, 20);
+    }
+
+    public function testBuildPriceDefinitionWithCurrencySpecificPrice(): void
+    {
+        $salesChannelContext = $this->createSalesChannelContext([SalesChannelContextService::CURRENCY_ID => $this->currencyId]);
+
+        $tax = (new TaxEntity())->assign(['id' => Uuid::randomHex(), 'name' => 'test', 'taxRate' => 10]);
+        $this->addTaxEntityToSalesChannel($salesChannelContext, $tax);
+
+        $product = (new ProductEntity())->assign([
+            'id' => Uuid::randomHex(),
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 1,
+            'price' => new PriceCollection([
+                new Price(Defaults::CURRENCY, 7, 10, false),
+                new Price($this->currencyId, 9, 12, false),
+            ]),
+            'taxId' => $tax->getId(),
+            'name' => 'test',
+        ]);
+
+        $definition = $this->priceDefinitionBuilder->build($product, $salesChannelContext)->getPrice();
+        $this->assertPriceDefinition($definition, 12, 1);
+
+        $definition = $this->priceDefinitionBuilder->build($product, $salesChannelContext)->getFrom();
+        $this->assertPriceDefinition($definition, 12, 1);
+
+        $definition = $this->priceDefinitionBuilder->build($product, $salesChannelContext)->getTo();
+        $this->assertPriceDefinition($definition, 12, 1);
+
+        $definition = $this->priceDefinitionBuilder->build($product, $salesChannelContext)->getQuantityPrice();
+        $this->assertPriceDefinition($definition, 12, 1);
     }
 
     private function createSalesChannelContext(array $options = []): SalesChannelContext

@@ -1,4 +1,5 @@
 import template from './sw-order-state-history-card.html.twig';
+import '../sw-order-state-change-modal/';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
@@ -13,6 +14,7 @@ Component.register('sw-order-state-history-card', {
     inject: [
         'orderService',
         'stateMachineService',
+        'orderStateMachineService',
         'repositoryFactory'
     ],
     props: {
@@ -32,18 +34,28 @@ Component.register('sw-order-state-history-card', {
     },
     data() {
         return {
+            showModal: false,
             orderHistory: [],
             orderOptions: [],
             transactionHistory: [],
             transactionOptions: [],
             deliveryHistory: [],
             deliveryOptions: [],
-            statesLoading: true
+            statesLoading: true,
+            modalConfirmed: false,
+            currentActionName: null,
+            currentStateType: null,
+            mailTemplatesExist: false,
+            technicalName: ''
         };
     },
     computed: {
         stateMachineStateRepository() {
             return this.repositoryFactory.create('state_machine_state');
+        },
+
+        mailTemplateRepository() {
+            return this.repositoryFactory.create('mail_template');
         },
 
         stateMachineHistoryRepository() {
@@ -92,15 +104,19 @@ Component.register('sw-order-state-history-card', {
         }
 
     },
+
     created() {
         this.createdComponent();
     },
+
     methods: {
         createdComponent() {
             this.loadHistory();
         },
+
         loadHistory() {
             this.statesLoading = true;
+            this.modalConfirmed = false;
 
             Promise.all([
                 this.getStateHistoryEntries(),
@@ -233,6 +249,16 @@ Component.register('sw-order-state-history-card', {
             return criteria;
         },
 
+        isMailTemplateAssigned(technicalName) {
+            this.technicalName = technicalName;
+
+            const mailTemplates = this.order.salesChannel.mailTemplates;
+
+            return mailTemplates.find((mailTemplate) => {
+                return mailTemplate.mailTemplateType.technicalName === technicalName;
+            });
+        },
+
         buildTransitionOptions(stateMachineName, allTransitions, possibleTransitions) {
             const entries = allTransitions.filter((entry) => {
                 return entry.stateMachine.technicalName === stateMachineName;
@@ -266,12 +292,26 @@ Component.register('sw-order-state-history-card', {
                 return;
             }
 
-            this.stateMachineService.transitionState('order', this.order.id, actionName).then(() => {
-                this.$emit('order-state-change');
-                this.loadHistory();
-            }).catch((error) => {
-                this.createStateChangeErrorNotification(error);
-            });
+            if (this.modalConfirmed === false) {
+                this.currentActionName = actionName;
+                this.currentStateType = 'orderState';
+
+                const matchedTransactionOption = this.orderOptions
+                    .find((orderOption) => orderOption.id === actionName);
+
+                this.mailTemplatesExist = this.isMailTemplateAssigned(
+                    `order.state.${matchedTransactionOption.stateName}`
+                );
+
+                this.showModal = true;
+
+                return;
+            }
+            this.modalConfirmed = false;
+        },
+
+        onCancelCreation() {
+            this.showModal = false;
         },
 
         onTransactionStateSelected(actionName) {
@@ -280,16 +320,21 @@ Component.register('sw-order-state-history-card', {
                 return;
             }
 
-            this.stateMachineService.transitionState(
-                'order_transaction',
-                this.transaction.id,
-                actionName
-            ).then(() => {
-                this.$emit('order-state-change');
-                this.loadHistory();
-            }).catch((error) => {
-                this.createStateChangeErrorNotification(error);
-            });
+            if (this.modalConfirmed === false) {
+                this.currentActionName = actionName;
+                this.currentStateType = 'orderTransactionState';
+
+                const matchedTransactionOption = this.transactionOptions
+                    .find((transactionOption) => transactionOption.id === actionName);
+
+                this.mailTemplatesExist = this.isMailTemplateAssigned(
+                    `order_transaction.state.${matchedTransactionOption.stateName}`
+                );
+
+                this.showModal = true;
+                return;
+            }
+            this.modalConfirmed = false;
         },
 
         onDeliveryStateSelected(actionName) {
@@ -298,16 +343,74 @@ Component.register('sw-order-state-history-card', {
                 return;
             }
 
-            this.stateMachineService.transitionState(
-                'order_delivery',
-                this.delivery.id,
-                actionName
-            ).then(() => {
-                this.$emit('order-state-change');
-                this.loadHistory();
-            }).catch((error) => {
-                this.createStateChangeErrorNotification(error);
-            });
+            if (this.modalConfirmed === false) {
+                this.currentActionName = actionName;
+                this.currentStateType = 'orderDeliveryState';
+
+                const matchedTransactionOption = this.deliveryOptions
+                    .find((deliveryOption) => deliveryOption.id === actionName);
+
+                this.mailTemplatesExist = this.isMailTemplateAssigned(
+                    `order_delivery.state.${matchedTransactionOption.stateName}`
+                );
+
+                this.showModal = true;
+                return;
+            }
+            this.modalConfirmed = false;
+        },
+
+        removeLastMailTemplate() {
+            this.order.salesChannel.mailTemplates.pop();
+        },
+
+        onLeaveModalClose() {
+            this.modalConfirmed = false;
+            this.currentActionName = null;
+            this.currentStateType = null;
+            this.showModal = false;
+
+            this.removeLastMailTemplate();
+        },
+
+        onLeaveModalConfirm(docIds) {
+            this.showModal = false;
+            if (this.currentStateType === 'orderTransactionState') {
+                this.orderStateMachineService.transitionOrderTransactionState(
+                    this.transaction.id,
+                    this.currentActionName,
+                    { documentIds: docIds }
+                ).then(() => {
+                    this.$emit('order-state-change');
+                    this.loadHistory();
+                }).catch((error) => {
+                    this.createStateChangeErrorNotification(error);
+                });
+            } else if (this.currentStateType === 'orderState') {
+                this.orderStateMachineService.transitionOrderState(
+                    this.order.id,
+                    this.currentActionName,
+                    { documentIds: docIds }
+                ).then(() => {
+                    this.$emit('order-state-change');
+                    this.loadHistory();
+                }).catch((error) => {
+                    this.createStateChangeErrorNotification(error);
+                });
+            } else if (this.currentStateType === 'orderDeliveryState') {
+                this.orderStateMachineService.transitionOrderDeliveryState(
+                    this.delivery.id,
+                    this.currentActionName,
+                    { documentIds: docIds }
+                ).then(() => {
+                    this.$emit('order-state-change');
+                    this.loadHistory();
+                }).catch((error) => {
+                    this.createStateChangeErrorNotification(error);
+                });
+            }
+            this.currentActionName = null;
+            this.currentStateType = null;
         },
 
         createStateChangeErrorNotification(errorMessage) {

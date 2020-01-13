@@ -24,6 +24,7 @@ class ThemeFileResolver
                 $themeConfig,
                 $configurationCollection,
                 $onlySourceFiles,
+                true,
                 function (StorefrontPluginConfiguration $configuration, bool $onlySourceFiles) {
                     $fileCollection = new FileCollection();
                     $scriptFiles = $configuration->getScriptFiles();
@@ -53,7 +54,8 @@ class ThemeFileResolver
                 $themeConfig,
                 $configurationCollection,
                 $onlySourceFiles,
-                function (StorefrontPluginConfiguration $configuration, bool $onlySourceFiles) {
+                true,
+                function (StorefrontPluginConfiguration $configuration) {
                     return $configuration->getStyleFiles();
                 }
             ),
@@ -64,6 +66,7 @@ class ThemeFileResolver
         StorefrontPluginConfiguration $themeConfig,
         StorefrontPluginConfigurationCollection $configurationCollection,
         bool $onlySourceFiles,
+        bool $considerPlugins,
         callable $configFileResolver
     ): FileCollection {
         /** @var FileCollection $files */
@@ -75,14 +78,15 @@ class ThemeFileResolver
 
         $resolvedFiles = new FileCollection();
 
-        /** @var File $file */
         foreach ($files as $file) {
             $filepath = $file->getFilepath();
             if (!$this->isInclude($filepath)) {
                 if (file_exists($filepath)) {
                     $resolvedFiles->add($file);
+
                     continue;
                 }
+
                 throw new ThemeCompileException(
                     $themeConfig->getTechnicalName(),
                     sprintf('Unable to load file "%s". Did you forget to build the theme? Try running ./psh.phar storefront:build ', $filepath)
@@ -90,11 +94,18 @@ class ThemeFileResolver
             }
 
             if ($filepath === '@Plugins') {
+                if (!$considerPlugins) {
+                    continue;
+                }
+
+                $considerPlugins = false;
+
                 foreach ($configurationCollection->getNoneThemes() as $plugin) {
-                    foreach ($this->resolve($plugin, $configurationCollection, $onlySourceFiles, $configFileResolver) as $item) {
+                    foreach ($this->resolve($plugin, $configurationCollection, $onlySourceFiles, $considerPlugins, $configFileResolver) as $item) {
                         $resolvedFiles->add($item);
                     }
                 }
+
                 continue;
             }
 
@@ -106,7 +117,7 @@ class ThemeFileResolver
                 throw new InvalidThemeException($name);
             }
 
-            foreach ($this->resolve($configuration, $configurationCollection, $onlySourceFiles, $configFileResolver) as $item) {
+            foreach ($this->resolve($configuration, $configurationCollection, $onlySourceFiles, $considerPlugins, $configFileResolver) as $item) {
                 $resolvedFiles->add($item);
             }
         }

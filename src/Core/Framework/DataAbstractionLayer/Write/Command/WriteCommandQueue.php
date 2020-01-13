@@ -14,7 +14,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 class WriteCommandQueue
 {
     /**
-     * @var array<string, WriteCommandInterface[]>
+     * @var array<string, WriteCommand[]>
      */
     private $commands = [];
 
@@ -28,7 +28,7 @@ class WriteCommandQueue
      */
     private $definitions = [];
 
-    public function add(EntityDefinition $senderIdentification, WriteCommandInterface $command): void
+    public function add(EntityDefinition $senderIdentification, WriteCommand $command): void
     {
         $primaryKey = $command->getPrimaryKey();
 
@@ -49,7 +49,7 @@ class WriteCommandQueue
     /**
      * @throws ImpossibleWriteOrderException
      *
-     * @return WriteCommandInterface[]
+     * @return WriteCommand[]
      */
     public function getCommandsInOrder(): array
     {
@@ -85,7 +85,7 @@ class WriteCommandQueue
     }
 
     /**
-     * @return array<string, WriteCommandInterface[]>
+     * @return array<string, WriteCommand[]>
      */
     public function getCommands(): array
     {
@@ -97,7 +97,6 @@ class WriteCommandQueue
      */
     public function ensureIs(EntityDefinition $definition, string $class): void
     {
-        /** @var WriteCommandInterface[] $commands */
         $commands = $this->commands[$definition->getClass()];
 
         foreach ($commands as $command) {

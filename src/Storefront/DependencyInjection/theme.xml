@@ -12,7 +12,6 @@
 
         <service id="Shopware\Storefront\Theme\ThemeCompiler">
             <argument type="service" id="shopware.filesystem.public"/>
-            <argument type="service" id="filesystem" />
             <argument type="service" id="Shopware\Storefront\Theme\ThemeFileResolver" />
             <argument>%kernel.cache_dir%</argument>
             <argument>%kernel.debug%</argument>
@@ -81,7 +80,7 @@
         <service id="Shopware\Storefront\Theme\Command\ThemeCreateCommand">
             <argument>%kernel.project_dir%</argument>
 
-            <tag name="console.command" command="theme:create"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Command\ThemeChangeCommand">
@@ -92,14 +91,14 @@
             <argument type="service" id="theme_sales_channel.repository"/>
             <argument type="service" id="Shopware\Core\Content\Media\DataAbstractionLayer\MediaThumbnailRepositoryDecorator"/>
 
-            <tag name="console.command" command="theme:change"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Command\ThemeCompileCommand">
             <argument type="service" id="Shopware\Storefront\Theme\ThemeService"/>
             <argument type="service" id="sales_channel.repository"/>
 
-            <tag name="console.command" command="theme:compile"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Command\ThemeDumpCommand">
@@ -108,13 +107,13 @@
             <argument type="service" id="theme.repository"/>
             <argument>%kernel.cache_dir%</argument>
 
-            <tag name="console.command" command="theme:dump"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Command\ThemeRefreshCommand">
             <argument type="service" id="Shopware\Storefront\Theme\ThemeLifecycleService"/>
 
-            <tag name="console.command" command="theme:refresh"/>
+            <tag name="console.command"/>
         </service>
 
         <!-- Subscriber -->
@@ -129,12 +128,25 @@
             <tag name="kernel.event_subscriber"/>
         </service>
 
+        <service id="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilderInterface"
+                 class="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilder">
+            <argument type="service" id="kernel"/>
+        </service>
+
         <!-- Twig -->
         <service id="Shopware\Storefront\Theme\Twig\ThemeTemplateFinder" public="true"
-                 decorates="Shopware\Core\Framework\Twig\TemplateFinder">
+                 decorates="Shopware\Core\Framework\Adapter\Twig\TemplateFinder">
+
             <argument type="service" id="twig"/>
             <argument type="service" id="twig.loader"/>
-            <argument type="service" id="kernel"/>
+            <argument>%kernel.cache_dir%</argument>
+            <argument type="service" id="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilderInterface"/>
+
+            <call method="registerBundles">
+                <argument type="service" id="kernel" />
+            </call>
+
+            <tag name="kernel.event_subscriber" />
         </service>
 
         <service id="Shopware\Storefront\Theme\Subscriber\FirstRunWizardSubscriber">

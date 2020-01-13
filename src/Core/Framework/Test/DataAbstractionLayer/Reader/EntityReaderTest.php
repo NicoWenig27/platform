@@ -15,14 +15,14 @@ use Shopware\Core\Content\Product\Aggregate\ProductPrice\ProductPriceCollection;
 use Shopware\Core\Content\Product\ProductCollection;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Context\SystemSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
-use Shopware\Core\Framework\Pricing\Price;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\Tax\TaxEntity;
@@ -81,7 +81,7 @@ class EntityReaderTest extends TestCase
         $this->categoryRepository->create($data, $context);
 
         $context = new Context(
-            new Context\SystemSource(),
+            new SystemSource(),
             [],
             Defaults::CURRENCY,
             [
@@ -98,7 +98,7 @@ class EntityReaderTest extends TestCase
         static::assertSame('test', $category->getTranslated()['name']);
 
         $context = new Context(
-            new Context\SystemSource(),
+            new SystemSource(),
             [],
             Defaults::CURRENCY,
             [
@@ -115,7 +115,7 @@ class EntityReaderTest extends TestCase
         static::assertSame('test', $category->getTranslated()['name']);
 
         $context = new Context(
-            new Context\SystemSource(),
+            new SystemSource(),
             [],
             Defaults::CURRENCY,
             [

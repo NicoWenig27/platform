@@ -5,13 +5,14 @@ namespace Shopware\Storefront\Test\Framework\Routing;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Cart\CartRuleLoader;
+use Shopware\Core\Content\Seo\SeoResolver;
+use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
+use Shopware\Core\Framework\Routing\RequestTransformer as CoreRequestTransformer;
 use Shopware\Core\Framework\Routing\RequestTransformerInterface;
-use Shopware\Core\Framework\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -55,8 +56,9 @@ class StorefrontRoutingTest extends TestCase
     public function setUp(): void
     {
         $this->requestTransformer = new RequestTransformer(
-            new \Shopware\Core\Framework\Routing\RequestTransformer(),
-            $this->getContainer()->get(Connection::class)
+            new CoreRequestTransformer(),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get(SeoResolver::class)
         );
 
         $this->seoUrlReplacer = $this->getContainer()->get(SeoUrlPlaceholderHandlerInterface::class);
@@ -93,7 +95,7 @@ class StorefrontRoutingTest extends TestCase
         $absolutePath = $this->router->generate($case->route, [], Router::ABSOLUTE_PATH);
         $absoluteUrl = $this->router->generate($case->route, [], Router::ABSOLUTE_URL);
         $networkPath = $this->router->generate($case->route, [], Router::NETWORK_PATH);
-        $pathInfo = $this->router->generate($case->route, [], ROUTER::PATH_INFO);
+        $pathInfo = $this->router->generate($case->route, [], Router::PATH_INFO);
 
         static::assertSame($case->getAbsolutePath(), $absolutePath, var_export($case, true));
         static::assertSame($case->getAbsoluteUrl(), $absoluteUrl, var_export($case, true));
@@ -166,7 +168,7 @@ class StorefrontRoutingTest extends TestCase
         );
     }
 
-    private function generateCases($keys, $config): array
+    private function generateCases(array $keys, array $config): array
     {
         if (empty($keys)) {
             return [];
@@ -212,7 +214,7 @@ class StorefrontRoutingTest extends TestCase
         return $this->createSalesChannels([$salesChannel]);
     }
 
-    private function createSalesChannels($salesChannels): SalesChannelContext
+    private function createSalesChannels(array $salesChannels): SalesChannelContext
     {
         $salesChannels = array_map(function ($salesChannelData) {
             $defaults = [
@@ -244,14 +246,11 @@ class StorefrontRoutingTest extends TestCase
         /** @var EntityRepositoryInterface $salesChannelRepository */
         $salesChannelRepository = $this->getContainer()->get('sales_channel.repository');
 
-        /** @var EntityWrittenContainerEvent $event */
         $event = $salesChannelRepository->create($salesChannels, Context::createDefaultContext());
 
         $id = $event->getEventByEntityName($salesChannelRepository->getDefinition()->getEntityName())->getIds()[0];
 
-        $factory = $this->getContainer()->get(SalesChannelContextFactory::class);
-
-        $context = $factory->create(Uuid::randomHex(), $id, []);
+        $context = $this->getContainer()->get(SalesChannelContextFactory::class)->create(Uuid::randomHex(), $id);
 
         $ruleLoader = $this->getContainer()->get(CartRuleLoader::class);
         $rulesProperty = ReflectionHelper::getProperty(CartRuleLoader::class, 'rules');

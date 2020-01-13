@@ -4,11 +4,11 @@ namespace Shopware\Core\Framework\Test\ScheduledTask\Subscriber;
 
 use Google\Auth\Cache\MemoryCacheItemPool;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\MessageQueue\ScheduledTask\Registry\TaskRegistry;
+use Shopware\Core\Framework\MessageQueue\ScheduledTask\Subscriber\PluginLifecycleSubscriber;
 use Shopware\Core\Framework\Plugin\Event\PluginPostActivateEvent;
 use Shopware\Core\Framework\Plugin\Event\PluginPostDeactivateEvent;
-use Shopware\Core\Framework\ScheduledTask\Registry\TaskRegistry;
-use Shopware\Core\Framework\ScheduledTask\Subscriber\PluginLifecycleSubscriber;
-use Symfony\Component\Messenger\Worker\StopWhenRestartSignalIsReceived;
+use Symfony\Component\Messenger\EventListener\StopWorkerOnRestartSignalListener;
 
 class PluginLifecycleSubscriberTest extends TestCase
 {
@@ -32,6 +32,6 @@ class PluginLifecycleSubscriberTest extends TestCase
         $subscriber = new PluginLifecycleSubscriber($taskRegistry, $signalCachePool);
         $subscriber->afterPluginStateChange();
 
-        static::assertTrue($signalCachePool->hasItem(StopWhenRestartSignalIsReceived::RESTART_REQUESTED_TIMESTAMP_KEY));
+        static::assertTrue($signalCachePool->hasItem(StopWorkerOnRestartSignalListener::RESTART_REQUESTED_TIMESTAMP_KEY));
     }
 }

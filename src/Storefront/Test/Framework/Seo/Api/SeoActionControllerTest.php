@@ -6,9 +6,9 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Seo\Exception\SeoUrlRouteNotFoundException;
+use Shopware\Core\Content\Seo\SeoUrlTemplate\SeoUrlTemplateEntity;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Seo\Exception\SeoUrlRouteNotFoundException;
-use Shopware\Core\Framework\Seo\SeoUrlTemplate\SeoUrlTemplateEntity;
 use Shopware\Core\Framework\Test\Seo\StorefrontSalesChannelTestHelper;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminFunctionalTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -133,7 +133,7 @@ class SeoActionControllerTest extends TestCase
         $this->createStorefrontSalesChannelContext($salesChannelId, 'test');
 
         $aId = $this->createTestCategory('A');
-        $bId = $this->createTestCategory('B', $aId);
+        $this->createTestCategory('B', $aId);
 
         $this->updateSalesChannelNavigationEntryPoint($salesChannelId, $aId);
 
@@ -150,8 +150,8 @@ class SeoActionControllerTest extends TestCase
 
         $data = json_decode($response->getContent(), true);
 
-        static::assertCount(1, $data);
-        static::assertEquals('B/', $data[0]['seoPathInfo']);
+        $urls = array_column($data, 'seoPathInfo');
+        static::assertContains('B/', $urls);
     }
 
     public function testUnknownRoute(): void
@@ -174,9 +174,12 @@ class SeoActionControllerTest extends TestCase
 
     public function testUpdateDefaultCanonical(): void
     {
+        $salesChannelId = Uuid::randomHex();
+        $this->createStorefrontSalesChannelContext($salesChannelId, 'test');
+
         $id = $this->createTestProduct();
 
-        $seoUrls = $this->getSeoUrls($id, true);
+        $seoUrls = $this->getSeoUrls($id, true, $salesChannelId);
         static::assertCount(1, $seoUrls);
 
         $seoUrl = $seoUrls[0]['attributes'];
@@ -191,7 +194,7 @@ class SeoActionControllerTest extends TestCase
         $response = $this->getBrowser()->getResponse();
         static::assertEquals(204, $response->getStatusCode(), $response->getContent());
 
-        $seoUrls = $this->getSeoUrls($id, true);
+        $seoUrls = $this->getSeoUrls($id, true, $salesChannelId);
         static::assertCount(1, $seoUrls);
         $seoUrl = $seoUrls[0]['attributes'];
         static::assertTrue($seoUrl['isModified']);
@@ -204,7 +207,7 @@ class SeoActionControllerTest extends TestCase
         $this->getBrowser()->request('PATCH', '/api/v1/product/' . $id, $productUpdate);
 
         // seo url is not updated with the product
-        $seoUrls = $this->getSeoUrls($id, true);
+        $seoUrls = $this->getSeoUrls($id, true, $salesChannelId);
         static::assertCount(1, $seoUrls);
         $seoUrl = $seoUrls[0]['attributes'];
         static::assertTrue($seoUrl['isModified']);
@@ -254,14 +257,6 @@ class SeoActionControllerTest extends TestCase
         $seoUrl = $seoUrls[0]['attributes'];
         static::assertTrue($seoUrl['isModified']);
         static::assertEquals($newSeoPathInfo, $seoUrl['seoPathInfo']);
-
-        // the seoPathInfo for the default sales channel is updated
-        $seoUrls = $this->getSeoUrls($id, true, null);
-        static::assertCount(1, $seoUrls);
-        $seoUrl = $seoUrls[0]['attributes'];
-        static::assertFalse($seoUrl['isModified']);
-        $expectedPath = $productUpdate['name'] . '/' . $newProductNumber;
-        static::assertEquals($expectedPath, $seoUrl['seoPathInfo']);
     }
 
     private function getSeoUrls(string $id, ?bool $canonical = null, ?string $salesChannelId = null): array

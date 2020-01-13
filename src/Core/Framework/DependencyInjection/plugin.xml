@@ -16,7 +16,7 @@
         <service id="Shopware\Core\Framework\Plugin\Command\BundleDumpCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\BundleConfigDumper"/>
 
-            <tag name="console.command" command="bundle:dump"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\BundleConfigDumper">
@@ -49,15 +49,14 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\KernelPluginCollection"/>
             <argument type="service" id="service_container"/>
-            <argument type="service" id="Shopware\Core\Framework\Migration\MigrationCollection"/>
             <argument type="service" id="Shopware\Core\Framework\Migration\MigrationCollectionLoader"/>
-            <argument type="service" id="Shopware\Core\Framework\Migration\MigrationRuntime"/>
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\Util\AssetService"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\Composer\CommandExecutor"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\Requirement\RequirementsValidator"/>
             <argument type="service" id="cache.messenger.restart_workers_signal" />
             <argument>%kernel.shopware_version%</argument>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService" />
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Changelog\ChangelogParser"/>
@@ -85,53 +84,53 @@
         <service id="Shopware\Core\Framework\Plugin\Command\PluginRefreshCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService"/>
 
-            <tag name="console.command" command="plugin:refresh"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\PluginListCommand">
             <argument type="service" id="plugin.repository"/>
 
-            <tag name="console.command" command="plugin:list"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\Lifecycle\PluginInstallCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
 
-            <tag name="console.command" command="plugin:install"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\Lifecycle\PluginActivateCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
 
-            <tag name="console.command" command="plugin:activate"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\Lifecycle\PluginUpdateCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
 
-            <tag name="console.command" command="plugin:update"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\Lifecycle\PluginDeactivateCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
 
-            <tag name="console.command" command="plugin:deactivate"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Command\Lifecycle\PluginUninstallCommand">
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="plugin.repository"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
 
-            <tag name="console.command" command="plugin:uninstall"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Framework\Plugin\Subscriber\PluginLoadedSubscriber">
@@ -150,6 +149,8 @@
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginService"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginLifecycleService"/>
             <argument type="service" id="Shopware\Core\Framework\Plugin\PluginManagementService"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
+            <argument type="service" id="Shopware\Core\Framework\Plugin\PluginDefinition"/>
         </service>
 
         <!-- Helper -->
@@ -178,7 +179,7 @@
         <service id="Shopware\Core\Framework\Plugin\Command\PluginCreateCommand">
             <argument>%kernel.project_dir%</argument>
 
-            <tag name="console.command" command="plugin:create"/>
+            <tag name="console.command"/>
         </service>
     </services>
 </container>

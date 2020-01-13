@@ -7,9 +7,9 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
-use Shopware\Core\Framework\Language\LanguageValidator;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Language\LanguageValidator;
 
 class LanguageValidatorTest extends TestCase
 {
@@ -728,6 +728,20 @@ class LanguageValidatorTest extends TestCase
         $this->assertDeleteViolations([$a], []);
     }
 
+    public function testSetParentOfSystemDefaultViolation(): void
+    {
+        // *systemDefault +> UUID
+
+        $systemDefaultLanguage = [
+            'id' => Defaults::LANGUAGE_SYSTEM,
+            'parentId' => Uuid::randomHex(),
+        ];
+
+        $this->assertUpsertViolations([$systemDefaultLanguage], [
+            [LanguageValidator::VIOLATION_DEFAULT_LANGUAGE_PARENT, '/0/parentId'],
+        ]);
+    }
+
     public function testDeleteEnglishViolation(): void
     {
         // -en
@@ -783,6 +797,7 @@ class LanguageValidatorTest extends TestCase
     {
         /** @var WriteException|null $stack */
         $stack = null;
+
         try {
             $function();
         } catch (WriteException $exception) {
@@ -809,7 +824,7 @@ class LanguageValidatorTest extends TestCase
         }, $expectedCodePathPairs);
     }
 
-    protected function assertInsertViolations(array $insertData, array $expectedCodePathPairs, $addDefaultTranslationCode = true): void
+    protected function assertInsertViolations(array $insertData, array $expectedCodePathPairs, bool $addDefaultTranslationCode = true): void
     {
         if ($addDefaultTranslationCode) {
             $insertData = $this->addDefaultTranslationCodes($insertData);
@@ -838,7 +853,7 @@ class LanguageValidatorTest extends TestCase
         }, $expectedCodePathPairs);
     }
 
-    protected function addLanguagesWithDefaultLocales($languages): void
+    protected function addLanguagesWithDefaultLocales(array $languages): void
     {
         $this->languageRepository->create($this->addDefaultTranslationCodes($this->addDefaultLocales($languages)), $this->defaultContext);
     }
@@ -862,14 +877,14 @@ class LanguageValidatorTest extends TestCase
         return $lang;
     }
 
-    protected function addDefaultTranslationCodes($languages)
+    protected function addDefaultTranslationCodes(array $languages)
     {
         return array_map(function ($lang) {
             return $this->addDefaultTranslationCode($lang);
         }, $languages);
     }
 
-    protected function addDefaultTranslationCode($lang)
+    protected function addDefaultTranslationCode(array $lang)
     {
         if (!isset($lang['translationCode']) && !isset($lang['translationCodeId'])) {
             $id = Uuid::randomHex();

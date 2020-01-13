@@ -35,7 +35,7 @@ class WikiApiService
     public function syncFilesWithServer(DocumentTree $tree): void
     {
         echo 'Syncing markdown files ...' . PHP_EOL;
-        [$globalCategoryList, $articleList] = $this->gatherCategoryChildrenAndArticles(
+        [$_globalCategoryList, $articleList] = $this->gatherCategoryChildrenAndArticles(
             $this->rootCategoryId,
             $this->getAllCategories()
         );
@@ -326,6 +326,7 @@ class WikiApiService
         foreach ($chain as $parentCategory) {
             if ($parentCategory->getCategoryId()) {
                 $prevEntryId = $parentCategory->getCategoryId();
+
                 continue;
             }
 
@@ -342,8 +343,13 @@ class WikiApiService
         return $prevEntryId;
     }
 
-    private function createCategory($titleEn, $seoEn, $titleDe, $seoDe, $parentCategoryId = 50): int
-    {
+    private function createCategory(
+        string $titleEn,
+        string $seoEn,
+        string $titleDe,
+        string $seoDe,
+        ?int $parentCategoryId = 50
+    ): int {
         $response = $this->client->post(
             '/wiki/categories',
             [
@@ -393,7 +399,7 @@ class WikiApiService
         return $responseJson['id'];
     }
 
-    private function createLocalizedVersionedArticle($seoEn, $seoDe): array
+    private function createLocalizedVersionedArticle(string $seoEn, string $seoDe): array
     {
         $response = $this->client->post(
             '/wiki/entries',
@@ -417,12 +423,12 @@ class WikiApiService
         $articleUrl = vsprintf('/wiki/entries/%d', [$articleId]);
         $articleLocalizationUrl = vsprintf('%s/localizations', [$articleUrl]);
 
-        [$localeIdEn, $versionIdEn, $articleUrlEn] = $this->createArticleLocale(
+        [$localeIdEn, $versionIdEn] = $this->createArticleLocale(
             $seoEn,
             $articleLocalizationUrl,
             ['id' => 2, 'name' => 'en_GB']
         );
-        [$localeIdDe, $versionIdDe, $articleUrlDe] = $this->createArticleLocale(
+        [$localeIdDe, $versionIdDe] = $this->createArticleLocale(
             $seoDe,
             $articleLocalizationUrl,
             ['name' => 'de_DE']
@@ -442,7 +448,7 @@ class WikiApiService
         ];
     }
 
-    private function createArticleLocale($seo, $articleLocalizationUrl, $locale): array
+    private function createArticleLocale($seo, string $articleLocalizationUrl, array $locale): array
     {
         $response = $this->client->post(
             $articleLocalizationUrl,
@@ -472,9 +478,8 @@ class WikiApiService
 
         $responseContents = $response->getBody()->getContents();
         $versionId = json_decode($responseContents, true)['id'];
-        $articleInLocaleWithVersionUrl = $articleVersioningUrl . '/' . $versionId;
 
-        return [$localeId, $versionId, $articleInLocaleWithVersionUrl];
+        return [$localeId, $versionId];
     }
 
     private function deleteCategoryChildren(int $categoryId = -1): void
@@ -663,7 +668,6 @@ class WikiApiService
         $oldCategories = $this->getAllCategories();
         $categoryIds = array_column($oldCategories, 'id');
 
-        /** @var Document $document */
         foreach ($tree->getCategories() as $document) {
             echo 'Syncing category ' . $document->getFile()->getRelativePathname() . ' with priority ' . $document->getPriority() . ' ... ' . PHP_EOL;
             $parentId = $this->rootCategoryId;
@@ -675,11 +679,13 @@ class WikiApiService
 
             if (!$categoryId) {
                 echo 'Skipping category ' . $document->getFile()->getRelativePathname() . " - no sync reason found\n";
+
                 continue;
             }
 
             if (!$parentId) {
                 echo 'Skipping category ' . $document->getFile()->getRelativePathname() . " - parent not synced\n";
+
                 continue;
             }
 

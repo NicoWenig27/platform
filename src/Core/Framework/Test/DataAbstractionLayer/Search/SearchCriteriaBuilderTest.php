@@ -5,7 +5,7 @@ namespace Shopware\Core\Framework\Test\DataAbstractionLayer\Search;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\Api\Converter\ConverterService;
+use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\SearchRequestException;
@@ -389,6 +389,7 @@ class SearchCriteriaBuilderTest extends TestCase
         ];
 
         $gotError = false;
+
         try {
             $this->fakeHandleRequest($maxLimit, [], $params);
         } catch (SearchRequestException $e) {
@@ -412,6 +413,7 @@ class SearchCriteriaBuilderTest extends TestCase
         ];
 
         $gotError = false;
+
         try {
             $this->fakeHandleRequest(0, $allowedLimits, $params);
         } catch (SearchRequestException $e) {
@@ -455,11 +457,11 @@ class SearchCriteriaBuilderTest extends TestCase
         static::assertEquals('/filter/2/queries/1/field', $content['errors'][5]['source']['pointer']);
     }
 
-    private function fakeHandleRequest($maxLimit = 0, array $allowedLimits = [], $params = []): Criteria
+    private function fakeHandleRequest(int $maxLimit = 0, array $allowedLimits = [], array $params = []): Criteria
     {
         $parser = $this->getContainer()->get(AggregationParser::class);
-        $converterService = $this->getContainer()->get(ConverterService::class);
-        $requestBuilder = new RequestCriteriaBuilder($parser, $converterService, $maxLimit, $allowedLimits);
+        $apiVersionConverter = $this->getContainer()->get(ApiVersionConverter::class);
+        $requestBuilder = new RequestCriteriaBuilder($parser, $apiVersionConverter, $maxLimit, $allowedLimits);
         $context = Context::createDefaultContext();
         $definition = $this->getContainer()->get(ProductDefinition::class);
 

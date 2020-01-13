@@ -46,7 +46,6 @@ class ConfigReader extends XmlReader
     {
         $cardDefinitions = [];
 
-        /** @var \DOMElement $element */
         foreach ($xml->getElementsByTagName('card') as $element) {
             $cardDefinitions[] = [
                 'title' => $this->getCardTitles($element),
@@ -61,7 +60,6 @@ class ConfigReader extends XmlReader
     private function getCardTitles(\DOMElement $element): array
     {
         $titles = [];
-        /** @var \DOMElement $title */
         foreach ($element->getElementsByTagName('title') as $title) {
             $titles[$this->getLocaleCodeFromElement($title)] = $title->nodeValue;
         }
@@ -89,7 +87,6 @@ class ConfigReader extends XmlReader
 
     private function getCardName(\DOMElement $element): ?string
     {
-        /** @var \DOMElement $name */
         foreach ($element->getElementsByTagName('name') as $name) {
             if ($name->parentNode->nodeName !== 'card') {
                 return null;
@@ -113,6 +110,7 @@ class ConfigReader extends XmlReader
             foreach ($options as $option) {
                 if ($this->isTranslateAbleOption($option)) {
                     $elementData[$option->nodeName][$this->getLocaleCodeFromElement($option)] = $option->nodeValue;
+
                     continue;
                 }
 
@@ -131,16 +129,19 @@ class ConfigReader extends XmlReader
         foreach ($options as $option) {
             if ($this->isTranslateAbleOption($option)) {
                 $elementData[$option->nodeName][$this->getLocaleCodeFromElement($option)] = $option->nodeValue;
+
                 continue;
             }
 
             if ($this->isBoolOption($option)) {
                 $elementData[$option->nodeName] = filter_var($option->nodeValue, FILTER_VALIDATE_BOOLEAN);
+
                 continue;
             }
 
             if ($this->elementIsOptions($option)) {
                 $elementData['options'] = $this->optionsToArray($option);
+
                 continue;
             }
 
@@ -154,7 +155,6 @@ class ConfigReader extends XmlReader
     {
         $options = [];
 
-        /** @var \DOMElement $option */
         foreach ($element->getElementsByTagName('option') as $option) {
             $options[] = [
                 'id' => $option->getElementsByTagName('id')->item(0)->nodeValue,
@@ -169,7 +169,6 @@ class ConfigReader extends XmlReader
     {
         $optionLabels = [];
 
-        /** @var \DOMElement $label */
         foreach ($option->getElementsByTagName('name') as $label) {
             $optionLabels[$this->getLocaleCodeFromElement($label)] = $label->nodeValue;
         }

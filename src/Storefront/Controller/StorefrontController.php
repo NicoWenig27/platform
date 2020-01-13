@@ -3,15 +3,15 @@
 namespace Shopware\Storefront\Controller;
 
 use Shopware\Core\Checkout\Cart\Exception\CustomerNotLoggedInException;
-use Shopware\Core\Framework\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
+use Shopware\Core\Framework\Adapter\Twig\TemplateFinder;
+use Shopware\Core\Framework\Routing\RequestTransformerInterface;
 use Shopware\Core\PlatformRequest;
-use Shopware\Core\SalesChannelRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Event\StorefrontRenderEvent;
 use Shopware\Storefront\Framework\Routing\RequestTransformer;
 use Shopware\Storefront\Framework\Routing\Router;
 use Shopware\Storefront\Framework\Routing\StorefrontResponse;
-use Shopware\Storefront\Theme\Twig\ThemeTemplateFinder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -24,14 +24,9 @@ abstract class StorefrontController extends AbstractController
     {
         $request = $this->get('request_stack')->getCurrentRequest();
 
-        $master = $this->get('request_stack')->getMasterRequest();
+        $salesChannelContext = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
 
-        $salesChannelContext = $master->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_CONTEXT_OBJECT);
-
-        $activeThemeName = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_NAME);
-        $activeThemeBaseName = $request->attributes->get(SalesChannelRequest::ATTRIBUTE_THEME_BASE_NAME);
-
-        $view = $this->resolveView($view, $activeThemeName, $activeThemeBaseName);
+        $view = $this->get(TemplateFinder::class)->find($view, false, null);
 
         $event = new StorefrontRenderEvent($view, $parameters, $request, $salesChannelContext);
         $this->get('event_dispatcher')->dispatch($event);
@@ -55,6 +50,7 @@ abstract class StorefrontController extends AbstractController
         $response->setData($parameters);
         $response->setContext($salesChannelContext);
         $response->headers->set(AbstractSessionListener::NO_AUTO_CACHE_CONTROL_HEADER, '1');
+        $response->headers->set('Content-Type', 'text/html');
 
         return $response;
     }
@@ -77,13 +73,13 @@ abstract class StorefrontController extends AbstractController
         if ($request->get('forwardTo')) {
             $params = $this->decodeParam($request, 'forwardParameters');
 
-            return $this->forwardToRoute($request->get('forwardTo'), $params);
+            return $this->forwardToRoute($request->get('forwardTo'), [], $params);
         }
 
         return new Response();
     }
 
-    protected function forwardToRoute(string $routeName, array $parameters = [], array $routeParameters = []): Response
+    protected function forwardToRoute(string $routeName, array $attributes = [], array $routeParameters = []): Response
     {
         $router = $this->container->get('router');
 
@@ -99,17 +95,14 @@ abstract class StorefrontController extends AbstractController
         $router->getContext()->setMethod($method);
 
         $request = $this->container->get('request_stack')->getCurrentRequest();
-        $parameters = array_merge($request->attributes->all(), $parameters);
 
-        return $this->forward($route['_controller'], $parameters);
-    }
+        $attributes = array_merge(
+            $this->get(RequestTransformerInterface::class)->extractInheritableAttributes($request),
+            $route,
+            $attributes
+        );
 
-    protected function resolveView(string $view, ?string $activeThemeName, ?string $activeThemeBaseName): string
-    {
-        /** @var ThemeTemplateFinder $templateFinder */
-        $templateFinder = $this->get(ThemeTemplateFinder::class);
-
-        return $templateFinder->find($view, false, null, $activeThemeName, $activeThemeBaseName);
+        return $this->forward($route['_controller'], $attributes, $routeParameters);
     }
 
     /**
@@ -119,10 +112,10 @@ abstract class StorefrontController extends AbstractController
     {
         /** @var RequestStack $requestStack */
         $requestStack = $this->get('request_stack');
-        $request = $requestStack->getMasterRequest();
+        $request = $requestStack->getCurrentRequest();
 
         if (!$request) {
-            return;
+            throw new CustomerNotLoggedInException();
         }
 
         /** @var SalesChannelContext|null $context */

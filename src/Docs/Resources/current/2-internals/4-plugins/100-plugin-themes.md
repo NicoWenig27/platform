@@ -40,7 +40,7 @@ bin/console theme:create
 Alternatively here is a step-by-step guide.
 
 If you want to create a custom theme to change the storefront, you have to create a `theme.json`
-file in the `<plugin root>/src/` folder of your plugin.
+file in the `<plugin root>/src/Resources` folder of your plugin.
 
 Basic example for `theme.json`:
 
@@ -54,14 +54,19 @@ Basic example for `theme.json`:
   },
   "style": [
     "@Storefront",
-    "Resources/storefront/style/base.scss"
+    "app/storefront/src/scss/base.scss"
+  ],
+  "views": [
+    "@Storefront",
+    "@Plugins",
+    "@JustAnotherTheme"
   ],
   "script": [
     "@Storefront",
-    "Resources/storefront/dist/script/all.js"
+    "app/storefront/dist/storefront/js/just-another-theme.js"
   ],
   "asset": [
-    "Resources/storefront/asset"
+    "app/storefront/src/assets"
   ]
 }
 ```
@@ -73,36 +78,15 @@ Common options:
 | style    | Array of paths to style files (e.g. *.css/*.scss          |
 | script   | Array of paths to compiled script files (e.g. javascript) |
 | asset    | Array of paths to asset folders                           |
+| views    | Array of theme or plugin names                            |
 
-Using `@Storefront` in the `style` and `script` array specifies that your theme extends
+Using `@Storefront` in the `style`, `views` and `script` array specifies that your theme extends
 the basic storefront theme which ships with shopware. This is useful if a theme just makes some
 adjustments to this theme or to use it as a starting point.
 Without these entries the storefront would be completely unstyled.
 
 Please be aware that all paths have to be relative to the theme.json 
 without leading and trailing slashes.
-
-If you want to change the location of the `theme.json`, define the method `getThemeConfigPath`
-in the plugin bootstrap file.
-
-Example:
-
-```php
-<?php declare(strict_types=1);
-
-namespace Swag\ThemeQuickStart;
-
-use Shopware\Core\Framework\Plugin;
-use Shopware\Storefront\Framework\ThemeInterface;
-
-class ThemeQuickStart extends Plugin implements ThemeInterface
-{
-        public function getThemeConfigPath(): string
-        {
-            return 'theme.json';
-        }
-}
-```
 
 Once you have created a custom theme you need to install and activate it:
 ```bash
@@ -119,6 +103,27 @@ This command checks all plugins and if a new theme is found, it will be register
 Please be aware that this command currently doesn't recognize changes in the config, name or
 author of the theme.
 
+## Theme template inheritance
+The inheritance of the templates can be controlled via the `views` option. Here you define the order in which the templates are to be loaded.
+To illustrate this, here is an example for the `views` configuration:
+
+```json
+{
+  "views": [
+    "@Storefront",
+    "@Plugins",
+    "@PayPal",
+    "@MyTheme"
+  ]
+}
+```
+
+Defining the above configuration results in the following behavior:
+* Templates are first searched in `@MyTheme`.
+* The specification of `@PayPal` allows to control the order for a specific plugin more precisely
+* `@Plugins` serves as a placeholder and defines that the `@MyTheme` and `@PayPal` should be searched for in all other plugins for the templates
+* `@Storefront` then defines that the shopware storefront theme should be used as the last inheritance level.
+
 ## Theme assets
 You can add custom styles or javascript by using the `style` and `script` property in the `theme.json`.
 Example `theme.json`
@@ -132,11 +137,11 @@ Example `theme.json`
   },
   "style": [
     "@Storefront",
-    "Resources/storefront/style/base.scss"
+    "app/storefront/src/scss/base.scss"
   ],
   "script": [
     "@Storefront",
-    "Resources/storefront/dist/script/all.js"
+    "app/storefront/dist/storefront/js/just-another-theme.js"
   ]
 }
 ```
@@ -156,14 +161,72 @@ path to your theme.json.
 
 To trigger the build process of javascript, you can call 
 ```bash
-bin/console storefront:build
+./psh.phar storefront:build
 ``` 
 
 This will compile the javascript and trigger a rebuild of the theme, so all your script and style changes
 are be visible.
 
 Please have a look at the [storefront assets](./../../4-how-to/330-storefront-assets.md) documentation
-for more information about the build process and how to add your own assets. 
+for more information about the build process and how to add your own assets.
+
+### Override default SCSS variables
+
+To override default variables like for example `$border-radius` from Bootstrap you should use a slightly different approach then explained in the [storefront assets](./../../4-how-to/330-storefront-assets.md) how-to.
+
+Bootstrap 4 is using the `!default` flag for it's own default variables. Variable overrides have to be declared beforehand.
+
+More information: https://getbootstrap.com/docs/4.0/getting-started/theming/#variable-defaults
+
+To be able to override Bootstrap variables you can define an additional SCSS entry point in your `theme.json` which is declared before `@Storefront`.
+This entry point is called `overrides.scss`:
+
+```json
+{
+  "name": "Just another theme",
+  "author": "Just another author",
+  "views": [
+     "@Storefront",
+     "@Plugins",
+     "@JustAnotherTheme"
+  ],
+  "style": [
+    "app/storefront/src/scss/overrides.scss", <-- Variable overrides
+    "@Storefront",
+    "app/storefront/src/scss/base.scss"
+  ],
+  "script": [
+    "@Storefront",
+    "app/storefront/dist/storefront/js/just-another-theme.js"
+  ],
+  "asset": [
+    "app/storefront/src/assets"
+  ]
+}
+```
+
+In the `overrides.scss` you can now override default variables like `$border-radius` globally:
+
+```scss
+/*
+Override variable defaults
+==================================================
+This file is used to override default SCSS variables from the Shopware Storefront or Bootstrap.
+
+Because of the !default flags, theme variable overrides have to be declared beforehand.
+https://getbootstrap.com/docs/4.0/getting-started/theming/#variable-defaults
+*/
+
+$disabled-btn-bg: #f00;
+$disabled-btn-border-color: #fc8;
+$font-weight-semibold: 300;
+$border-radius: 0;
+$icon-base-color: #f00;
+$modal-backdrop-bg: rgba(255, 0, 0, 0.5);
+```
+
+Please only add variable overrides in this file. You should not write CSS code like `.container { background: #f00 }` in this file. When running `storefront:hot` or `storefront:hot-proxy` SCSS variables will be injected dynamically by webpack. When writing selectors and properties in the `overrides.scss` the code can appear multiple times in your built CSS.
+
 ## Theme Configuration
 
 One of the benefits of creating a theme is that you can overwrite the theme configuration of 

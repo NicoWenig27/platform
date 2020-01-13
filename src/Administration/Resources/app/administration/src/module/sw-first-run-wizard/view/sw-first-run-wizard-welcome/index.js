@@ -38,7 +38,7 @@ Component.register('sw-first-run-wizard-welcome', {
         },
 
         languageId() {
-            return Shopware.State.get('adminLocale').languageId;
+            return Shopware.State.get('session').languageId;
         },
 
         localeRepository() {
@@ -68,6 +68,8 @@ Component.register('sw-first-run-wizard-welcome', {
         },
 
         createdComponent() {
+            this.updateButtons();
+            this.setTitle();
             this.getLanguagePlugins();
 
             const languagePromise = new Promise((resolve) => {
@@ -88,6 +90,25 @@ Component.register('sw-first-run-wizard-welcome', {
             });
         },
 
+        setTitle() {
+            this.$emit('frw-set-title', this.$tc('sw-first-run-wizard.welcome.modalTitle'));
+        },
+
+        updateButtons() {
+            const buttonConfig = [
+                {
+                    key: 'next',
+                    label: this.$tc('sw-first-run-wizard.general.buttonNext'),
+                    position: 'right',
+                    variant: 'primary',
+                    action: 'sw.first.run.wizard.index.data-import',
+                    disabled: false
+                }
+            ];
+
+            this.$emit('buttons-update', buttonConfig);
+        },
+
         setUserData(userProfile) {
             this.userProfile = userProfile;
             return new Promise((resolve) => {
@@ -96,7 +117,7 @@ Component.register('sw-first-run-wizard-welcome', {
         },
 
         getLanguagePlugins() {
-            const language = Shopware.State.get('adminLocale').currentLocale;
+            const language = Shopware.State.get('session').currentLocale;
 
             this.languagePluginService.getPlugins({
                 language

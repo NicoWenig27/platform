@@ -5,17 +5,20 @@ namespace Shopware\Core\Framework\DataAbstractionLayer;
 use Doctrine\Common\Inflector\Inflector;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Events;
-use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\Table;
+use Shopware\Core\Framework\DataAbstractionLayer\Exception\DefinitionNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\CascadeDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Flag;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\RestrictDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SetNullOnDelete;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
@@ -89,6 +92,12 @@ class DefinitionValidator
         'seo_url.foreignKey',
     ];
 
+    private const DELETE_FLAG_TO_ACTION_MAPPING = [
+        CascadeDelete::class => ['CASCADE'],
+        RestrictDelete::class => ['RESTRICT', null, false],
+        SetNullOnDelete::class => ['SET NULL'],
+    ];
+
     /**
      * @var DefinitionInstanceRegistry
      */
@@ -139,8 +148,6 @@ class DefinitionValidator
                 $violations = array_merge_recursive($violations, $this->validateEntityTranslationGettersAreNullable($definition));
                 $violations = array_merge_recursive($violations, $this->validateEntityTranslationDefinitions($definition));
             }
-
-            $violations = array_merge_recursive($violations, $this->validateSchema($definition));
         }
 
         $violations = array_filter($violations, function ($vio) {
@@ -153,7 +160,6 @@ class DefinitionValidator
     public function getNotices(): array
     {
         $notices = [];
-        /** @var EntityDefinition $definition */
         foreach ($this->registry->getDefinitions() as $definition) {
             $notices[$definition->getClass()] = [];
         }
@@ -205,9 +211,10 @@ class DefinitionValidator
             if (\in_array($table->getName(), self::TABLES_WITHOUT_DEFINITION, true)) {
                 continue;
             }
+
             try {
                 $this->registry->getByEntityName($table->getName());
-            } catch (Exception\DefinitionNotFoundException $e) {
+            } catch (DefinitionNotFoundException $e) {
                 $violations[] = sprintf(
                     'Table %s has no configured definition',
                     $table->getName()
@@ -330,6 +337,7 @@ class DefinitionValidator
             foreach ($getterMethods as $getterMethod) {
                 if ($reflection->hasMethod($getterMethod)) {
                     $hasGetter = true;
+
                     break;
                 }
             }
@@ -438,6 +446,7 @@ class DefinitionValidator
 
             if (!$method->hasReturnType()) {
                 $violations[$translationDefinition->getClass()][] = sprintf('No return type is declared in `%s` for method `%s`', $translationDefinition->getClass(), $method->getName());
+
                 continue;
             }
 
@@ -582,8 +591,9 @@ class DefinitionValidator
         $reference = $association->getReferenceDefinition();
 
         $associationViolations = $this->validateIsPlural($definition, $association);
+        $associationViolations = $this->validateSetterIsNotNull($definition, $association, $associationViolations);
 
-        $reverseSide = $reference->getFields()->filter(
+        $reference->getFields()->filter(
             function (Field $field) use ($association, $definition) {
                 if (!$field instanceof ManyToOneAssociationField) {
                     return false;
@@ -612,6 +622,8 @@ class DefinitionValidator
             }
         }
 
+        $associationViolations = $this->validateForeignKeyOnDeleteBehaviour($definition, $association, $reference, $associationViolations);
+
         return $associationViolations;
     }
 
@@ -620,6 +632,7 @@ class DefinitionValidator
         $reference = $association->getToManyReferenceDefinition();
 
         $violations = $this->validateIsPlural($definition, $association);
+        $violations = $this->validateSetterIsNotNull($definition, $association, $violations);
 
         $mapping = $association->getMappingDefinition();
         $column = $association->getMappingReferenceColumn();
@@ -687,6 +700,8 @@ class DefinitionValidator
             }
         }
 
+        $violations = $this->validateForeignKeyOnDeleteBehaviour($definition, $association, $reference, $violations);
+
         $reverse = $reference->getFields()->filter(function (Field $field) use ($definition, $association) {
             return $field instanceof ManyToManyAssociationField
                 && $field->getToManyReferenceDefinition() === $definition
@@ -709,12 +724,12 @@ class DefinitionValidator
         $violations = [];
         $mappedFieldNames = [];
 
-        /** @var Column $column */
         foreach ($columns as $column) {
             $field = $definition->getFields()->getByStorageName($column->getName());
 
             if ($field) {
                 $mappedFieldNames[] = $field->getPropertyName();
+
                 continue;
             }
 
@@ -723,6 +738,7 @@ class DefinitionValidator
 
             if ($association instanceof AssociationField && $association->is(Inherited::class)) {
                 $mappedFieldNames[] = $association->getPropertyName();
+
                 continue;
             }
 
@@ -955,5 +971,71 @@ class DefinitionValidator
         }
 
         return [sprintf('Missing parent definition in aggregate definition %s', $definition->getClass())];
+    }
+
+    /**
+     * @param OneToManyAssociationField|ManyToManyAssociationField $association
+     */
+    private function validateForeignKeyOnDeleteBehaviour(EntityDefinition $definition, AssociationField $association, EntityDefinition $reference, array $associationViolations): array
+    {
+        $manager = $this->connection->getSchemaManager();
+
+        if ($association->getFlag(CascadeDelete::class)
+            || $association->getFlag(RestrictDelete::class)
+            || $association->getFlag(SetNullOnDelete::class)) {
+            $fks = $manager->listTableForeignKeys($reference->getEntityName());
+
+            foreach ($fks as $fk) {
+                if ($fk->getForeignTableName() !== $definition->getEntityName() || !\in_array($association->getReferenceField(), $fk->getLocalColumns(), true)) {
+                    continue;
+                }
+
+                /** @var Flag $deleteFlag */
+                $deleteFlag = $association->getFlag(CascadeDelete::class)
+                    ?? $association->getFlag(RestrictDelete::class)
+                    ?? $association->getFlag(SetNullOnDelete::class);
+
+                if (\in_array($fk->onDelete(), self::DELETE_FLAG_TO_ACTION_MAPPING[\get_class($deleteFlag)], true)) {
+                    continue;
+                }
+
+                $associationViolations[$definition->getClass()][] = sprintf(
+                    'ForeignKey "%s" on entity "%s" has wrong OnDelete behaviour, behaviour should be "%s",'
+                    . 'because Association "%s" on entity "%s" defined flag "%s", got "%s" instead.',
+                    $fk->getName(),
+                    $reference->getEntityName(),
+                    self::DELETE_FLAG_TO_ACTION_MAPPING[\get_class($deleteFlag)][0],
+                    $association->getPropertyName(),
+                    $definition->getEntityName(),
+                    \get_class($deleteFlag),
+                    $fk->onDelete()
+                );
+            }
+        }
+
+        return $associationViolations;
+    }
+
+    private function validateSetterIsNotNull(EntityDefinition $definition, AssociationField $association, array $associationViolations): array
+    {
+        $setter = 'set' . ucfirst($association->getPropertyName());
+
+        $classReflection = new \ReflectionClass($definition->getEntityClass());
+        $reflectionMethods = $classReflection->getMethods(\ReflectionMethod::IS_PUBLIC);
+
+        foreach ($reflectionMethods as $reflectionMethod) {
+            if (mb_strpos($reflectionMethod->getName(), $setter) !== 0) {
+                continue;
+            }
+
+            $param = $reflectionMethod->getParameters()[0];
+
+            if ($param->allowsNull()) {
+                $associationViolations[$definition->getClass()][]
+                    = sprintf('Setter "%s" of Entity "%s" is nullable, but shouldn\'t allow null as it is a toMany association.', $setter, $definition->getEntityClass());
+            }
+        }
+
+        return $associationViolations;
     }
 }

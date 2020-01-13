@@ -12,7 +12,7 @@ use Shopware\Core\Checkout\Promotion\PromotionCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\Language\LanguageEntity;
+use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\Salutation\SalutationEntity;
 use Shopware\Core\System\Tag\TagCollection;
@@ -113,6 +113,26 @@ class CustomerEntity extends Entity
      * @var bool
      */
     protected $active;
+
+    /**
+     * @var bool
+     */
+    protected $doubleOptInRegistration;
+
+    /**
+     * @var \DateTimeInterface|null
+     */
+    protected $doubleOptInEmailSentDate;
+
+    /**
+     * @var \DateTimeInterface|null
+     */
+    protected $doubleOptInConfirmDate;
+
+    /**
+     * @var string|null
+     */
+    protected $hash;
 
     /**
      * @var bool
@@ -258,6 +278,11 @@ class CustomerEntity extends Entity
      * @var ProductReviewCollection|null
      */
     protected $productReviews;
+
+    /**
+     * @var string|null
+     */
+    protected $remoteAddress;
 
     public function __toString()
     {
@@ -422,6 +447,46 @@ class CustomerEntity extends Entity
     public function setActive(bool $active): void
     {
         $this->active = $active;
+    }
+
+    public function getDoubleOptInRegistration(): bool
+    {
+        return $this->doubleOptInRegistration;
+    }
+
+    public function setDoubleOptInRegistration(bool $doubleOptInRegistration): void
+    {
+        $this->doubleOptInRegistration = $doubleOptInRegistration;
+    }
+
+    public function getDoubleOptInEmailSentDate(): ?\DateTimeInterface
+    {
+        return $this->doubleOptInEmailSentDate;
+    }
+
+    public function setDoubleOptInEmailSentDate(\DateTimeInterface $doubleOptInEmailSentDate): void
+    {
+        $this->doubleOptInEmailSentDate = $doubleOptInEmailSentDate;
+    }
+
+    public function getDoubleOptInConfirmDate(): ?\DateTimeInterface
+    {
+        return $this->doubleOptInConfirmDate;
+    }
+
+    public function setDoubleOptInConfirmDate(\DateTimeInterface $doubleOptInConfirmDate): void
+    {
+        $this->doubleOptInConfirmDate = $doubleOptInConfirmDate;
+    }
+
+    public function getHash(): ?string
+    {
+        return $this->hash;
+    }
+
+    public function setHash(string $hash): void
+    {
+        $this->hash = $hash;
     }
 
     public function getGuest(): bool
@@ -700,7 +765,7 @@ class CustomerEntity extends Entity
         return $this->productReviews;
     }
 
-    public function setProductReviews(?ProductReviewCollection $productReviews): void
+    public function setProductReviews(ProductReviewCollection $productReviews): void
     {
         $this->productReviews = $productReviews;
     }
@@ -733,5 +798,15 @@ class CustomerEntity extends Entity
     public function setCampaignCode(?string $campaignCode): void
     {
         $this->campaignCode = $campaignCode;
+    }
+
+    public function getRemoteAddress(): ?string
+    {
+        return $this->remoteAddress;
+    }
+
+    public function setRemoteAddress(?string $remoteAddress): void
+    {
+        $this->remoteAddress = $remoteAddress;
     }
 }

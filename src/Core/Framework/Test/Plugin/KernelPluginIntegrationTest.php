@@ -9,12 +9,11 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Migration\MigrationCollection;
 use Shopware\Core\Framework\Migration\MigrationCollectionLoader;
-use Shopware\Core\Framework\Migration\MigrationRuntime;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Composer\CommandExecutor;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\DbalKernelPluginLoader;
+use Shopware\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Shopware\Core\Framework\Plugin\PluginCollection;
 use Shopware\Core\Framework\Plugin\PluginLifecycleService;
@@ -23,7 +22,7 @@ use Shopware\Core\Framework\Plugin\Util\AssetService;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
-use Shopware\Development\Kernel;
+use SwagTest\SwagTest;
 
 class KernelPluginIntegrationTest extends TestCase
 {
@@ -66,8 +65,7 @@ class KernelPluginIntegrationTest extends TestCase
         $plugins = $this->kernel->getPluginLoader()->getPluginInstances();
         static::assertNotEmpty($plugins->all());
 
-        /** @var Plugin|null $testPlugin */
-        $testPlugin = $plugins->get('SwagTest\\SwagTest');
+        $testPlugin = $plugins->get(SwagTest::class);
         static::assertNotNull($testPlugin);
 
         static::assertFalse($testPlugin->isActive());
@@ -83,8 +81,7 @@ class KernelPluginIntegrationTest extends TestCase
         $this->kernel = $this->makeKernel($loader);
         $this->kernel->boot();
 
-        $plugins = $this->kernel->getPluginLoader()->getPluginInstances();
-        $testPlugin = $plugins->get('SwagTest\\SwagTest');
+        $testPlugin = $this->kernel->getPluginLoader()->getPluginInstances()->get(SwagTest::class);
         static::assertNotNull($testPlugin);
 
         static::assertTrue($testPlugin->isActive());
@@ -98,7 +95,7 @@ class KernelPluginIntegrationTest extends TestCase
         $this->kernel = $this->makeKernel($loader);
         $this->kernel->boot();
 
-        static::assertFalse($this->kernel->getContainer()->has('SwagTest\\SwagTest'));
+        static::assertFalse($this->kernel->getContainer()->has(SwagTest::class));
     }
 
     public function testActiveAutoLoadedAndWired(): void
@@ -110,9 +107,9 @@ class KernelPluginIntegrationTest extends TestCase
         $this->kernel->boot();
 
         // should always be public
-        static::assertTrue($this->kernel->getContainer()->has('SwagTest\\SwagTest'));
+        static::assertTrue($this->kernel->getContainer()->has(SwagTest::class));
 
-        $swagTestPlugin = $this->kernel->getContainer()->get('SwagTest\\SwagTest');
+        $swagTestPlugin = $this->kernel->getContainer()->get(SwagTest::class);
 
         // autowired
         static::assertInstanceOf(SystemConfigService::class, $swagTestPlugin->systemConfig);
@@ -133,8 +130,7 @@ class KernelPluginIntegrationTest extends TestCase
         $lifecycleService = $this->makePluginLifecycleService();
         $lifecycleService->activatePlugin($inactive, Context::createDefaultContext());
 
-        $plugins = $this->kernel->getPluginLoader()->getPluginInstances();
-        $swagTestPlugin = $plugins->get($inactive->getBaseClass());
+        $swagTestPlugin = $this->kernel->getPluginLoader()->getPluginInstances()->get($inactive->getBaseClass());
         static::assertNotNull($swagTestPlugin);
 
         // autowired
@@ -165,8 +161,7 @@ class KernelPluginIntegrationTest extends TestCase
 
         $lifecycleService->deactivatePlugin($active, Context::createDefaultContext());
 
-        $plugins = $this->kernel->getPluginLoader()->getPluginInstances();
-        $swagTestPlugin = $plugins->get($active->getBaseClass());
+        $swagTestPlugin = $this->kernel->getPluginLoader()->getPluginInstances()->get($active->getBaseClass());
 
         // only the preDeactivate is called with the plugin still active
         static::assertNull($oldPluginInstance->preActivateContext);
@@ -198,11 +193,10 @@ class KernelPluginIntegrationTest extends TestCase
             'kernel.shopware_version_revision' => self::getTestRevision(),
             'kernel.project_dir' => TEST_PROJECT_DIR,
             'kernel.plugin_dir' => TEST_PROJECT_DIR . '/custom/plugins',
-            'kernel.active_plugins' => [],
         ];
 
         $actualParameters = [];
-        foreach ($expectedParameters as $key => $_) {
+        foreach ($expectedParameters as $key => $_value) {
             $actualParameters[$key] = $this->kernel->getContainer()->getParameter($key);
         }
 
@@ -212,18 +206,19 @@ class KernelPluginIntegrationTest extends TestCase
 
         $lifecycleService->activatePlugin($plugin, Context::createDefaultContext());
 
-        $expectedParameters['kernel.active_plugins'] = [
-            'SwagTest\SwagTest' => [
-                'name' => 'SwagTest',
-                'path' => TEST_PROJECT_DIR . '/platform/src/Core/Framework/Test/Plugin/_fixture/plugins/SwagTest/src',
-                'class' => 'SwagTest\SwagTest',
-            ],
-        ];
-
         $newActualParameters = [];
-        foreach ($expectedParameters as $key => $_) {
+        foreach ($expectedParameters as $key => $_value) {
             $newActualParameters[$key] = $this->kernel->getContainer()->getParameter($key);
         }
+
+        $activePlugins = $this->kernel->getContainer()->getParameter('kernel.active_plugins');
+
+        static::assertIsArray($activePlugins);
+        static::assertArrayHasKey(SwagTest::class, $activePlugins);
+
+        static::assertArrayHasKey('name', $activePlugins[SwagTest::class]);
+        static::assertArrayHasKey('path', $activePlugins[SwagTest::class]);
+        static::assertArrayHasKey('class', $activePlugins[SwagTest::class]);
 
         static::assertSame($expectedParameters, $newActualParameters);
     }
@@ -279,26 +274,23 @@ class KernelPluginIntegrationTest extends TestCase
             $container->get('event_dispatcher'),
             $this->kernel->getPluginLoader()->getPluginInstances(),
             $container,
-            $this->createMock(MigrationCollection::class),
             $this->createMock(MigrationCollectionLoader::class),
-            $this->createMock(MigrationRuntime::class),
             $this->connection,
             $this->createMock(AssetService::class),
             $this->createMock(CommandExecutor::class),
             $this->createMock(RequirementsValidator::class),
             new MemoryCacheItemPool(),
-            $container->getParameter('kernel.shopware_version')
+            $container->getParameter('kernel.shopware_version'),
+            $container->get(SystemConfigService::class)
         );
     }
 
-    private function makeKernel(Plugin\KernelPluginLoader\KernelPluginLoader $loader): \Shopware\Core\Kernel
+    private function makeKernel(KernelPluginLoader $loader): \Shopware\Core\Kernel
     {
         $kernelClass = KernelLifecycleManager::getKernelClass();
         $version = 'v' . self::getTestVersion() . '@' . self::getTestRevision();
         $this->kernel = new $kernelClass('test', true, $loader, Uuid::randomHex(), $version);
-        $class = new \ReflectionClass(Kernel::class);
-
-        $connection = $class->getProperty('connection');
+        $connection = (new \ReflectionClass($kernelClass))->getProperty('connection');
         $connection->setAccessible(true);
         $connection->setValue($this->connection);
 

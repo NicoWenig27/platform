@@ -8,20 +8,18 @@ use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufactu
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturerTranslation\ProductManufacturerTranslationDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
+use Shopware\Core\Content\Seo\SeoTemplateReplacementVariable;
+use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlExtractIdResult;
+use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlMapping;
+use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteConfig;
+use Shopware\Core\Content\Seo\SeoUrlRoute\SeoUrlRouteInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
-use Shopware\Core\Framework\Seo\MainCategory\MainCategoryCollection;
-use Shopware\Core\Framework\Seo\MainCategory\MainCategoryEntity;
-use Shopware\Core\Framework\Seo\SeoUrlRoute\SeoUrlExtractIdResult;
-use Shopware\Core\Framework\Seo\SeoUrlRoute\SeoUrlMapping;
-use Shopware\Core\Framework\Seo\SeoUrlRoute\SeoUrlRouteConfig;
-use Shopware\Core\Framework\Seo\SeoUrlRoute\SeoUrlRouteInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Shopware\Storefront\Framework\Seo\SeoTemplateReplacementVariable;
 
 class ProductPageSeoUrlRoute implements SeoUrlRouteInterface
 {
@@ -58,7 +56,6 @@ class ProductPageSeoUrlRoute implements SeoUrlRouteInterface
         $criteria->addAssociation('manufacturer');
         $criteria->addAssociation('mainCategories.category');
         $criteria->addAssociation('categories');
-        $criteria->addAssociation('children');
     }
 
     public function getMapping(Entity $product, ?SalesChannelEntity $salesChannel): SeoUrlMapping
@@ -148,13 +145,9 @@ class ProductPageSeoUrlRoute implements SeoUrlRouteInterface
 
     private function extractMainCategory(ProductEntity $product, ?SalesChannelEntity $salesChannel): ?CategoryEntity
     {
-        /** @var CategoryEntity|null $mainCategory */
         $mainCategory = null;
         if ($salesChannel !== null) {
-            /** @var MainCategoryCollection $mainCategories */
-            $mainCategories = $product->getMainCategories();
-            /** @var MainCategoryEntity|null $mainCategoryEntity */
-            $mainCategoryEntity = $mainCategories->filterBySalesChannelId($salesChannel->getId())->first();
+            $mainCategoryEntity = $product->getMainCategories()->filterBySalesChannelId($salesChannel->getId())->first();
             $mainCategory = $mainCategoryEntity !== null ? $mainCategoryEntity->getCategory() : null;
         }
 

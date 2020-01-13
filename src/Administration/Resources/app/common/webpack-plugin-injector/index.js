@@ -1,4 +1,4 @@
-const { join } = require('path');
+const { join, isAbsolute } = require('path');
 const fs = require('fs');
 const { addPath } = require('app-module-path');
 const merge = require('webpack-merge');
@@ -14,7 +14,15 @@ const projectRoot = process.env.PROJECT_ROOT || '';
  * @returns {String}
  */
 function resolveFromRootPath(directory) {
+    if (isAbsolute(directory)) {
+        return directory;
+    }
+
     return join(projectRoot, directory);
+}
+
+function toKebabCase(val) {
+    return val.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 /**
@@ -35,10 +43,6 @@ const sections = [
  */
 function resolve(directory) {
     return join(__dirname, '..', directory);
-}
-
-function toKebabCase(val) {
-    return val.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 /**
@@ -173,7 +177,7 @@ class WebpackPluginInjector {
      * @return {Object}
      */
     static getPluginConfig(pluginName, pluginDefinition, section) {
-        const basePath = pluginDefinition.basePath;
+        const basePath = resolveFromRootPath(pluginDefinition.basePath);
         const hasCustomWebpackConfig = (pluginDefinition[section].webpack !== null);
         const hasCustomStyleFiles = Object.prototype.hasOwnProperty.call(pluginDefinition[section], 'styleFiles')
             ? pluginDefinition[section].styleFiles.length > 0
@@ -183,10 +187,10 @@ class WebpackPluginInjector {
 
         const assetPaths = [];
         if (pluginDefinition.administration) {
-            assetPaths.push(join(basePath, pluginDefinition.administration.path, 'static'));
+            assetPaths.push(join(basePath, pluginDefinition.administration.path, '../static'));
         }
         if (pluginDefinition.storefront) {
-            assetPaths.push(join(basePath, pluginDefinition.storefront.path, 'static'));
+            assetPaths.push(join(basePath, pluginDefinition.storefront.path, '../static'));
         }
 
         return {
@@ -197,7 +201,7 @@ class WebpackPluginInjector {
             pluginName,
             assetPaths,
             styleFiles: pluginDefinition[section].styleFiles,
-            technicalName: toKebabCase(pluginName),
+            technicalName: pluginDefinition.technicalName || toKebabCase(pluginName),
             viewPath: pluginDefinition.views.map((path) => join(basePath, path)),
             entryFile: join(basePath, pluginDefinition[section].entryFilePath)
         };

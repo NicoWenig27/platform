@@ -3,8 +3,8 @@
 namespace Shopware\Storefront\Controller;
 
 use Shopware\Core\Content\Product\SalesChannel\ProductReviewService;
+use Shopware\Core\Content\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
-use Shopware\Core\Framework\Seo\SeoUrlPlaceholderHandlerInterface;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -130,7 +130,7 @@ class ProductController extends StorefrontController
         try {
             $this->productReviewService->save($productId, $data, $context);
         } catch (ConstraintViolationException $formViolations) {
-            return $this->forward('Shopware\Storefront\Controller\ProductController::loadReviews', [
+            return $this->forwardToRoute('frontend.product.reviews', [
                 'productId' => $productId,
                 'success' => -1,
                 'formViolations' => $formViolations,
@@ -148,7 +148,7 @@ class ProductController extends StorefrontController
             $forwardParams['success'] = 2;
         }
 
-        return $this->forward('Shopware\Storefront\Controller\ProductController::loadReviews', $forwardParams);
+        return $this->forwardToRoute('frontend.product.reviews', $forwardParams, ['productId' => $productId]);
     }
 
     /**
@@ -158,7 +158,7 @@ class ProductController extends StorefrontController
     {
         $reviews = $this->reviewPageletLoader->load($request, $context);
 
-        return $this->renderStorefront('page/product-detail/review/review.html.twig', [
+        return $this->renderStorefront('storefront/page/product-detail/review/review.html.twig', [
             'reviews' => $reviews,
             'ratingSuccess' => $request->get('success'),
         ]);

@@ -50,7 +50,6 @@
 
                     {% block sw_product_list_grid %}
                         <sw-entity-listing ref="swProductGrid"
-                                           v-if="products"
                                            class="sw-product-list-grid"
                                            :items="products"
                                            :columns="productColumns"
@@ -59,7 +58,7 @@
                                            :showSelection="true"
                                            :isLoading="isLoading"
                                            @inline-edit-save="onInlineEditSave"
-                                           @select-item="updateSelection"
+                                           @selection-change="updateSelection"
                                            @update-records="updateTotal">
                             {% block sw_product_list_grid_columns %}
                                 {% block sw_product_list_grid_columns_name_preview %}

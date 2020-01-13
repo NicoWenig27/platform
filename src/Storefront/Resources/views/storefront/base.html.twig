@@ -1,12 +1,12 @@
 {# Set variable to "true" to enable HMR (hot page reloading) mode #}
-{% set isHMRMode = false %}
+{% set isHMRMode = app.request.headers.get('hot-reload-mode') %}
 
 {% block base_doctype %}
 <!DOCTYPE html>
 {% endblock %}
 
 {% block base_html %}
-<html lang="{{ "meta.xmlLang"|trans }}"
+<html lang="{{ app.request.locale }}"
       itemscope="itemscope"
       itemtype="https://schema.org/WebPage">
 {% endblock %}
@@ -16,13 +16,13 @@
 {% endblock %}
 
 {% block base_body %}
-    <body class="is-ctl-{{ controllerName|lower }} is-act-{{ controllerAction|lower }}">
+    <body class="{% block base_body_classes %}is-ctl-{{ controllerName|lower }} is-act-{{ controllerAction|lower }}{% endblock %}">
     {% block base_body_inner %}
         {% block base_noscript %}
             <noscript class="noscript-main">
                 {% sw_include '@Storefront/storefront/utilities/alert.html.twig' with {
                     type: 'info',
-                    content: 'general.noscriptNotice'|trans
+                    content: 'general.noscriptNotice'|trans|sw_sanitize
                 } %}
             </noscript>
         {% endblock %}
@@ -46,11 +46,13 @@
         {% endblock %}
 
         {% block base_offcanvas_navigation %}
-            <div class="d-none js-navigation-offcanvas-initial-content">
-                {% block base_offcanvas_navigation_inner %}
-                    {% sw_include '@Storefront/storefront/layout/navigation/offcanvas/navigation.html.twig' %}
-                {% endblock %}
-            </div>
+            {% if page.header.navigation %}
+                <div class="d-none js-navigation-offcanvas-initial-content">
+                    {% block base_offcanvas_navigation_inner %}
+                        {% sw_include '@Storefront/storefront/layout/navigation/offcanvas/navigation.html.twig' with { navigation: page.header.navigation } %}
+                    {% endblock %}
+                </div>
+            {% endif %}
         {% endblock %}
 
         {% block base_main %}
@@ -97,7 +99,7 @@
     {% endblock %}
 
     {% block base_cookie_permission %}
-        {% sw_include '@Storefront/storefront/layout/cookie-permission.html.twig' %}
+        {% sw_include '@Storefront/storefront/layout/cookie/cookie-permission.html.twig' %}
     {% endblock %}
 
     {% block base_pseudo_modal %}
@@ -118,6 +120,7 @@
                 window.activeNavigationId = '{{ page.header.navigation.active.id }}';
                 window.router = {
                     'frontend.cart.offcanvas': '{{ path('frontend.cart.offcanvas') }}',
+                    'frontend.cookie.offcanvas': '{{ path('frontend.cookie.offcanvas') }}',
                     'frontend.checkout.finish.page': '{{ path('frontend.checkout.finish.page') }}',
                     'frontend.checkout.info': '{{ path('frontend.checkout.info') }}',
                     'frontend.menu.offcanvas': '{{ path('frontend.menu.offcanvas') }}',
@@ -125,6 +128,7 @@
                     'frontend.cms.navigation.page': '{{ path('frontend.cms.navigation.page') }}',
                     'frontend.account.addressbook': '{{ path('frontend.account.addressbook') }}',
                     'frontend.csrf.generateToken': '{{ path('frontend.csrf.generateToken') }}',
+                    'frontend.country.country-data': '{{ path('frontend.country.country.data') }}',
                 };
             </script>
         {% endblock %}
@@ -156,7 +160,7 @@
                 <script type="text/javascript" src="{{ baseUrl }}:9999/js/storefront.js"></script>
             {% else %}
                 {% for file in shopware.theme.assets.js %}
-                    <script type="text/javascript" src="{{ asset(file) }}"></script>
+                    <script type="text/javascript" src="{{ asset(file) }}" async></script>
                 {% endfor %}
             {% endif %}
         {% endblock %}

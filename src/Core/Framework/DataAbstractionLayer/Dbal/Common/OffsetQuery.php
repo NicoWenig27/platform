@@ -3,7 +3,7 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common;
 
 use Doctrine\DBAL\Query\QueryBuilder;
-use Shopware\Core\Framework\Doctrine\FetchModeHelper;
+use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
 
 class OffsetQuery implements IterableQuery
 {
@@ -40,7 +40,6 @@ class OffsetQuery implements IterableQuery
 
     public function fetchCount(): int
     {
-        /** @var QueryBuilder $query */
         $query = clone $this->query;
 
         //get first column for distinct selection

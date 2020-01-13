@@ -18,15 +18,14 @@ import './component/sw-product-variants/sw-product-variants-delivery/sw-product-
 import './component/sw-product-variants/sw-product-variants-delivery/sw-product-variants-delivery-media';
 import './component/sw-product-variants/sw-product-variants-overview';
 import './component/sw-product-variants/sw-product-variants-configurator/sw-product-variants-price-field';
+import './component/sw-product-cross-selling-form';
 import './view/sw-product-detail-base';
 import './view/sw-product-detail-context-prices';
 import './view/sw-product-detail-properties';
 import './view/sw-product-detail-variants';
+import './view/sw-product-detail-cross-selling';
 import './page/sw-product-list';
 import './page/sw-product-detail';
-
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
 
 const { Module } = Shopware;
 
@@ -41,11 +40,6 @@ Module.register('sw-product', {
     icon: 'default-symbol-products',
     favicon: 'icon-module-products.png',
     entity: 'product',
-
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB
-    },
 
     routes: {
         index: {
@@ -106,6 +100,13 @@ Module.register('sw-product', {
                 variants: {
                     component: 'sw-product-detail-variants',
                     path: 'variants',
+                    meta: {
+                        parentPath: 'sw.product.index'
+                    }
+                },
+                crossSelling: {
+                    component: 'sw-product-detail-cross-selling',
+                    path: 'cross-selling',
                     meta: {
                         parentPath: 'sw.product.index'
                     }

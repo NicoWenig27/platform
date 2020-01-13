@@ -27,9 +27,10 @@ shopware:
     auto_update:
         enabled: true
 
-    cache:
-        entity_cache:
-            enabled: true
-            expiration_time: 3600
     store:
         frw: false
+
+    sitemap:
+        batchsize: 100
+        custom_urls:
+        excluded_urls:

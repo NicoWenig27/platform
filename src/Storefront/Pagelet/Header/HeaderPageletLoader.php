@@ -8,9 +8,9 @@ use Shopware\Core\Content\Category\Service\NavigationLoader;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
-use Shopware\Core\Framework\Language\LanguageCollection;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\System\Currency\CurrencyCollection;
+use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -73,7 +73,8 @@ class HeaderPageletLoader
         $category = $this->navigationLoader->load(
             (string) $navigationId,
             $salesChannelContext,
-            $salesChannelContext->getSalesChannel()->getNavigationCategoryId()
+            $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
+            $salesChannelContext->getSalesChannel()->getNavigationCategoryDepth()
         );
 
         $languages = $this->loadLanguages($salesChannelContext);
@@ -102,7 +103,7 @@ class HeaderPageletLoader
     private function loadLanguages(SalesChannelContext $salesChannelContext): LanguageCollection
     {
         $criteria = new Criteria();
-        $criteria->addAssociation('language.translationCode');
+        $criteria->addAssociation('translationCode');
 
         $criteria->addFilter(
             new EqualsFilter('language.salesChannelDomains.salesChannelId', $salesChannelContext->getSalesChannel()->getId())

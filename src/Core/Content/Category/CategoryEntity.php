@@ -6,10 +6,10 @@ use Shopware\Core\Content\Category\Aggregate\CategoryTranslation\CategoryTransla
 use Shopware\Core\Content\Cms\CmsPageEntity;
 use Shopware\Core\Content\Media\MediaEntity;
 use Shopware\Core\Content\Product\ProductCollection;
+use Shopware\Core\Content\Seo\MainCategory\MainCategoryCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\Seo\MainCategory\MainCategoryCollection;
-use Shopware\Core\Framework\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\System\SalesChannel\SalesChannelCollection;
 use Shopware\Core\System\Tag\TagCollection;
 
@@ -522,7 +522,7 @@ class CategoryEntity extends Entity
         return $this->mainCategories;
     }
 
-    public function setMainCategories(?MainCategoryCollection $mainCategories): void
+    public function setMainCategories(MainCategoryCollection $mainCategories): void
     {
         $this->mainCategories = $mainCategories;
     }
@@ -562,29 +562,30 @@ class CategoryEntity extends Entity
         return $this->seoUrls;
     }
 
-    public function setSeoUrls(?SeoUrlCollection $seoUrls): void
+    public function setSeoUrls(SeoUrlCollection $seoUrls): void
     {
         $this->seoUrls = $seoUrls;
     }
 
     private function getBreadcrumbMapping(): array
     {
-        if ($this->breadcrumb === null) {
+        $breadcrumb = $this->getTranslation('breadcrumb');
+        if ($breadcrumb === null) {
             return [];
         }
         if ($this->path === null) {
-            return $this->breadcrumb;
+            return $breadcrumb;
         }
 
         $parts = array_slice(explode('|', $this->path), 1, -1);
 
-        $breadcrumb = [];
+        $filtered = [];
         foreach ($parts as $id) {
-            $breadcrumb[$id] = $this->breadcrumb[$id];
+            $filtered[$id] = $breadcrumb[$id];
         }
 
-        $breadcrumb[$this->getId()] = $this->breadcrumb[$this->getId()];
+        $filtered[$this->getId()] = $breadcrumb[$this->getId()];
 
-        return $breadcrumb;
+        return $filtered;
     }
 }

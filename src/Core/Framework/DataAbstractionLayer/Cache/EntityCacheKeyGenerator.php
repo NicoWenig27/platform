@@ -16,7 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\StorageAware;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\TranslatedField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Aggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Language\LanguageDefinition;
+use Shopware\Core\System\Language\LanguageDefinition;
 
 class EntityCacheKeyGenerator
 {
@@ -168,7 +168,6 @@ class EntityCacheKeyGenerator
             $keys[] = $translationDefinition->getEntityName() . '.language_id';
         }
 
-        /** @var AssociationField[] $associations */
         foreach ($associations as $association) {
             if ($association->is(Extension::class)) {
                 $value = $entity->getExtension($association->getPropertyName());
@@ -195,7 +194,6 @@ class EntityCacheKeyGenerator
             }
 
             if ($association instanceof OneToManyAssociationField) {
-                /** @var Entity[] $value */
                 foreach ($value as $item) {
                     $nested = $this->getAssociatedTags($association->getReferenceDefinition(), $item, $context);
                     foreach ($nested as $key) {
@@ -207,7 +205,6 @@ class EntityCacheKeyGenerator
             }
 
             if ($association instanceof ManyToManyAssociationField) {
-                /** @var Entity[] $value */
                 foreach ($value as $item) {
                     $nested = $this->getAssociatedTags($association->getToManyReferenceDefinition(), $item, $context);
                     foreach ($nested as $key) {

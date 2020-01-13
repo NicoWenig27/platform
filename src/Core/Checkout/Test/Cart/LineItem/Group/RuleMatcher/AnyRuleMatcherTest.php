@@ -79,7 +79,6 @@ class AnyRuleMatcherTest extends TestCase
 
         $matcher = new AnyRuleMatcher();
 
-        /** @var LineItemFlatCollection $matchedItems */
         $matchedItems = $matcher->getMatchingItems($group, new LineItemFlatCollection([$productLower50, $product50]), $this->context);
 
         static::assertCount(1, $matchedItems);
@@ -103,8 +102,8 @@ class AnyRuleMatcherTest extends TestCase
 
         $productHighQuantity1Id = Uuid::randomBytes();
         $productHighQuantity2Id = Uuid::randomBytes();
-        $productLowQuantity1Id = UUID::randomBytes();
-        $productLowQuantity2Id = UUID::randomBytes();
+        $productLowQuantity1Id = Uuid::randomBytes();
+        $productLowQuantity2Id = Uuid::randomBytes();
 
         // create our test product line items
         $productHighQuantityHighPrice = $this->createProductItem($minPrice, 0);
@@ -124,7 +123,7 @@ class AnyRuleMatcherTest extends TestCase
         $productLowQuantityLowPrice->setQuantity($minQuantity - 1);
 
         $rulesMinPrice = new RuleEntity();
-        $rulesMinPrice->setId(UUID::randomBytes());
+        $rulesMinPrice->setId(Uuid::randomBytes());
         $rulesMinPrice->setPayload(new OrRule(
             [
                 $this->getMinQuantityRule($productHighQuantity1Id, $minQuantity),
@@ -135,7 +134,7 @@ class AnyRuleMatcherTest extends TestCase
         ));
 
         $rulesMinQuantity = new RuleEntity();
-        $rulesMinQuantity->setId(UUID::randomBytes());
+        $rulesMinQuantity->setId(Uuid::randomBytes());
         $rulesMinQuantity->setPayload(new AndRule([$this->getMinPriceRule($minPrice)]));
 
         // create our group with our price and quantity rule
@@ -149,7 +148,6 @@ class AnyRuleMatcherTest extends TestCase
 
         $matcher = new AnyRuleMatcher();
 
-        /** @var LineItemFlatCollection $matchedItems */
         $matchedItems = $matcher->getMatchingItems(
             $group,
             new LineItemFlatCollection(

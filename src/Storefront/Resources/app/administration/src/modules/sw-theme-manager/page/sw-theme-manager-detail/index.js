@@ -1,7 +1,7 @@
 import template from './sw-theme-manager-detail.html.twig';
 import './sw-theme-manager-detail.scss';
 
-const { Component, Application, Mixin, State } = Shopware;
+const { Component, Application, Mixin, StateDeprecated } = Shopware;
 const Criteria = Shopware.Data.Criteria;
 const { getObjectDiff, cloneDeep } = Shopware.Utils.object;
 
@@ -54,7 +54,7 @@ Component.register('sw-theme-manager-detail', {
         },
 
         defaultThemeAsset() {
-            return `url('${Shopware.Context.Api.assetsPath}/administration/static/img/theme/default_theme_preview.jpg')`;
+            return `url('${Shopware.Context.api.assetsPath}/administration/static/img/theme/default_theme_preview.jpg')`;
         },
 
         deleteDisabledToolTip() {
@@ -65,12 +65,8 @@ Component.register('sw-theme-manager-detail', {
             };
         },
 
-        languageId() {
-            return this.$store.state.adminLocale.languageId;
-        },
-
         mediaStore() {
-            return State.getStore('media');
+            return StateDeprecated.getStore('media');
         },
 
         themeId() {
@@ -85,10 +81,6 @@ Component.register('sw-theme-manager-detail', {
     watch: {
         themeId() {
             this.getTheme();
-        },
-
-        languageId() {
-            this.getThemeConfig();
         }
     },
 
@@ -112,9 +104,7 @@ Component.register('sw-theme-manager-detail', {
             this.themeRepository.get(this.themeId, Shopware.Context.api, criteria).then((response) => {
                 this.theme = response;
 
-                if (this.languageId) {
-                    this.getThemeConfig();
-                }
+                this.getThemeConfig();
 
                 if (this.theme.parentThemeId) {
                     this.getParentTheme();
@@ -131,11 +121,11 @@ Component.register('sw-theme-manager-detail', {
                 return;
             }
 
-            this.themeService.getFields(this.themeId, this.languageId).then((fields) => {
+            this.themeService.getFields(this.themeId).then((fields) => {
                 this.themeFields = fields;
             });
 
-            this.themeService.getConfiguration(this.themeId, this.languageId).then((config) => {
+            this.themeService.getConfiguration(this.themeId).then((config) => {
                 this.themeConfig = config.fields;
                 this.baseThemeConfig = cloneDeep(config.fields);
                 this.isLoading = false;
@@ -168,7 +158,7 @@ Component.register('sw-theme-manager-detail', {
 
         successfulUpload(mediaItem, context) {
             this.mediaStore.getByIdAsync(mediaItem.targetId).then((media) => {
-                context.value = media.id;
+                this.setMediaItem(media, context);
                 return true;
             });
         },

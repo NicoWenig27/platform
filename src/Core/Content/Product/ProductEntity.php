@@ -3,9 +3,10 @@
 namespace Shopware\Core\Content\Product;
 
 use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryDate;
+use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
 use Shopware\Core\Content\Category\CategoryCollection;
-use Shopware\Core\Content\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductConfiguratorSetting\ProductConfiguratorSettingCollection;
+use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductManufacturer\ProductManufacturerEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductMedia\ProductMediaEntity;
@@ -15,13 +16,14 @@ use Shopware\Core\Content\Product\Aggregate\ProductSearchKeyword\ProductSearchKe
 use Shopware\Core\Content\Product\Aggregate\ProductTranslation\ProductTranslationCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityCollection;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Content\Seo\MainCategory\MainCategoryCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\Pricing\ListingPriceCollection;
-use Shopware\Core\Framework\Pricing\Price;
-use Shopware\Core\Framework\Pricing\PriceCollection;
-use Shopware\Core\Framework\Seo\MainCategory\MainCategoryCollection;
-use Shopware\Core\Framework\Seo\SeoUrl\SeoUrlCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\ListingPriceCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\Price;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\PriceCollection;
+use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\System\Tag\TagCollection;
 use Shopware\Core\System\Tax\TaxEntity;
 use Shopware\Core\System\Unit\UnitEntity;
@@ -380,6 +382,16 @@ class ProductEntity extends Entity
      */
     protected $seoUrls;
 
+    /**
+     * @var OrderLineItemCollection|null
+     */
+    protected $orderLineItems;
+
+    /**
+     * @var ProductCrossSellingCollection|null
+     */
+    protected $crossSellings;
+
     public function __construct()
     {
         $this->prices = new ProductPriceCollection();
@@ -395,7 +407,7 @@ class ProductEntity extends Entity
         return $this->productReviews;
     }
 
-    public function setProductReviews(?ProductReviewCollection $productReviews): void
+    public function setProductReviews(ProductReviewCollection $productReviews): void
     {
         $this->productReviews = $productReviews;
     }
@@ -1101,7 +1113,7 @@ class ProductEntity extends Entity
         return $this->mainCategories;
     }
 
-    public function setMainCategories(?MainCategoryCollection $mainCategories): void
+    public function setMainCategories(MainCategoryCollection $mainCategories): void
     {
         $this->mainCategories = $mainCategories;
     }
@@ -1121,8 +1133,28 @@ class ProductEntity extends Entity
         return $this->seoUrls;
     }
 
-    public function setSeoUrls(?SeoUrlCollection $seoUrls): void
+    public function setSeoUrls(SeoUrlCollection $seoUrls): void
     {
         $this->seoUrls = $seoUrls;
+    }
+
+    public function getOrderLineItems(): ?OrderLineItemCollection
+    {
+        return $this->orderLineItems;
+    }
+
+    public function setOrderLineItems(OrderLineItemCollection $orderLineItems): void
+    {
+        $this->orderLineItems = $orderLineItems;
+    }
+
+    public function getCrossSellings(): ?ProductCrossSellingCollection
+    {
+        return $this->crossSellings;
+    }
+
+    public function setCrossSellings(ProductCrossSellingCollection $crossSellings): void
+    {
+        $this->crossSellings = $crossSellings;
     }
 }

@@ -18,7 +18,6 @@
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\CartValueResolver">
-            <argument type="service" id="request_stack"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
 
             <tag name="controller.argument_value_resolver" priority="1001"/>
@@ -115,6 +114,7 @@
             <argument type="service" id="order.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\AccountRegistrationService"/>
             <argument type="service" id="Shopware\Core\Checkout\Customer\SalesChannel\AccountService"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -213,7 +213,6 @@
             <argument type="service" id="rule.repository"/>
             <argument type="service" id="logger"/>
             <argument type="service" id="cache.object"/>
-            <argument>%shopware.cache.entity_cache.expiration_time%</argument>
         </service>
 
         <service id="Shopware\Core\Checkout\Cart\LineItem\LineItemQuantitySplitter">

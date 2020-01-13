@@ -2,8 +2,8 @@
 
 namespace Shopware\Core\System\User\Command;
 
-use Shopware\Core\Framework\Console\ShopwareStyle;
-use Shopware\Core\Framework\Provisioning\UserProvisioner;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
+use Shopware\Core\System\User\Service\UserProvisioner;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,6 +13,8 @@ use Symfony\Component\Console\Question\Question;
 
 class UserCreateCommand extends Command
 {
+    protected static $defaultName = 'user:create';
+
     /**
      * @var UserProvisioner
      */
@@ -29,7 +31,7 @@ class UserCreateCommand extends Command
      */
     protected function configure(): void
     {
-        $this->setName('user:create')
+        $this
             ->addArgument('username', InputArgument::REQUIRED, 'Username for the user')
             ->addOption('admin', 'a', InputOption::VALUE_NONE, 'mark the user as admin')
             ->addOption('password', 'p', InputOption::VALUE_REQUIRED, 'Password for the user')
@@ -42,7 +44,7 @@ class UserCreateCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new ShopwareStyle($input, $output);
 
@@ -75,6 +77,6 @@ class UserCreateCommand extends Command
 
         $io->success(sprintf('User "%s" successfully created.', $username));
 
-        return null;
+        return 0;
     }
 }

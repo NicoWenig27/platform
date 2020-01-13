@@ -20,6 +20,10 @@
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
         </service>
 
+        <service id="Shopware\Core\Content\Product\DataAbstractionLayer\ProductExceptionHandler">
+            <tag name="shopware.dal.exception_handler"/>
+        </service>
+
         <service id="Shopware\Core\Content\Product\ProductDefinition">
             <tag name="shopware.entity.definition" entity="product"/>
             <tag name="shopware.composite_search.definition"  priority="600"/>
@@ -86,6 +90,14 @@
             <tag name="shopware.entity.definition" entity="product_category_tree"/>
         </service>
 
+        <service id="Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition">
+            <tag name="shopware.entity.definition" entity="product_cross_selling"/>
+        </service>
+
+        <service id="Shopware\Core\Content\Product\Aggregate\ProductCrossSellingTranslation\ProductCrossSellingTranslationDefinition">
+            <tag name="shopware.entity.definition" entity="product_cross_selling_translation"/>
+        </service>
+
         <service id="Shopware\Core\Content\Product\Cart\ProductGateway">
             <argument type="service" id="sales_channel.product.repository"/>
         </service>
@@ -95,7 +107,7 @@
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
             <tag name="shopware.dal_indexing.indexer" priority="900"/>
         </service>
@@ -107,7 +119,7 @@
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
             <tag name="shopware.dal_indexing.indexer" priority="300"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Price\PriceRounding"/>
         </service>
 
@@ -139,7 +151,7 @@
             <argument type="service" id="event_dispatcher"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer"/>
 
@@ -154,7 +166,7 @@
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
         </service>
 
@@ -166,7 +178,7 @@
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
 
-        <service id="Shopware\Core\Content\DeliveryTime\DeliveryTimeDefinition">
+        <service id="Shopware\Core\System\DeliveryTime\DeliveryTimeDefinition">
             <tag name="shopware.entity.definition" entity="delivery_time"/>
         </service>
 
@@ -261,6 +273,31 @@
                 <argument key="product.listingPrices">desc</argument>
             </argument>
             <tag name="shopware.sales_channel.product_listing.sorting" />
+        </service>
+
+        <service id="product_listing.sorting.score" class="Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingSorting">
+            <argument>score</argument>
+            <argument>filter.sortByScore</argument>
+            <argument type="collection">
+                <argument key="_score">desc</argument>
+            </argument>
+            <tag name="shopware.sales_channel.product_listing.sorting" />
+        </service>
+
+        <service id="Shopware\Core\Content\Product\Cart\ProductLineItemCommandValidator">
+            <argument type="service" id="Doctrine\DBAL\Connection" />
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Shopware\Core\Content\Product\SalesChannel\CrossSelling\SalesChannelCrossSellingController" public="true">
+            <argument type="service" id="sales_channel.product.repository"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
+            <argument type="service" id="Shopware\Core\Content\Product\ProductDefinition"/>
+            <argument type="service" id="Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingDefinition"/>
+            <argument type="service" id="Shopware\Core\Content\ProductStream\Service\ProductStreamBuilder"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
         </service>
     </services>
 </container>

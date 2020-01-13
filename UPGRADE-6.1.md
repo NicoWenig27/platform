@@ -4,6 +4,14 @@ UPGRADE FROM 6.0 to 6.1
 Core
 ----
 
+* `\Shopware\Storefront\Controller\StorefrontController::forwardToRoute` now handles parameters correctly.
+* Request scope changes during a single request handle are prohibited.
+* Use `\Shopware\Core\Framework\Routing\RequestTransformerInterface::extractInheritableAttributes` if you want to create a true subrequest.
+* The Context will only be resolved when a valid scope is dipatched.
+* All admin and api routes are now authentication protected by default.
+* Changed the `\Symfony\Component\HttpKernel\KernelEvents::CONTROLLER` Event-Subscriber priorities. Now all Shopware Listeners are handled after the core symfony event handlers. You can find the priorities in `\Shopware\Core\Framework\Routing\KernelListenerPriorities`.
+* Removed the `Shopware\Core\Framework\Routing\Event\RouteScopeWhitlistCollectEvent` in favor of a taggable interface named `Shopware\Core\Framework\Routing\RouteScopeWhitelistInterface`.
+* Requests can no longer be forwarded across different request scopes.
 * If you have implemented a custom FieldResolver, you need to implement the `getJoinBuilder` method.
 * `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria` association handling
 
@@ -140,10 +148,10 @@ Core
 * Removed `Shopware\Core\Framework\DataAbstractionLayer\EntityWrittenContainerEvent::getEventByDefinition`. Use `getEventByEntityName` instead, which takes the entity name instead of the entity classname but proved the same functionality.
 * Removed `getDefinition` and the corresponding `definition` member from `\Shopware\Core\Framework\DataAbstractionLayer\EntityWriteResults` and `...\Event\EntityWrittenEvent`. Classes which used this function can access the name of the written entity via the new method `getEntityName` and retrieve the definition using the `DefinitionInstanceRegistry`
 * Replace service id `shopware.cache` with `cache.object`
-* If you invalidated the entity cache over the `shopware.cache` service, use the `\Shopware\Core\Framework\Cache\CacheClearer` instead.
+* If you invalidated the entity cache over the `shopware.cache` service, use the `\Shopware\Core\Framework\Adapter\Cache\CacheClearer` instead.
 * All customer events in `Shopware\Core\Checkout\Customer\Event` now get the `Shopware\Core\Syste\SalesChannel\SalesChannelContext` instead of `Shopware\Core\Framework\Context` and a `salesChannelId`
 * Implement `getName` for classes that implement `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`
-* We've moved the seo module into the core. Replace the namespace `Shopware\Storefront\Framework\Seo\` with `Shopware\Core\Framework\Seo\`
+* We've moved the seo module into the core. Replace the namespace `Shopware\Storefront\Framework\Seo\` with `Shopware\Core\Content\Seo\`
 * Switch the usage of `\Shopware\Core\Framework\Migration\MigrationStep::addForwardTrigger()` and `\Shopware\Core\Framework\Migration\MigrationStep::addBackwardTrigger()`, as the execution conditions were switched. 
 * `\Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCode` has been replaced with `\Shopware\Core\Checkout\Order\Aggregate\OrderDelivery\OrderDeliveryEntity::$trackingCodes`.
 * Add Bearer Auth Token to requests to `/api/v{version}/_info/entity-schema.json` and `/api/v{version}/_info/business-events.json` routes
@@ -151,6 +159,90 @@ Core
 * Replace `product/category.extensions.seoUrls` with `product/category.seoUrls`
 * Dropped `additionalText` column of product entity, use `metaDescription` instead
 * If your entity definition overwrites the `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getDefaults` method, you will have to remove the parameter, as it is not needed anymore. Remove the check `$existence->exists()` as this is done before by the Core now. If you want to define different defaults for child entities, overwrite `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getChildDefaults`
+* If you depend on `\Shopware\Core\Framework\Context::createDefaultContext()` outside of tests, pass the context as a parameter to your method instead
+* The Shopware entity cache has been removed and has been replaced by a symfony cache pool. You have to remove any configuration files pointing to `shopware.entity_cache`.
+
+    Example: Redis implementation
+    ```yaml
+    framework:
+        cache:
+            app: cache.adapter.redis
+            default_redis_provider: 'redis://redis.server'
+    ```
+
+    Example: Disable the object cache only
+    ```yaml
+    framework:
+        cache:
+            pools:
+                cache.object:
+                    adapter: cache.adapter.array
+    ```
+
+    Example: Disable the cache entirely
+    ```yaml
+    framework:
+        cache:
+            app: cache.adapter.array
+    ```
+  
+ * Add the `extractInheritableAttributes()` function to your implementations of `\Shopware\Core\Framework\Routing\RequestTransformerInterface`
+ * Find and replace `Shopware\Core\Framework\Acl` with `Shopware\Core\Framework\Api\Acl`
+ * Find and replace `Shopware\Core\Framework\CustomField` with `Shopware\Core\System\CustomField`
+ * Find and replace `Shopware\Core\Framework\Language` with `Shopware\Core\System\Language`
+ * Find and replace `Shopware\Core\Framework\Snippet` with `Shopware\Core\System\Snippet`
+ * Find and replace `Shopware\Core\Framework\Doctrine` with `Shopware\Core\Framework\DataAbstractionLayer\Doctrine`
+ * Find and replace `Shopware\Core\Framework\Pricing` with `Shopware\Core\Framework\DataAbstractionLayer\Pricing`
+ * Find and replace `Shopware\Core\Framework\Version` with `Shopware\Core\Framework\DataAbstractionLayer\Version`
+ * Find and replace `Shopware\Core\Framework\Faker` with `Shopware\Core\Framework\Demodata\Faker`
+ * Find and replace `Shopware\Core\Framework\PersonalData` with `Shopware\Core\Framework\Demodata\PersonalData`
+ * Find and replace `Shopware\Core\Framework\Logging` with `Shopware\Core\Framework\Log`
+ * Find and replace `Shopware\Core\Framework\ScheduledTask` with `Shopware\Core\Framework\MessageQueue\ScheduledTask`
+ * Find and replace `Shopware\Core\Framework\Twig` with `Shopware\Core\Framework\Adapter\Twig`
+ * Find and replace `Shopware\Core\Framework\Asset` with `Shopware\Core\Framework\Adapter\Asset`
+ * Find and replace `Shopware\Core\Framework\Console` with `Shopware\Core\Framework\Adapter\Console`
+ * Find and replace `Shopware\Core\Framework\Cache` with `Shopware\Core\Framework\Adapter\Cache`
+ * Find and replace `Shopware\Core\Framework\Filesystem` with `Shopware\Core\Framework\Adapter\Filesystem`
+ * Find and replace `Shopware\Core\Framework\Translation` with `Shopware\Core\Framework\Adapter\Translation`
+ * Find and replace `Shopware\Core\Framework\Seo` with `Shopware\Core\Content\Seo`
+ * Find and replace `Shopware\Core\Content\DeliveryTime` with `Shopware\Core\System\DeliveryTime`
+ * Find and replace `Shopware\Core\Framework\Context\` with `Shopware\Core\Framework\Api\Context\`
+ * Find and replace `Shopware\Core\System\User\Service\UserProvisioner` with `Shopware\Core\System\User\Service\UserProvisioner`
+    * Warning: Do not replace `Shopware\Core\Framework\Context` with `Shopware\Core\Framework\Api\Context`, this would replace the `Framework\Context.php` usage.
+ * Added unique constraint for `iso_code` column of `currency` table. The migration can fail if there are already duplicate `iso_codes` in the table
+ * Replace `mailer` usage with `core_mailer` in your service definitions. 
+ * If you call `\Shopware\Core\Framework\Api\Response\ResponseFactoryInterface::createDetailResponse` or `\Shopware\Core\Framework\Api\Response\ResponseFactoryInterface::createListingResponse` in your plugin, the first parameter to be passed now is the `Criteria` object with which the data was loaded.
+ * We changed the type hint of `Shopware\Core\Framework\Validation\ValidationServiceInterface::buildCreateValidation` and `Shopware\Core\Framework\Validation\ValidationServiceInterface::buildUpdateValidation` to `SalesChannelContext`
+ * Replace `\Shopware\Core\Framework\Plugin::getExtraBundles` with `\Shopware\Core\Framework\Plugin::getAdditionalBundles`. Dont use both.
+ * We implemented the new `Shopware\Core\HttpKernel` class which simplifies the kernel initialisation. This kernel can simply initialed and can be used in your `index.php` file as follow:
+    ```php
+    $request = Request::createFromGlobals();
+
+    $kernel = new HttpKernel($appEnv, $debug, $classLoader);
+    $result = $kernel->handle($request);
+
+    $result->getResponse()->send();
+
+    $kernel->terminate($result->getRequest(), $result->getResponse());
+    ```
+ * If you used the `\Shopware\Core\Content\Seo\SeoUrlGenerator` in your sources, please use the `generate` function instead of the `generateSeoUrls`
+ 
+ * If you update your decoration implementations of `\Shopware\Core\Framework\Validation\ValidationServiceInterface` to  `\Shopware\Core\Framework\Validation\DataValidationFactoryInterface` make sure to still implement the old interface
+    and when calling the inner implementation please make sure to check if the inner implementation already supports the interface, like
+    ```php
+       public function createValidation(SalesChannelContext $context): DataValidationDefinition
+       {
+           if ($this->inner instanceof DataValidationFactoryInterface) {
+               $validation = $this->inner->create($context);
+           } else {
+               $validation = $this->inner->buildCreateValidation($context->getContext());
+           }
+   
+           $this->modifyValidation($validation);
+   
+           return $validation;              
+       }
+    ```
 
 Administration
 --------------
@@ -618,6 +710,43 @@ To migrate your existing data run `bin/console database:migrate --all Shopware\\
         }
     });
     ```
+  
+ * Added new properties to the view in the `sw_sales_channel_detail_content_view` block.
+    
+    Before:
+    ```twig
+   {% block sw_sales_channel_detail_content_view %}
+       <router-view :salesChannel="salesChannel"
+                    :customFieldSets="customFieldSets"
+                    :isLoading="isLoading"
+                    :key="$route.params.id">
+       </router-view>
+   {% endblock %}
+   ``` 
+   
+   After:
+   ```twig
+   {% block sw_sales_channel_detail_content_view %}
+       <router-view :salesChannel="salesChannel"
+                    :productExport="productExport"
+                    :storefrontSalesChannelCriteria="storefrontSalesChannelCriteria"
+                    :customFieldSets="customFieldSets"
+                    :isLoading="isLoading"
+                    :productComparisonAccessUrl="productComparison.productComparisonAccessUrl"
+                    :key="$route.params.id"
+                    :templateOptions="productComparison.templateOptions"
+                    :showTemplateModal="productComparison.showTemplateModal"
+                    :templateName="productComparison.templateName"
+                    @template-selected="onTemplateSelected"
+                    @access-key-changed="generateAccessUrl"
+                    @domain-changed="generateAccessUrl"
+                    @invalid-file-name="setInvalidFileName(true)"
+                    @valid-file-name="setInvalidFileName(false)"
+                    @template-modal-close="onTemplateModalClose"
+                    @template-modal-confirm="onTemplateModalConfirm">
+       </router-view>
+    {% endblock %}
+   ```
 
 Storefront
 ----------
@@ -690,8 +819,68 @@ SHOPWARE_HTTP_DEFAULT_TTL=7200
          * @Route("/example/route", name="example.route", defaults={"csrf_protected"=false}, methods={"POST"})
         */
     ```
+* Removed abandoned TwigExtensions in favor of  Twig Core Extra extensions
+    * Use `u.wordwrap` and `u.truncate` instead of the `wordwrap` and `truncate` filter.
+    * Use the `format_date` or `format_datetime` filter instead of the `localizeddate` filter
+    * Take a look here for more information: https://github.com/twigphp/Twig-extensions
+* Removed the contact and newsletter page
+    * If you used the template `platform/src/Storefront/Resources/views/storefront/page/newsletter/index.html.twig` or `platform/src/Storefront/Resources/views/storefront/page/contact/index.html.twig` your changes will not work anymore. You now find them here: `platform/src/Storefront/Resources/views/storefront/element/cms-element-form`.
+    * The templates are part of the new `form cms element` that can be used in layouts. Therefore all changes in these templates are applied wherever you use the cms element.
+    * We added two `default shop page layouts` for the `contact` and `newsletter form` in the `shopping experiences` where the cms form element is used.
+    * These layouts have to be assigned in the `settings` under `basic information` for `contact pages` and `newsletter pages`.
+    * The assigned layout for `contact pages` is used in the footer `platform/src/Storefront/Resources/views/storefront/layout/footer/footer.html.twig` as modal.
+* We split the `Storefront/Resources/views/storefront/layout/navigation/offcanvas/navigation.html.twig` template into smaller templates. If you have extended this template you should check if the blocks are still correctly overwritten. If this is not the case, you have to extend the smaller template file into which the block was moved. 
+* The data format of the `lineItem.payload.options` has changed. Now there is a simple array per element with `option` and `group`. It contains the translated names of the entities. If you have changed the template `storefront/page/checkout/checkout-item.html.twig` you have to change the following: 
+    Before:
+    ```twig
+    {% block page_checkout_item_info_variants %}
+        {% if lineItem.payload.options|length >= 1 %}
+            <div class="cart-item-variants">
+                {% for option in lineItem.payload.options %}
+                    <div class="cart-item-variants-properties">
+                         <div class="cart-item-variants-properties-name">{{ option.group.translated.name }}:</div>
+                         <div class="cart-item-variants-properties-value">{{ option.translated.name }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endblock %}    
+    ``` 
 
-
+    After:
+    ```twig
+    {% block page_checkout_item_info_variants %}
+        {% if lineItem.payload.options|length >= 1 %}
+            <div class="cart-item-variants">
+                {% for option in lineItem.payload.options %}
+                    <div class="cart-item-variants-properties">
+                        <div class="cart-item-variants-properties-name">{{ option.group }}:</div>
+                        <div class="cart-item-variants-properties-value">{{ option.option }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endblock %}    
+    ``` 
+  * The following blocks moved from the `storefront/element/cms-element-product-listing.html.twig` template into the new template `storefront/component/product/listing.html.twig`. If you have overwritten one of the following blocks, you must now extend the `storefront/component/product/listing.html.twig` template instead of the `storefront/element/cms-element-product-listing.html.twig` template 
+    * `element_product_listing_wrapper_content`
+    * `element_product_listing_pagination_nav_actions`
+    * `element_product_listing_pagination_nav_top`
+    * `element_product_listing_sorting`
+    * `element_product_listing_row`
+    * `element_product_listing_col`
+    * `element_product_listing_box`
+    * `element_product_listing_col_empty`
+    * `element_product_listing_col_empty_alert`
+    * `element_product_listing_pagination_nav_bottom`
+  * The `storefront/component/listing/filter-panel.html.twig` component requires now a provided `sidebar (bool)` parameter. Please provide this parameter in the `sw_include` tag:
+    ```twig
+        {% sw_include '@Storefront/storefront/component/listing/filter-panel.html.twig' with {
+            listing: listing,
+            sidebar: true
+        } %}
+    ```
+    
 Elasticsearch
 -------------
 
@@ -716,5 +905,22 @@ Elasticsearch
          <argument>%elasticsearch.index_prefix%</argument>
       </service>    
     ```
-
+* The extensions are now saved at the top level of the entities.
+    * Now you have to change the ElasticsearchDefinition::getMapping for external resources.
+   
+        Before:
+        ```
+            'extensions' => [
+                'type' => 'nested
+                'properties' => [
+                    'extensionsField' => $this->mapper->mapField($definition, $definition->getField('extensionsField'), $context)
+                ]
+            ]
+        ```
+      
+       After:
+      ```
+            'extensionsField' => $this->mapper->mapField($definition, $definition->getField('extensionsField'), $context)
+      ```     
+    * And you have to reindex.
 

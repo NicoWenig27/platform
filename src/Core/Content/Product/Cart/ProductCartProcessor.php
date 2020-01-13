@@ -11,12 +11,13 @@ use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryTime;
 use Shopware\Core\Checkout\Cart\Exception\MissingLineItemPriceException;
 use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
-use Shopware\Core\Checkout\Cart\LineItem\LineItemCollection;
 use Shopware\Core\Checkout\Cart\LineItem\QuantityInformation;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
 use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface;
+use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
+use Shopware\Core\Defaults;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorInterface
@@ -86,7 +87,6 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
         CartBehavior $behavior
     ): void {
         // handle all products which stored in root level
-        /** @var LineItemCollection $lineItems */
         $lineItems = $original
             ->getLineItems()
             ->filterType(LineItem::PRODUCT_LINE_ITEM_TYPE);
@@ -99,6 +99,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
             }
 
             if ($behavior->isRecalculation()) {
+                $definition->setQuantity($lineItem->getQuantity());
                 $lineItem->setPrice($this->calculator->calculate($definition, $context));
                 $toCalculate->add($lineItem);
 
@@ -111,6 +112,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
             // container products can not be bought
             if ($product->getChildCount() > 0) {
                 $original->remove($lineItem->getId());
+
                 continue;
             }
 
@@ -154,7 +156,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
 
         $product = $data->get($key);
 
-        if (!$product instanceof ProductEntity) {
+        if (!$product instanceof SalesChannelProductEntity) {
             $cart->addErrors(new ProductNotFoundError($lineItem->getLabel() ?: $lineItem->getId()));
             $cart->getLineItems()->remove($lineItem->getId());
 
@@ -220,18 +222,22 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
 
         $lineItem->setQuantityInformation($quantityInformation);
 
-        $options = [];
-        $productOptions = $product->getOptions();
-        if ($productOptions !== null) {
-            $options = $productOptions->getElements();
-        }
-
         $lineItem->replacePayload([
-            'tags' => $product->getTagIds(),
-            'categories' => $product->getCategoryTree(),
-            'properties' => $product->getPropertyIds(),
+            'isCloseout' => $product->getIsCloseout(),
+            'customFields' => $product->getCustomFields(),
+            'createdAt' => $product->getCreatedAt()->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'releaseDate' => $product->getReleaseDate() ? $product->getReleaseDate()->format(Defaults::STORAGE_DATE_TIME_FORMAT) : null,
+            'isNew' => $product->isNew(),
+            'markAsTopseller' => $product->getMarkAsTopseller(),
+            'purchasePrice' => $product->getPurchasePrice(),
             'productNumber' => $product->getProductNumber(),
-            'options' => $options,
+            'manufacturerId' => $product->getManufacturerId(),
+            'taxId' => $product->getTaxId(),
+            'tagIds' => $product->getTagIds(),
+            'categoryIds' => $product->getCategoryTree(),
+            'propertyIds' => $product->getPropertyIds(),
+            'optionIds' => $product->getOptionIds(),
+            'options' => $this->getOptions($product),
         ]);
     }
 
@@ -253,6 +259,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
             // user change line item quantity or price?
             if ($lineItem->isModified()) {
                 $ids[] = $id;
+
                 continue;
             }
 
@@ -294,5 +301,27 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
         }
 
         return $product->getAvailableStock();
+    }
+
+    private function getOptions(SalesChannelProductEntity $product): array
+    {
+        $options = [];
+
+        if (!$product->getOptions()) {
+            return $options;
+        }
+
+        foreach ($product->getOptions() as $option) {
+            if (!$option->getGroup()) {
+                continue;
+            }
+
+            $options[] = [
+                'group' => $option->getGroup()->getTranslation('name'),
+                'option' => $option->getTranslation('name'),
+            ];
+        }
+
+        return $options;
     }
 }

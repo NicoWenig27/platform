@@ -3,8 +3,8 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer\Write;
 
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Language\LanguageDefinition;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Language\LanguageDefinition;
 
 class WriteContext
 {
@@ -41,7 +41,7 @@ class WriteContext
         $this->exceptions = new WriteException();
     }
 
-    public function setLanguages($languages): void
+    public function setLanguages(array $languages): void
     {
         $this->languages = $languages;
         $this->languageCodeIdMapping = null;

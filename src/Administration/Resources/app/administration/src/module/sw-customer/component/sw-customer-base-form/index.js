@@ -6,11 +6,6 @@ const { mapApiErrors } = Shopware.Component.getComponentHelper();
 Component.register('sw-customer-base-form', {
     template,
 
-    inject: [
-        'repositoryFactory',
-        'swCustomerCreateOnChangeSalesChannel'
-    ],
-
     props: {
         customer: {
             type: Object,
@@ -30,6 +25,14 @@ Component.register('sw-customer-base-form', {
             'customerNumber',
             'password'
         ])
+    },
+
+    watch: {
+        'customer.guest'(newVal) {
+            if (newVal) {
+                this.customer.password = null;
+            }
+        }
     },
 
     methods: {

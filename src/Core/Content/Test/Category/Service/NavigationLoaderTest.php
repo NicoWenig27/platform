@@ -2,8 +2,10 @@
 
 namespace Shopware\Core\Content\Test\Category\Service;
 
+use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Test\Cart\Common\Generator;
+use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Content\Category\Service\NavigationLoader;
@@ -13,6 +15,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
+use Shopware\Core\Framework\Test\TestDataCollection;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepository;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -73,6 +76,7 @@ class NavigationLoaderTest extends TestCase
     public function testTreeBuilderWithSimpleTree(): void
     {
         $loader = new NavigationLoader(
+            $this->createMock(Connection::class),
             $this->createMock(SalesChannelRepository::class),
             $this->createMock(EventDispatcher::class)
         );
@@ -96,15 +100,20 @@ class NavigationLoaderTest extends TestCase
     {
         $this->createCategoryTree();
 
-        $tree = $this->navigationLoader->load($this->category1Id, Generator::createSalesChannelContext(), $this->category1Id);
+        $context = Generator::createSalesChannelContext();
+        $context->getSalesChannel()->setNavigationCategoryId($this->rootId);
+
+        $tree = $this->navigationLoader->load($this->category1Id, $context, $this->category1Id);
         static::assertInstanceOf(Tree::class, $tree);
     }
 
     public function testLoadChildOfRootCategory(): void
     {
         $this->createCategoryTree();
+        $context = Generator::createSalesChannelContext();
+        $context->getSalesChannel()->setNavigationCategoryId($this->rootId);
 
-        $tree = $this->navigationLoader->load($this->category1_1Id, Generator::createSalesChannelContext(), $this->category1Id);
+        $tree = $this->navigationLoader->load($this->category1_1Id, $context, $this->category1Id);
         static::assertInstanceOf(Tree::class, $tree);
     }
 
@@ -128,6 +137,101 @@ class NavigationLoaderTest extends TestCase
 
         static::expectException(CategoryNotFoundException::class);
         $this->navigationLoader->load($this->rootId, Generator::createSalesChannelContext(), $this->category1Id);
+    }
+
+    public function testLoadDeepNestedTree(): void
+    {
+        $category1_1_1Id = Uuid::randomHex();
+        $category1_1_1_1Id = Uuid::randomHex();
+
+        $this->createCategoryTree();
+        $this->repository->upsert([
+            [
+                'id' => $category1_1_1Id,
+                'parentId' => $this->category1_1Id,
+                'name' => 'category 1.1.1',
+                'children' => [
+                    [
+                        'id' => $category1_1_1_1Id,
+                        'name' => 'category 1.1.1.1',
+                    ],
+                ],
+            ],
+        ], Context::createDefaultContext());
+
+        $context = Generator::createSalesChannelContext();
+        $context->getSalesChannel()->setNavigationCategoryId($this->rootId);
+
+        $tree = $this->navigationLoader->load($category1_1_1_1Id, $context, $this->rootId);
+
+        static::assertNotNull($tree->getChildren($category1_1_1Id));
+    }
+
+    public function testLoadDifferentDepth(): void
+    {
+        $data = new TestDataCollection(Context::createDefaultContext());
+        $categories = [
+            [
+                'id' => $data->create('root'), 'name' => 'root', 'children' => [
+                    ['id' => $data->create('a'), 'name' => 'a', 'children' => [
+                        ['id' => $data->create('b'), 'name' => 'b', 'children' => [
+                            ['id' => $data->create('c'), 'name' => 'c', 'children' => [
+                                ['id' => $data->create('d'), 'name' => 'd', 'children' => [
+                                    ['id' => $data->create('e'), 'name' => 'e'],
+                                ]],
+                            ]],
+                        ]],
+                    ]],
+                ],
+            ],
+        ];
+
+        $this->repository->create($categories, $data->getContext());
+
+        $context = Generator::createSalesChannelContext();
+        $context->getSalesChannel()->setNavigationCategoryId($data->get('root'));
+
+        $tree = $this->navigationLoader->load(
+            $data->get('root'),
+            $context, $data->get('root'),
+            3
+        );
+
+        static::assertSame($data->get('root'), $tree->getActive()->getId());
+        static::assertCount(1, $tree->getChildren($data->get('root'))->getTree());
+        static::assertCount(1, $tree->getChildren($data->get('a'))->getTree());
+        static::assertCount(1, $tree->getChildren($data->get('b'))->getTree());
+        static::assertCount(0, $tree->getChildren($data->get('c'))->getTree());
+
+        $tree = $this->navigationLoader->load(
+            $data->get('root'),
+            $context, $data->get('root'),
+           4
+        );
+
+        static::assertSame($data->get('root'), $tree->getActive()->getId());
+        static::assertCount(1, $tree->getChildren($data->get('root'))->getTree());
+        static::assertCount(1, $tree->getChildren($data->get('a'))->getTree());
+        static::assertCount(1, $tree->getChildren($data->get('b'))->getTree());
+        static::assertCount(1, $tree->getChildren($data->get('c'))->getTree());
+        static::assertCount(0, $tree->getChildren($data->get('d'))->getTree());
+    }
+
+    public function testLoadRootLevelsAreCached(): void
+    {
+        CountingEntitySearcher::resetCount();
+        CountingEntityReader::resetCount();
+        $this->createCategoryTree();
+
+        $context = Generator::createSalesChannelContext();
+        $context->getSalesChannel()->setNavigationCategoryId($this->rootId);
+
+        $this->navigationLoader->load($this->category1_1Id, $context, $this->rootId);
+
+        $this->navigationLoader->load($this->category2_1Id, $context, $this->rootId);
+
+        static::assertEquals(1, CountingEntityReader::getReadOperationCount(CategoryDefinition::ENTITY_NAME));
+        static::assertEquals(0, CountingEntitySearcher::getSearchOperationCount(CategoryDefinition::ENTITY_NAME));
     }
 
     private function createSimpleTree(): array

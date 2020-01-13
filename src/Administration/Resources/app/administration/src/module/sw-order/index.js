@@ -1,22 +1,28 @@
 import './page/sw-order-list';
 import './page/sw-order-detail';
+import './page/sw-order-create';
 import './view/sw-order-detail-base';
+import './view/sw-order-create-base';
 import './component/sw-order-line-items-grid';
+import './component/sw-order-line-items-grid-sales-channel';
 import './component/sw-order-delivery-metadata';
 import './component/sw-order-product-select';
 import './component/sw-order-saveable-field';
 import './../sw-customer/component/sw-customer-address-form';
 import './component/sw-order-address-modal';
 import './component/sw-order-leave-page-modal';
+import './component/sw-order-state-change-modal/sw-order-state-change-modal-attach-documents';
+import './component/sw-order-state-change-modal/sw-order-state-change-modal-assign-mail-template';
 import './component/sw-order-state-history-card';
 import './component/sw-order-state-history-card-entry';
 import './component/sw-order-state-select';
 import './component/sw-order-inline-field';
 import './component/sw-order-user-card';
 import './component/sw-order-document-card';
-
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
+import './component/sw-order-create-details-header';
+import './component/sw-order-create-details-body';
+import './component/sw-order-create-details-footer';
+import './component/sw-order-new-customer-modal';
 
 const { Module } = Shopware;
 
@@ -32,17 +38,29 @@ Module.register('sw-order', {
     favicon: 'icon-module-orders.png',
     entity: 'order',
 
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB
-    },
-
     routes: {
         index: {
             components: {
                 default: 'sw-order-list'
             },
             path: 'index'
+        },
+
+        create: {
+            component: 'sw-order-create',
+            path: 'create',
+            redirect: {
+                name: 'sw.order.create.base'
+            },
+            children: {
+                base: {
+                    component: 'sw-order-create-base',
+                    path: 'base',
+                    meta: {
+                        parentPath: 'sw.order.index'
+                    }
+                }
+            }
         },
 
         detail: {

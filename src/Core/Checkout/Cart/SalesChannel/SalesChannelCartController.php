@@ -184,13 +184,10 @@ class SalesChannelCartController extends AbstractController
      */
     public function addCode(string $code, Request $request, SalesChannelContext $context): JsonResponse
     {
-        /** @var string $token */
         $token = $request->request->getAlnum('token', $context->getToken());
 
-        /** @var LineItem $lineItem */
         $lineItem = $this->promotionItemBuilder->buildPlaceholderItem($code, $context->getContext()->getCurrencyPrecision());
 
-        /** @var Cart $cart */
         $cart = $this->cartService->add($this->cartService->getCart($token, $context), $lineItem, $context);
 
         return new JsonResponse($this->serialize($cart));
@@ -332,7 +329,7 @@ class SalesChannelCartController extends AbstractController
         }
     }
 
-    private function serialize($data): array
+    private function serialize(Cart $data): array
     {
         $decoded = $this->serializer->normalize($data);
 

@@ -21,8 +21,7 @@ That's already all the setup you need.
 ### Injecting custom javascript
 
 The main entry point to customize the administration via plugin is the `main.js` file.
-It has to be placed into a `<plugin root>/src/Resources/app/administration` directory in order to be found by Shopware 6.
-*Note: This path can be changed by overriding the [getAdministrationEntryPath](./../2-internals/4-plugins/020-plugin-base-class.md#getAdministrationEntryPath) method of your plugin's base class.*
+It has to be placed into a `<plugin root>/src/Resources/app/administration/src` directory in order to be found by Shopware 6.
 
 ### Creating a new tab
 
@@ -37,7 +36,7 @@ Instead you can choose the last available block inside the element, which is `sw
 
 Knowing the block you have to override in your plugin, you can now start doing exactly this.
 First of all, re-create the directory structure from the core code in your plugin.
-In this case, you'll have to create a directory structure like the following: `<plugin root>/src/Resources/app/administration/page/sw-product-detail`
+In this case, you'll have to create a directory structure like the following: `<plugin root>/src/Resources/app/administration/src/page/sw-product-detail`
 
 In there you create a new file `index.js`, which then contains the following code:
 

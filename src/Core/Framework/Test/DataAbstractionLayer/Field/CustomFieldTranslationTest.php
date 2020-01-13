@@ -5,9 +5,8 @@ namespace Shopware\Core\Framework\Test\DataAbstractionLayer\Field;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Context\SystemSource;
-use Shopware\Core\Framework\CustomField\CustomFieldTypes;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Read\EntityReaderInterface;
@@ -22,6 +21,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\CacheTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\CustomField\CustomFieldTypes;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class CustomFieldTranslationTest extends TestCase
@@ -59,7 +59,7 @@ class CustomFieldTranslationTest extends TestCase
               language_id BINARY(16) NOT NULL,
               custom_translated json DEFAULT NULL,
               created_at datetime not null,
-              updated_at datetime,              
+              updated_at datetime,
               PRIMARY KEY (`attribute_test_id`, `language_id`)
         )');
 
@@ -262,7 +262,6 @@ class CustomFieldTranslationTest extends TestCase
         static::assertArrayNotHasKey('child', $first->getTranslated()['customTranslated']);
         static::assertSame(1, $first->getTranslated()['customTranslated']['int']);
 
-        /** @var array $translated */
         $translated = $first->getTranslated();
         static::assertSame(1.0, $translated['customTranslated']['systemFloat']);
         static::assertArrayNotHasKey('root', $translated['customTranslated']);
@@ -304,7 +303,6 @@ class CustomFieldTranslationTest extends TestCase
         static::assertArrayNotHasKey('child', $first->getTranslated()['customTranslated']);
         static::assertSame(2, $first->getTranslated()['customTranslated']['int']);
 
-        /** @var array $translated */
         $translated = $first->getTranslated();
         static::assertSame(1.0, $translated['customTranslated']['systemFloat']);
         static::assertTrue($translated['customTranslated']['root']);
@@ -346,7 +344,6 @@ class CustomFieldTranslationTest extends TestCase
         static::assertSame((new \DateTime($now))->format(\DateTime::ATOM), $first->get('customTranslated')['child']);
         static::assertSame(3, $first->get('customTranslated')['int']);
 
-        /** @var array $translated */
         $translated = $first->getTranslated();
         static::assertSame(1.0, $translated['customTranslated']['systemFloat']);
         static::assertTrue($translated['customTranslated']['root']);
@@ -542,7 +539,7 @@ class CustomFieldTranslationTest extends TestCase
         static::assertSame('inherited attribute', $translated['customTranslated']['parent']);
     }
 
-    protected function addLanguage($id, $rootLanguage): void
+    protected function addLanguage(string $id, ?string $rootLanguage): void
     {
         $translationCodeId = Uuid::randomHex();
         $languageRepository = $this->getContainer()->get('language.repository');

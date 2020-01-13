@@ -4,7 +4,7 @@ namespace Shopware\Core\Content\Media\Commands;
 
 use Shopware\Core\Content\Media\Message\UpdateThumbnailsMessage;
 use Shopware\Core\Content\Media\Thumbnail\ThumbnailService;
-use Shopware\Core\Framework\Console\ShopwareStyle;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\RepositoryIterator;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -21,6 +21,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 class GenerateThumbnailsCommand extends Command
 {
+    protected static $defaultName = 'media:generate-thumbnails';
+
     /**
      * @var ThumbnailService
      */
@@ -81,7 +83,6 @@ class GenerateThumbnailsCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('media:generate-thumbnails')
             ->setDescription('Generates the thumbnails for media entities')
             ->addOption(
                 'batch-size',
@@ -108,7 +109,7 @@ class GenerateThumbnailsCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new ShopwareStyle($input, $output);
         $context = Context::createDefaultContext();
@@ -123,7 +124,7 @@ class GenerateThumbnailsCommand extends Command
             $this->generateAsynchronous($mediaIterator, $context);
         }
 
-        return null;
+        return 0;
     }
 
     private function initializeCommand(InputInterface $input, Context $context): void

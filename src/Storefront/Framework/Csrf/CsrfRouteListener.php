@@ -3,7 +3,9 @@
 namespace Shopware\Storefront\Framework\Csrf;
 
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\KernelListenerPriorities;
 use Shopware\Storefront\Framework\Csrf\Exception\InvalidCsrfTokenException;
+use Shopware\Storefront\Framework\Routing\StorefrontRouteScope;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -65,7 +67,7 @@ class CsrfRouteListener implements EventSubscriberInterface
     {
         return [
             KernelEvents::CONTROLLER => [
-                ['csrfCheck', -16],
+                ['csrfCheck', KernelListenerPriorities::KERNEL_CONTROLLER_EVENT_SCOPE_VALIDATE],
             ],
         ];
     }
@@ -90,7 +92,7 @@ class CsrfRouteListener implements EventSubscriberInterface
         $routeScope = $request->attributes->get('_routeScope');
 
         // Only check csrf token on storefront routes
-        if ($routeScope && !in_array('storefront', $routeScope->getScopes(), true)) {
+        if ($routeScope === null || !$routeScope->hasScope(StorefrontRouteScope::ID)) {
             return;
         }
 
@@ -108,8 +110,11 @@ class CsrfRouteListener implements EventSubscriberInterface
         } else {
             $intent = 'ajax';
         }
-
-        if (!$this->csrfTokenManager->isTokenValid(new CsrfToken($intent, $submittedCSRFToken))) {
+        $csrfCookies = $request->cookies->get('csrf', []);
+        if (
+            (!isset($csrfCookies[$intent]) || $csrfCookies[$intent] !== $submittedCSRFToken)
+            && !$this->csrfTokenManager->isTokenValid(new CsrfToken($intent, $submittedCSRFToken))
+        ) {
             if ($request->isXmlHttpRequest()) {
                 $this->session->getFlashBag()->add('danger', $this->translator->trans('error.message-403-ajax'));
             } else {

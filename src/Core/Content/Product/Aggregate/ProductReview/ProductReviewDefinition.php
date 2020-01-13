@@ -4,11 +4,13 @@ namespace Shopware\Core\Content\Product\Aggregate\ProductReview;
 
 use Shopware\Core\Checkout\Customer\CustomerDefinition;
 use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Framework\Api\Context\SalesChannelApiSource;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\ReadProtected;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Required;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\SearchRanking;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FloatField;
@@ -20,7 +22,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\StringField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\UpdatedAtField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
-use Shopware\Core\Framework\Language\LanguageDefinition;
+use Shopware\Core\System\Language\LanguageDefinition;
 use Shopware\Core\System\SalesChannel\SalesChannelDefinition;
 
 class ProductReviewDefinition extends EntityDefinition
@@ -66,9 +68,15 @@ class ProductReviewDefinition extends EntityDefinition
             new UpdatedAtField(),
             new CreatedAtField(),
             new ManyToOneAssociationField('product', 'product_id', ProductDefinition::class, 'id', false),
-            (new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false))->addFlags(new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING)),
-            new ManyToOneAssociationField('salesChannel', 'sales_channel_id', SalesChannelDefinition::class, 'id', false),
-            new ManyToOneAssociationField('language', 'language_id', LanguageDefinition::class, 'id', false),
+
+            (new ManyToOneAssociationField('customer', 'customer_id', CustomerDefinition::class, 'id', false))
+                ->addFlags(new SearchRanking(SearchRanking::MIDDLE_SEARCH_RANKING), new ReadProtected(SalesChannelApiSource::class)),
+
+            (new ManyToOneAssociationField('salesChannel', 'sales_channel_id', SalesChannelDefinition::class, 'id', false))
+                ->addFlags(new ReadProtected(SalesChannelApiSource::class)),
+
+            (new ManyToOneAssociationField('language', 'language_id', LanguageDefinition::class, 'id', false))
+                ->addFlags(new ReadProtected(SalesChannelApiSource::class)),
         ]);
     }
 }

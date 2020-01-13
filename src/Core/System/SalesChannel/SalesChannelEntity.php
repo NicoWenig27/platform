@@ -17,17 +17,18 @@ use Shopware\Core\Content\MailTemplate\Aggregate\MailTemplateSalesChannel\MailTe
 use Shopware\Core\Content\Newsletter\Aggregate\NewsletterRecipient\NewsletterRecipientCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductReview\ProductReviewCollection;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityCollection;
+use Shopware\Core\Content\ProductExport\ProductExportCollection;
+use Shopware\Core\Content\Seo\MainCategory\MainCategoryCollection;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlCollection;
+use Shopware\Core\Content\Seo\SeoUrlTemplate\SeoUrlTemplateCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\Language\LanguageCollection;
-use Shopware\Core\Framework\Language\LanguageEntity;
-use Shopware\Core\Framework\Seo\MainCategory\MainCategoryCollection;
-use Shopware\Core\Framework\Seo\SeoUrl\SeoUrlCollection;
-use Shopware\Core\Framework\Seo\SeoUrlTemplate\SeoUrlTemplateCollection;
 use Shopware\Core\System\Country\CountryCollection;
 use Shopware\Core\System\Country\CountryEntity;
 use Shopware\Core\System\Currency\CurrencyCollection;
 use Shopware\Core\System\Currency\CurrencyEntity;
+use Shopware\Core\System\Language\LanguageCollection;
+use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\NumberRange\Aggregate\NumberRangeSalesChannel\NumberRangeSalesChannelCollection;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationCollection;
@@ -74,6 +75,11 @@ class SalesChannelEntity extends Entity
     protected $navigationCategoryId;
 
     /**
+     * @var int
+     */
+    protected $navigationCategoryDepth;
+
+    /**
      * @var string|null
      */
     protected $footerCategoryId;
@@ -117,6 +123,16 @@ class SalesChannelEntity extends Entity
      * @var bool
      */
     protected $active;
+
+    /**
+     * @var bool
+     */
+    protected $maintenance;
+
+    /**
+     * @var string
+     */
+    protected $maintenanceIpWhitelist;
 
     /**
      * @var SalesChannelTypeEntity|null
@@ -283,6 +299,11 @@ class SalesChannelEntity extends Entity
      */
     protected $paymentMethodIds;
 
+    /**
+     * @var ProductExportCollection|null
+     */
+    protected $productExports;
+
     public function getMailHeaderFooter(): ?MailHeaderFooterEntity
     {
         return $this->mailHeaderFooter;
@@ -423,6 +444,26 @@ class SalesChannelEntity extends Entity
         $this->active = $active;
     }
 
+    public function isMaintenance(): bool
+    {
+        return $this->maintenance;
+    }
+
+    public function setMaintenance(bool $maintenance): void
+    {
+        $this->maintenance = $maintenance;
+    }
+
+    public function getMaintenanceIpWhitelist(): ?string
+    {
+        return $this->maintenanceIpWhitelist;
+    }
+
+    public function setMaintenanceIpWhitelist(?string $maintenanceIpWhitelist): void
+    {
+        $this->maintenanceIpWhitelist = $maintenanceIpWhitelist;
+    }
+
     public function getCurrency(): ?CurrencyEntity
     {
         return $this->currency;
@@ -558,7 +599,7 @@ class SalesChannelEntity extends Entity
         return $this->domains;
     }
 
-    public function setDomains(?SalesChannelDomainCollection $domains): void
+    public function setDomains(SalesChannelDomainCollection $domains): void
     {
         $this->domains = $domains;
     }
@@ -668,7 +709,7 @@ class SalesChannelEntity extends Entity
         return $this->numberRangeSalesChannels;
     }
 
-    public function setNumberRangeSalesChannels(?NumberRangeSalesChannelCollection $numberRangeSalesChannels): void
+    public function setNumberRangeSalesChannels(NumberRangeSalesChannelCollection $numberRangeSalesChannels): void
     {
         $this->numberRangeSalesChannels = $numberRangeSalesChannels;
     }
@@ -728,7 +769,7 @@ class SalesChannelEntity extends Entity
         return $this->productReviews;
     }
 
-    public function setProductReviews(?ProductReviewCollection $productReviews): void
+    public function setProductReviews(ProductReviewCollection $productReviews): void
     {
         $this->productReviews = $productReviews;
     }
@@ -738,7 +779,7 @@ class SalesChannelEntity extends Entity
         return $this->seoUrls;
     }
 
-    public function setSeoUrls(?SeoUrlCollection $seoUrls): void
+    public function setSeoUrls(SeoUrlCollection $seoUrls): void
     {
         $this->seoUrls = $seoUrls;
     }
@@ -748,7 +789,7 @@ class SalesChannelEntity extends Entity
         return $this->seoUrlTemplates;
     }
 
-    public function setSeoUrlTemplates(?SeoUrlTemplateCollection $seoUrlTemplates): void
+    public function setSeoUrlTemplates(SeoUrlTemplateCollection $seoUrlTemplates): void
     {
         $this->seoUrlTemplates = $seoUrlTemplates;
     }
@@ -758,7 +799,7 @@ class SalesChannelEntity extends Entity
         return $this->mainCategories;
     }
 
-    public function setMainCategories(?MainCategoryCollection $mainCategories): void
+    public function setMainCategories(MainCategoryCollection $mainCategories): void
     {
         $this->mainCategories = $mainCategories;
     }
@@ -777,5 +818,25 @@ class SalesChannelEntity extends Entity
     public function setPaymentMethodIds(array $paymentMethodIds): void
     {
         $this->paymentMethodIds = $paymentMethodIds;
+    }
+
+    public function getProductExports(): ?ProductExportCollection
+    {
+        return $this->productExports;
+    }
+
+    public function setProductExports(ProductExportCollection $productExports): void
+    {
+        $this->productExports = $productExports;
+    }
+
+    public function getNavigationCategoryDepth(): int
+    {
+        return $this->navigationCategoryDepth;
+    }
+
+    public function setNavigationCategoryDepth(int $navigationCategoryDepth): void
+    {
+        $this->navigationCategoryDepth = $navigationCategoryDepth;
     }
 }

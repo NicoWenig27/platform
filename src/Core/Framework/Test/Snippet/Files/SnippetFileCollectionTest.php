@@ -3,16 +3,16 @@
 namespace Shopware\Core\Framework\Test\Snippet\Files;
 
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Framework\Snippet\Exception\InvalidSnippetFileException;
-use Shopware\Core\Framework\Snippet\Files\SnippetFileCollection;
 use Shopware\Core\Framework\Test\Snippet\Mock\MockSnippetFile;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
+use Shopware\Core\System\Snippet\Exception\InvalidSnippetFileException;
+use Shopware\Core\System\Snippet\Files\SnippetFileCollection;
 
 class SnippetFileCollectionTest extends TestCase
 {
     public static function tearDownAfterClass(): void
     {
-        foreach (glob(__DIR__ . '/../_fixtures/*.json') as $mockFile) {
+        foreach (glob(__DIR__ . '/../Mock/_fixtures/*.json') as $mockFile) {
             unlink($mockFile);
         }
     }

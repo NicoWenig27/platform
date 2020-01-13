@@ -41,6 +41,10 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
 
         $slops = $this->slop($tokens);
 
+        if (empty($slops['normal'])) {
+            return new SearchPattern(new SearchTerm($word));
+        }
+
         $matches = $this->fetchKeywords($context, $slops);
 
         $combines = $this->permute($tokens);
@@ -93,7 +97,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
             'reversed' => [],
         ];
 
-        foreach ($tokens as $index => $token) {
+        foreach ($tokens as $token) {
             $token = (string) $token;
             $slopSize = \mb_strlen($token) > 4 ? 2 : 1;
             $length = \mb_strlen($token);
@@ -101,6 +105,7 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
             if (\mb_strlen($token) <= 2) {
                 $slops['normal'][] = $token . '%';
                 $slops['reversed'][] = $token . '%';
+
                 continue;
             }
 
@@ -173,11 +178,13 @@ class ProductSearchTermInterpreter implements ProductSearchTermInterpreterInterf
                 $levenshtein = levenshtein($match, (string) $token);
                 if ($levenshtein === 0) {
                     $score += 6;
+
                     continue;
                 }
 
                 if ($levenshtein <= 2) {
                     $score += 3;
+
                     continue;
                 }
 

@@ -1,6 +1,7 @@
 import template from './sw-settings-country-detail.html.twig';
 
 const { Component, Mixin } = Shopware;
+const { mapApiErrors } = Component.getComponentHelper();
 
 Component.register('sw-settings-country-detail', {
     template,
@@ -42,7 +43,9 @@ Component.register('sw-settings-country-detail', {
         },
         stateColumns() {
             return this.getStateColumns();
-        }
+        },
+
+        ...mapApiErrors('country', ['name'])
     },
 
     created() {
@@ -90,31 +93,24 @@ Component.register('sw-settings-country-detail', {
             });
         },
 
-        countryStateSelectionChanged() {
-            const selection = this.$refs.countryStateGrid.selection;
-            this.deleteButtonDisabled = Object.keys(selection).length <= 0;
+        countryStateSelectionChanged(selection, selectionCount) {
+            this.deleteButtonDisabled = selectionCount <= 0;
         },
 
         onDeleteCountryStates() {
             const selection = this.$refs.countryStateGrid.selection;
 
-            if (!Object.keys(selection).length) {
-                return;
+            const countryStateIds = Object.keys(selection);
+            if (!countryStateIds.length) {
+                return Promise.resolve();
             }
 
             this.countryStateLoading = true;
-            const deletePromises = [];
 
-            Object.keys(selection).forEach(id => {
-                deletePromises.push(this.countryStateRepository.delete(id, Shopware.Context.api));
-            });
-
-            Promise.all(deletePromises).then(() => {
-                this.countryStateLoading = false;
-                this.refreshCountryStateList();
-                this.$refs.countryStateGrid.allSelectedChecked = false;
-                this.$refs.countryStateGrid.selection = {};
-            });
+            return this.countryStateRepository.syncDeleted(countryStateIds, Shopware.Context.api)
+                .finally(() => {
+                    this.countryStateLoading = false;
+                });
         },
 
         onAddCountryState() {

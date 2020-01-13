@@ -4,16 +4,16 @@ namespace Shopware\Core\Framework\Test\Translation;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Adapter\Translation\Translator;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
-use Shopware\Core\Framework\Snippet\Files\SnippetFileCollection;
-use Shopware\Core\Framework\Snippet\SnippetDefinition;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
 use Shopware\Core\Framework\Test\Translation\_fixtures\SnippetFile_UnitTest;
-use Shopware\Core\Framework\Translation\Translator;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\SalesChannelRequest;
+use Shopware\Core\System\Snippet\Files\SnippetFileCollection;
+use Shopware\Core\System\Snippet\SnippetDefinition;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -98,6 +98,35 @@ class TranslatorTest extends TestCase
             $request,
             $this->getContainer()->get(RequestStack::class)->pop()
         );
+    }
+
+    public function testSymfonyDefaultTranslationFallback(): void
+    {
+        $catalogue = $this->translator->getCatalogue('en');
+        static::assertEquals('en_GB', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $catalogue = $this->translator->getCatalogue('en_GB');
+        static::assertEquals('en', $catalogue->getFallbackCatalogue()->getLocale());
+
+        $catalogue = $this->translator->getCatalogue('en-GB');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertEquals('en_GB', $fallback->getLocale());
+        static::assertEquals('en', $fallback->getFallbackCatalogue()->getLocale());
+
+        $catalogue = $this->translator->getCatalogue('de');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertEquals('en', $fallback->getLocale());
+        static::assertEquals('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+
+        $catalogue = $this->translator->getCatalogue('de_DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertEquals('en', $fallback->getLocale());
+        static::assertEquals('en_GB', $fallback->getFallbackCatalogue()->getLocale());
+
+        $catalogue = $this->translator->getCatalogue('de-DE');
+        $fallback = $catalogue->getFallbackCatalogue();
+        static::assertEquals('en', $fallback->getLocale());
+        static::assertEquals('en_GB', $fallback->getFallbackCatalogue()->getLocale());
     }
 
     public function testDeleteSnippet(): void

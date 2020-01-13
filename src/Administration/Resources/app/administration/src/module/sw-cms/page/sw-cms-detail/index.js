@@ -37,7 +37,6 @@ Component.register('sw-cms-detail', {
             page: {
                 sections: []
             },
-            cmsPageState: Shopware.State.get('cmsPageState'),
             salesChannels: [],
             isLoading: false,
             isSaveSuccessful: false,
@@ -111,8 +110,9 @@ Component.register('sw-cms-detail', {
             return {
                 page: this.$tc('sw-cms.detail.label.pageTypeShopPage'),
                 landingpage: this.$tc('sw-cms.detail.label.pageTypeLandingpage'),
-                product_list: this.$tc('sw-cms.detail.label.pageTypeCategory'),
-                product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct')
+                product_list: this.$tc('sw-cms.detail.label.pageTypeCategory')
+                // Will be implemented in the future
+                // product_detail: this.$tc('sw-cms.detail.label.pageTypeProduct')
             };
         },
 
@@ -236,7 +236,7 @@ Component.register('sw-cms-detail', {
 
             return this.defaultFolderRepository.search(criteria, Shopware.Context.api).then((searchResult) => {
                 const defaultFolder = searchResult.first();
-                if (defaultFolder.folder.id) {
+                if (defaultFolder.folder && defaultFolder.folder.id) {
                     return defaultFolder.folder.id;
                 }
 
@@ -356,10 +356,6 @@ Component.register('sw-cms-detail', {
 
         saveOnLanguageChange() {
             return this.onSave();
-        },
-
-        onSalesChannelChange() {
-            this.loadPage(this.pageId);
         },
 
         onDemoEntityChange(demoEntityId) {

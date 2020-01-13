@@ -3,16 +3,19 @@
 namespace Shopware\Core\Framework\Test\Api\Controller;
 
 use Doctrine\DBAL\Connection;
-use function Flag\next3722;
-use function Flag\skipTestNext3722;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
+use Shopware\Core\Content\Product\ProductDefinition;
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlDefinition;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Api\Exception\LiveVersionDeleteException;
 use Shopware\Core\Framework\Api\Util\AccessKeyHelper;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Extension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Seo\SeoUrl\SeoUrlDefinition;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Test\TestCaseBase\AdminApiTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\BasicTestDataBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\FilesystemBehaviour;
@@ -22,6 +25,8 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelDefinition;
 use Symfony\Component\HttpFoundation\Response;
+use function Flag\next3722;
+use function Flag\skipTestNext3722;
 
 class ApiControllerTest extends TestCase
 {
@@ -55,11 +60,11 @@ EOF;
         $namedStatement = <<<EOF
 CREATE TABLE `named` (
     `id` binary(16) NOT NULL,
-    `name` varchar(255) NOT NULL,    
-    `optional_group_id` varbinary(16) NULL,   
+    `name` varchar(255) NOT NULL,
+    `optional_group_id` varbinary(16) NULL,
     `created_at` DATETIME(3) NOT NULL,
-    `updated_at` DATETIME(3) NULL, 
-    PRIMARY KEY `id` (`id`),  
+    `updated_at` DATETIME(3) NULL,
+    PRIMARY KEY `id` (`id`),
     CONSTRAINT `fk` FOREIGN KEY (`optional_group_id`) REFERENCES `named_optional_group` (`id`) ON DELETE SET NULL
 );
 EOF;
@@ -191,7 +196,7 @@ EOF;
         $browser = $this->getBrowser();
         $connection = $this->getBrowser()->getContainer()->get(Connection::class);
         $user = TestUser::createNewTestUser($connection, ['country' => ['create', 'detail']]);
-        $admin = TestUser::getAdmin($connection);
+        $admin = TestUser::getAdmin();
 
         $user->authorizeBrowser($browser);
 
@@ -282,7 +287,7 @@ EOF;
         $browser = $this->getBrowser();
         $connection = $this->getBrowser()->getContainer()->get(Connection::class);
         $user = TestUser::createNewTestUser($connection, ['product' => ['create', 'detail']]);
-        $admin = TestUser::getAdmin($connection);
+        $admin = TestUser::getAdmin();
 
         $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $data);
         $response = $browser->getResponse();
@@ -388,7 +393,7 @@ EOF;
                 'version_commit' => ['create'],
             ]
         );
-        $admin = TestUser::getAdmin($connection);
+        $admin = TestUser::getAdmin();
 
         $user->authorizeBrowser($browser);
 
@@ -445,6 +450,90 @@ EOF;
         static::assertSame(Response::HTTP_NO_CONTENT, $this->getBrowser()->getResponse()->getStatusCode(), $this->getBrowser()->getResponse()->getContent());
 
         $this->assertEntityNotExists($this->getBrowser(), 'product', $id);
+    }
+
+    public function testDeleteVersion(): void
+    {
+        $id = Uuid::randomHex();
+        $browser = $this->getBrowser();
+
+        $data = [
+            'id' => $id,
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 1,
+            'name' => $id,
+            'tax' => ['name' => 'test', 'taxRate' => 10],
+            'manufacturer' => ['name' => 'test'],
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+        ];
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $data);
+        $response = $browser->getResponse();
+        static::assertSame(Response::HTTP_NO_CONTENT, $browser->getResponse()->getStatusCode(), $browser->getResponse()->getContent());
+        static::assertNotEmpty($response->headers->get('Location'));
+        static::assertEquals('http://localhost/api/v' . PlatformRequest::API_VERSION . '/product/' . $id, $response->headers->get('Location'));
+
+        $this->assertEntityExists($browser, 'product', $id);
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/version/product/' . $id);
+        $response = json_decode($browser->getResponse()->getContent(), true);
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), $browser->getResponse()->getContent());
+        static::assertArrayHasKey('versionId', $response);
+        static::assertArrayHasKey('versionName', $response);
+        static::assertArrayHasKey('id', $response);
+        static::assertArrayHasKey('entity', $response);
+        static::assertTrue(Uuid::isValid($response['versionId']));
+        $versionId = $response['versionId'];
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/version/' . $response['versionId'] . '/product/' . $id);
+        $response = json_decode($browser->getResponse()->getContent(), true);
+        static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), $browser->getResponse()->getContent());
+        static::assertEmpty($response);
+
+        $this->assertEntityExists($browser, 'product', $id);
+
+        /** @var EntityRepositoryInterface $productRepo */
+        $productRepo = $this->getContainer()->get(ProductDefinition::ENTITY_NAME . '.repository');
+        $criteria = new Criteria([$id]);
+        $criteria->addFilter(
+            new EqualsFilter('versionId', $versionId)
+        );
+
+        static::assertCount(0, $productRepo->search($criteria, Context::createDefaultContext()));
+    }
+
+    public function testDeleteVersionWithLiveVersion(): void
+    {
+        $id = Uuid::randomHex();
+        $browser = $this->getBrowser();
+
+        $data = [
+            'id' => $id,
+            'productNumber' => Uuid::randomHex(),
+            'stock' => 1,
+            'name' => $id,
+            'tax' => ['name' => 'test', 'taxRate' => 10],
+            'manufacturer' => ['name' => 'test'],
+            'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 50, 'net' => 25, 'linked' => false]],
+        ];
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $data);
+
+        $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/_action/version/' . Defaults::LIVE_VERSION . '/product/' . $id);
+
+        $repo = $this->getContainer()->get(ProductDefinition::ENTITY_NAME . '.repository');
+        $criteria = new Criteria([$id]);
+        $criteria->addFilter(new EqualsFilter('versionId', Defaults::LIVE_VERSION));
+
+        static::assertNotNull($repo->search($criteria, Context::createDefaultContext())->getEntities()->first());
+
+        $response = $browser->getResponse();
+
+        static::assertSame(Response::HTTP_INTERNAL_SERVER_ERROR, $response->getStatusCode(), $response->getContent());
+
+        $content = \json_decode($response->getContent(), true);
+
+        static::assertSame((new LiveVersionDeleteException())->getErrorCode(), $content['errors'][0]['code']);
     }
 
     public function testDeleteWithoutPermission(): void
@@ -858,6 +947,80 @@ EOF;
         $browser->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/product', $data);
         $response = $browser->getResponse();
         static::assertSame(Response::HTTP_FORBIDDEN, $response->getStatusCode(), $response->getContent());
+    }
+
+    /**
+     * Tests the API search endpoint. Asserts that an entity can be both part of the result data as well as the
+     * associations when the entity is fetched as a top level entity result and through circular associations.
+     */
+    public function testEntityIsPresentInTopLevelEntityResultWhenAlsoPartOfAssociations(): void
+    {
+        // In this test case both products are created with the same base data (i.e. they are part of the same sales
+        // channel).
+        $productBase = [
+            'name' => 'Some product',
+            'stock' => 1,
+            'tax' => [
+                'name' => 'test',
+                'taxRate' => 10,
+            ],
+            'manufacturer' => [
+                'name' => 'Shopware AG',
+            ],
+            'price' => [
+                [
+                    'currencyId' => Defaults::CURRENCY,
+                    'gross' => 50,
+                    'net' => 25,
+                    'linked' => false,
+                ],
+            ],
+            'visibilities' => [
+                [
+                    'salesChannelId' => Defaults::SALES_CHANNEL,
+                    'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL,
+                ],
+            ],
+        ];
+
+        $product1 = array_merge($productBase, [
+            'id' => Uuid::randomHex(),
+            'productNumber' => 'product-1',
+        ]);
+        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $product1);
+
+        $product2 = array_merge($productBase, [
+            'id' => Uuid::randomHex(),
+            'productNumber' => 'product-2',
+        ]);
+        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/product', $product2);
+
+        // Add associations so that the products are both part of the top level entity result as well as the
+        // associations through the circular association chain.
+        $data = [
+            'page' => 1,
+            'limit' => 25,
+            'associations' => [
+                'visibilities' => [
+                    'associations' => [
+                        'salesChannel' => [
+                            'associations' => [
+                                'productVisibilities' => [
+                                    'associations' => [
+                                        'product' => [],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->getBrowser()->request('POST', '/api/v' . PlatformRequest::API_VERSION . '/search/product', $data);
+        $response = $this->getBrowser()->getResponse();
+        $searchResult = json_decode($response->getContent(), true);
+        static::assertCount(2, $searchResult['data']);
     }
 
     public function testNestedSearchOnOneToMany(): void
@@ -1755,7 +1918,7 @@ EOF;
         static::assertEquals('test tax', $tax['data']['attributes']['name']);
     }
 
-    private function createSalesChannel($id): void
+    private function createSalesChannel(string $id): void
     {
         $data = [
             'id' => $id,

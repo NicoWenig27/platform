@@ -12,8 +12,8 @@ use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityIdTrait;
-use Shopware\Core\Framework\Language\LanguageEntity;
 use Shopware\Core\System\Currency\CurrencyEntity;
+use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateEntity;
 use Shopware\Core\System\Tag\TagCollection;
@@ -457,7 +457,7 @@ class OrderEntity extends Entity
         return $this->documents;
     }
 
-    public function setDocuments(?DocumentCollection $documents): void
+    public function setDocuments(DocumentCollection $documents): void
     {
         $this->documents = $documents;
     }
@@ -492,7 +492,7 @@ class OrderEntity extends Entity
 
         /** @var OrderLineItemCollection $roots */
         $roots = $lineItems->filterByProperty('parentId', null);
-        $roots->sortByCreationDate();
+        $roots->sortByPosition();
         $this->addChildren($lineItems, $roots);
 
         return $roots;
@@ -523,7 +523,7 @@ class OrderEntity extends Entity
         foreach ($parents as $parent) {
             /** @var OrderLineItemCollection $children */
             $children = $lineItems->filterByProperty('parentId', $parent->getId());
-            $children->sortByCreationDate();
+            $children->sortByPosition();
 
             $parent->setChildren($children);
 

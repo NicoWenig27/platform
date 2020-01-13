@@ -17,10 +17,30 @@
         {% set navigationDots = sliderConfig.navigationDots.value %}
         {% set galleryPosition = sliderConfig.galleryPosition.value %}
         {% set verticalAlign = sliderConfig.verticalAlign.value %}
+        {% set zoomImageContainerSelector = sliderConfig.zoomImageContainerSelector.value %}
+    {% endif %}
+
+    {% if fallbackImageTitle is not defined %}
+        {% set fallbackImageTitle = '' %}
     {% endif %}
 
     {# @var mediaItems \Shopware\Core\Content\Media\MediaCollection #}
     {% set imageCount = mediaItems|length %}
+
+    {% set magnifierOptions = [] %}
+
+    {% if magnifierOverGallery %}
+        {% set magnifierOptions = magnifierOptions|merge({
+            'magnifierOverGallery': true,
+            'cursorType': 'crosshair'
+        }) %}
+    {% endif %}
+
+    {% if zoomImageContainerSelector %}
+        {% set magnifierOptions = magnifierOptions|merge({
+            'zoomImageContainerSelector': zoomImageContainerSelector
+        }) %}
+    {% endif %}
 
     <div class="cms-element-{{ element.type }}{% if displayMode == "standard" and verticalAlign %} has-vertical-alignment{% endif %}">
         {% block element_image_gallery_alignment %}
@@ -32,12 +52,9 @@
                     <div class="row gallery-slider-row{% if imageCount == 1 %} is-single-image{% endif %} js-gallery-zoom-modal-container"
                             {% if zoom %}
                                 data-magnifier="true"
-                                {% if magnifierOverGallery %}
-                                    data-magnifier-options='{
-                                    "magnifierOverGallery": true,
-                                    "cursorType": "crosshair"
-                                }'
-                                {% endif %}
+                            {% endif %}
+                            {% if magnifierOptions|length > 0 %}
+                                data-magnifier-options='{{ magnifierOptions|json_encode|raw }}'
                             {% endif %}
                             {% if imageCount > 1 %}
                                 data-gallery-slider="true"
@@ -97,14 +114,12 @@
                                                             {% for image in mediaItems %}
                                                                 {% block element_image_gallery_inner_item %}
                                                                     <div class="gallery-slider-item-container">
-                                                                        <div class="gallery-slider-item is-{{ displayMode }} js-magnifier-container"{% if minHeight and  displayMode == "cover" %} style="min-height: {{ minHeight }}"{% endif %}>
+                                                                        <div class="gallery-slider-item is-{{ displayMode }} js-magnifier-container"{% if minHeight and  (displayMode == "cover" or displayMode == "contain" ) %} style="min-height: {{ minHeight }}"{% endif %}>
                                                                             {% set attributes = {
                                                                                 'class': 'img-fluid gallery-slider-image magnifier-image js-magnifier-image',
-                                                                                'alt': (image.translated.alt ?: ''),
-                                                                                'title': (image.translated.title ?: ''),
-                                                                                'data-full-image': image.url,
-                                                                                'data-width': image.metaData.width,
-                                                                                'data-height': image.metaData.height
+                                                                                'alt': (image.translated.alt ?: fallbackImageTitle),
+                                                                                'title': (image.translated.title ?: fallbackImageTitle),
+                                                                                'data-full-image': image.url
                                                                             } %}
 
                                                                             {% if displayMode == 'cover' or displayMode == 'contain' %}
@@ -132,7 +147,8 @@
                                                              data-gallery-slider-controls="{% if navigationArrows %}true{% else %}false{% endif %}">
                                                             {% block element_image_gallery_inner_control_items %}
                                                                 {% block element_image_gallery_inner_control_prev %}
-                                                                    <button class="base-slider-controls-prev gallery-slider-controls-prev{% if navigationArrows == "outside" %} is-nav-prev-outside{% elseif navigationArrows == "inside" %} is-nav-prev-inside{% endif %}">
+                                                                    <button class="base-slider-controls-prev gallery-slider-controls-prev{% if navigationArrows == "outside" %} is-nav-prev-outside{% elseif navigationArrows == "inside" %} is-nav-prev-inside{% endif %}"
+                                                                            aria-label="{{ 'general.previous'|trans|striptags }}">
                                                                         {% block element_image_gallery_inner_control_prev_icon %}
                                                                             {% sw_icon 'arrow-head-left' %}
                                                                         {% endblock %}
@@ -140,7 +156,8 @@
                                                                 {% endblock %}
 
                                                                 {% block element_image_gallery_inner_control_next %}
-                                                                    <button class="base-slider-controls-next gallery-slider-controls-next{% if navigationArrows == "outside" %} is-nav-next-outside{% elseif navigationArrows == "inside" %} is-nav-next-inside{% endif %}">
+                                                                    <button class="base-slider-controls-next gallery-slider-controls-next{% if navigationArrows == "outside" %} is-nav-next-outside{% elseif navigationArrows == "inside" %} is-nav-next-inside{% endif %}"
+                                                                            aria-label="{{ 'general.next'|trans|striptags }}">
                                                                         {% block element_image_gallery_inner_control_next_icon %}
                                                                             {% sw_icon 'arrow-head-right' %}
                                                                         {% endblock %}
@@ -157,11 +174,9 @@
                                                     {% if imageCount > 0 %}
                                                         {% set attributes = {
                                                             'class': 'img-fluid gallery-slider-image magnifier-image js-magnifier-image',
-                                                            'alt': (mediaItems|first.translated.alt ?: ''),
-                                                            'title': (mediaItems|first.translated.title ?: ''),
-                                                            'data-full-image': mediaItems|first.url,
-                                                            'data-width': mediaItems|first.metaData.width,
-                                                            'data-height': mediaItems|first.metaData.height
+                                                            'alt': (mediaItems|first.translated.alt ?: fallbackImageTitle),
+                                                            'title': (mediaItems|first.translated.title ?: fallbackImageTitle),
+                                                            'data-full-image': mediaItems|first.url
                                                         } %}
 
                                                         {% if displayMode == 'cover' or displayMode == 'contain' %}
@@ -220,8 +235,8 @@
                                                                     <div class="gallery-slider-thumbnails-item-inner">
                                                                         {% set attributes = {
                                                                             'class': 'gallery-slider-thumbnails-image',
-                                                                            'alt': (image.translated.alt ?: ''),
-                                                                            'title': (image.translated.title ?: '')
+                                                                            'alt': (image.translated.alt ?: fallbackImageTitle),
+                                                                            'title': (image.translated.title ?: fallbackImageTitle)
                                                                         } %}
 
                                                                         {% if isProduct %}
@@ -335,10 +350,8 @@
                                                                                                             media: image,
                                                                                                             attributes: {
                                                                                                                 'class': 'gallery-slider-image js-image-zoom-element',
-                                                                                                                'alt': (image.translated.alt ?: ''),
-                                                                                                                'title': (image.translated.title ?: ''),
-                                                                                                                'data-max-width': image.metaData.width,
-                                                                                                                'data-max-height': image.metaData.height
+                                                                                                                'alt': (image.translated.alt ?: fallbackImageTitle),
+                                                                                                                'title': (image.translated.title ?: fallbackImageTitle)
                                                                                                             }
                                                                                                         } %}
                                                                                                     {% endblock %}
@@ -356,7 +369,8 @@
                                                                             <div class="gallery-slider-controls"
                                                                                  data-gallery-slider-controls="true">
                                                                                 {% block element_image_gallery_inner_zoom_modal_slider_control_prev %}
-                                                                                    <button class="base-slider-controls-prev gallery-slider-controls-prev">
+                                                                                    <button class="base-slider-controls-prev gallery-slider-controls-prev"
+                                                                                            aria-label="{{ 'general.previous'|trans|striptags }}">
                                                                                         {% block element_image_gallery_inner_zoom_modal_slider_control_prev_icon %}
                                                                                             {% sw_icon 'arrow-head-left' %}
                                                                                         {% endblock %}
@@ -364,7 +378,8 @@
                                                                                 {% endblock %}
 
                                                                                 {% block element_image_gallery_inner_zoom_modal_slider_control_next %}
-                                                                                    <button class="base-slider-controls-next gallery-slider-controls-next">
+                                                                                    <button class="base-slider-controls-next gallery-slider-controls-next"
+                                                                                            aria-label="{{ 'general.next'|trans|striptags }}">
                                                                                         {% block element_image_gallery_inner_zoom_modal_slider_control_next_icon %}
                                                                                             {% sw_icon 'arrow-head-right' %}
                                                                                         {% endblock %}
@@ -382,10 +397,12 @@
                                                                         {% block element_image_gallery_inner_zoom_modal_thumbnails_controls %}
                                                                             <div class="gallery-slider-modal-controls">
                                                                                 <div data-thumbnail-slider-controls="true" class="gallery-slider-modal-thumbnails">
-                                                                                    <button class="base-slider-controls-prev gallery-slider-thumbnails-controls-prev">
+                                                                                    <button class="base-slider-controls-prev gallery-slider-thumbnails-controls-prev"
+                                                                                            aria-label="{{ 'general.previous'|trans|striptags }}">
                                                                                         {% sw_icon 'arrow-head-left' %}
                                                                                     </button>
-                                                                                    <button class="base-slider-controls-next gallery-slider-thumbnails-controls-next">
+                                                                                    <button class="base-slider-controls-next gallery-slider-thumbnails-controls-next"
+                                                                                            aria-label="{{ 'general.next'|trans|striptags }}">
                                                                                         {% sw_icon 'arrow-head-right' %}
                                                                                     </button>
                                                                                 </div>
@@ -408,8 +425,8 @@
                                                                                                             },
                                                                                                             attributes: {
                                                                                                                 'class': 'gallery-slider-thumbnails-image',
-                                                                                                                'alt': (image.translated.alt ?: ''),
-                                                                                                                'title': (image.translated.title ?: '')
+                                                                                                                'alt': (image.translated.alt ?: fallbackImageTitle),
+                                                                                                                'title': (image.translated.title ?: fallbackImageTitle)
                                                                                                             }
                                                                                                         } %}
                                                                                                     </div>

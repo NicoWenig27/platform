@@ -2,7 +2,7 @@
 
 namespace Shopware\Core\Framework\FeatureFlag\Command;
 
-use Shopware\Core\Framework\Console\ShopwareStyle;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
 use Shopware\Core\Framework\FeatureFlag\FeatureFlagGenerator;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,6 +11,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class FeatureFlagCreateCommand extends Command
 {
+    protected static $defaultName = 'feature:add';
+
     /**
      * @var FeatureFlagGenerator
      */
@@ -29,7 +31,7 @@ class FeatureFlagCreateCommand extends Command
         $this->addArgument('name', InputArgument::REQUIRED, 'What is the feature gonna be called?');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new ShopwareStyle($input, $output);
 
@@ -59,6 +61,6 @@ class FeatureFlagCreateCommand extends Command
         $io->success("Created flag: $name");
         $io->note('Please remember to add and commit the files');
 
-        return null;
+        return 0;
     }
 }

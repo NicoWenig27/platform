@@ -2,8 +2,8 @@
 
 namespace Shopware\Core\Framework\Plugin\Command\Lifecycle;
 
-use Shopware\Core\Framework\Cache\CacheClearer;
-use Shopware\Core\Framework\Console\ShopwareStyle;
+use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -55,7 +55,6 @@ abstract class AbstractPluginLifecycleCommand extends Command
     protected function configureCommand(string $lifecycleMethod): void
     {
         $this
-            ->setName(sprintf('plugin:%s', $lifecycleMethod))
             ->setDescription(sprintf('%ss given plugins', ucfirst($lifecycleMethod)))
             ->addArgument(
                 'plugins',
@@ -120,6 +119,7 @@ abstract class AbstractPluginLifecycleCommand extends Command
     {
         if ($input->getOption('clearCache')) {
             $io->note('Clearing Cache');
+
             try {
                 $this->cacheClearer->clear();
             } catch (\Exception $e) {

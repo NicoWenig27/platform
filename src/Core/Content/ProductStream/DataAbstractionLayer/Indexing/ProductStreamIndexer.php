@@ -5,16 +5,16 @@ namespace Shopware\Core\Content\ProductStream\DataAbstractionLayer\Indexing;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\ProductStreamDefinition;
-use Shopware\Core\Framework\Cache\CacheClearer;
+use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
 use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
+use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InvalidFilterQueryException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\SearchRequestException;
 use Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Parser\QueryStringParser;
-use Shopware\Core\Framework\Doctrine\FetchModeHelper;
 use Shopware\Core\Framework\Event\ProgressAdvancedEvent;
 use Shopware\Core\Framework\Event\ProgressFinishedEvent;
 use Shopware\Core\Framework\Event\ProgressStartedEvent;
@@ -161,6 +161,7 @@ class ProductStreamIndexer implements IndexerInterface
         foreach ($filters as $id => $filter) {
             $invalid = false;
             $serialized = null;
+
             try {
                 $nested = $this->buildNested($filter, null);
 
@@ -205,8 +206,12 @@ class ProductStreamIndexer implements IndexerInterface
                 continue;
             }
 
-            if ($this->isJsonString($entity['parameters'])) {
-                $entity['parameters'] = json_decode($entity['parameters'], true);
+            $parameters = $entity['parameters'];
+            if ($parameters && \is_string($parameters)) {
+                $decodedParameters = json_decode($entity['parameters'], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $entity['parameters'] = $decodedParameters;
+                }
             }
 
             if ($this->isMultiFilter($entity['type'])) {
@@ -219,19 +224,8 @@ class ProductStreamIndexer implements IndexerInterface
         return $nested;
     }
 
-    private function isJsonString($string): bool
-    {
-        if (!$string || !is_string($string)) {
-            return false;
-        }
-
-        json_decode($string);
-
-        return json_last_error() === JSON_ERROR_NONE;
-    }
-
     private function isMultiFilter(string $type): bool
     {
-        return in_array($type, ['multi', 'not'], true);
+        return \in_array($type, ['multi', 'not'], true);
     }
 }

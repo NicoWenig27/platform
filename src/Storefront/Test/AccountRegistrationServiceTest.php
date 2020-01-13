@@ -91,7 +91,6 @@ class AccountRegistrationServiceTest extends TestCase
         $customers = $this->accountService->getCustomersByEmail($data->get('email'), $this->salesChannelContext, false);
         static::assertCount(1, $customers);
 
-        /** @var CustomerEntity $customer */
         $customer = $this->accountService->getCustomerByEmail($data->get('email'), $this->salesChannelContext, true);
         static::assertTrue($customer->getGuest());
     }
@@ -159,7 +158,7 @@ class AccountRegistrationServiceTest extends TestCase
         static::assertNotEmpty($customerId);
     }
 
-    private function getRegistrationData($isGuest = false): DataBag
+    private function getRegistrationData(bool $isGuest = false): DataBag
     {
         $data = [
             'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,

@@ -1,4 +1,7 @@
 {% block component_product_quickview_minimal %}
+    {% set name = page.product.translated.name %}
+    {% set manufacturer = page.product.manufacturer %}
+
     <div class="quickview-minimal-container">
         {% block component_product_quickview_minimal_top %}
             <div class="row quickview-minimal-top">
@@ -23,36 +26,36 @@
                         {% endif %}
                     </div>
                 {% endblock %}
-    
+
                 {% block component_product_quickview_minimal_product %}
                     <div class="col-12 col-md-6 quickview-minimal-product">
                         {% block component_product_quickview_minimal_product_name %}
                             <a href="{{ seoUrl('frontend.detail.page', {'productId': page.product.id}) }}"
                                target="_blank"
-                               title="{{ page.product.translated.name }}"
+                               title="{{ name }}"
                                class="h4 quickview-minimal-product-name">
-                                {{ page.product.translated.name }}
+                                {{ name }}
                             </a>
                         {% endblock %}
-    
+
                         {% block component_product_quickview_minimal_product_number %}
                             <p class="quickview-minimal-product-number">
-                                {{ "detail.ordernumberLabel"|trans }} {{ page.product.productNumber }}
+                                {{ "detail.ordernumberLabel"|trans|sw_sanitize }} {{ page.product.productNumber }}
                             </p>
                         {% endblock %}
-    
+
                         {% block component_product_quickview_minimal_product_manufacturer %}
-                            {% if page.product.manufacturer %}
-                                <a href="{{ page.product.manufacturer.link }}"
+                            {% if manufacturer %}
+                                <a href="{{ manufacturer.link }}"
                                    target="_blank"
-                                   title="{{ page.product.manufacturer.translated.name }}"
+                                   title="{{ manufacturer.translated.name }}"
                                    class="quickview-minimal-product-manufacturer">
-                                    {% if page.product.manufacturer.media %}
-                                        <img src="{{ page.product.manufacturer.media.url }}"
+                                    {% if manufacturer.media %}
+                                        <img src="{{ manufacturer.media.url }}"
                                              class="quickview-minimal-product-manufacturer-logo"
-                                             alt="{{ page.product.manufacturer.translated.name }}"/>
+                                             alt="{{ manufacturer.translated.name }}"/>
                                     {% else %}
-                                        {{ page.product.manufacturer.translated.name }}
+                                        {{ manufacturer.translated.name }}
                                     {% endif %}
                                 </a>
                             {% endif %}
@@ -61,16 +64,16 @@
                 {% endblock %}
             </div>
         {% endblock %}
-    
+
         {% block component_product_quickview_minimal_footer %}
             {% if page.product.translated.description %}
                 <div class="quickview-minimal-footer">
                     {% block component_product_quickview_minimal_footer_heading %}
                         <p class="h5 quickview-minimal-footer-heading">
-                            {{ "detail.tabsDescription"|trans }}
+                            {{ "detail.tabsDescription"|trans|sw_sanitize }}
                         </p>
                     {% endblock %}
-    
+
                     {% block component_product_quickview_minimal_footer_text %}
                         <p class="quickview-minimal-footer-description">
                             {{ page.product.translated.description }}

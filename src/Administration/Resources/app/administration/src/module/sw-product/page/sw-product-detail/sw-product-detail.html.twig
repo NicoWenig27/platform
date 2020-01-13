@@ -45,6 +45,16 @@
         {% block sw_product_detail_content %}
             <sw-card-view slot="content">
 
+                {% block sw_product_detail_content_top %}
+                    <router-link
+                        :to="{ name: 'sw.product.detail.variants', params: { id: product.parentId } }"
+                        v-if="isChild"
+                        class="sw-card__back-link">
+                            <sw-icon name="default-arrow-simple-left" small></sw-icon>
+                            {{ $tc('sw-product.general.backToParent') }}
+                    </router-link>
+                {% endblock %}
+
                 {% block sw_product_detail_content_language_info %}
                     <sw-language-info
                             :entityDescription="placeholder(product, 'name', $tc('sw-product.detail.textHeadline'))"
@@ -89,6 +99,16 @@
                                           :route="{ name: 'sw.product.detail.variants', params: { id: $route.params.id } }"
                                           :title="$tc('sw-product.detail.tabVariation')">
                                 {{ $tc('sw-product.detail.tabVariation') }}
+                            </sw-tabs-item>
+                        {% endblock %}
+
+                        {% block sw_product_detail_content_tabs_cross_selling %}
+                            <sw-tabs-item
+                                v-if="!isChild"
+                                class="sw-product-detail__tab-cross-selling"
+                                :route="{ name: 'sw.product.detail.crossSelling', params: { id: $route.params.id } }"
+                                :title="$tc('sw-product.detail.tabCrossSelling')">
+                                {{ $tc('sw-product.detail.tabCrossSelling') }}
                             </sw-tabs-item>
                         {% endblock %}
                     </sw-tabs>

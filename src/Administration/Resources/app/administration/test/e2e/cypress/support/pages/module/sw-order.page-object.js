@@ -12,14 +12,14 @@ export default class OrderPageObject extends GeneralPageObject {
         };
     }
 
-    setOrderState({stateTitle, type, signal = 'neutral', scope = 'select', call = null}) {
+    setOrderState({stateTitle, type, signal = 'neutral', scope = 'select', call = null}, isMailTemplateAssigned) {
         const stateColor = `.sw-order-state__${signal}-select`;
         const callType = type === 'payment' ? '_transaction' : '';
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: `/api/v1/_action/state-machine/order${callType}/**/state/${call}`,
+            url: `/api/v1/_action/order${callType}/**/state/${call}`,
             method: 'post'
         }).as(`${call}Call`);
 
@@ -28,6 +28,20 @@ export default class OrderPageObject extends GeneralPageObject {
         cy.get(`.sw-order-state-${scope}__${type}-state select[name=sw-field--selectedActionName]`)
             .should('be.visible')
             .select(stateTitle);
+
+        cy.get(`.sw-order-state-change-modal`)
+            .should('be.visible');
+
+        if (!isMailTemplateAssigned) {
+            cy.get('.sw-order-state-change-modal-assign-mail-template__entity-listing .sw-data-grid__row--0 input')
+                .click();
+
+            cy.get(`.sw-order-state-change-modal-assign-mail-template__button`)
+                .click();
+        }
+
+        cy.get(`.sw-order-state-change-modal-attach-documents__button`)
+            .click();
 
         cy.wait(`@${call}Call`).then((xhr) => {
             expect(xhr).to.have.property('status', 200);

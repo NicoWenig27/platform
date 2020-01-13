@@ -52,12 +52,24 @@ class UpdateService extends ApiService {
             });
     }
 
-    unpackUpdate(offset, pluginDeactivationStrategy = '') {
+    deactivatePlugins(offset, pluginDeactivationStrategy = '') {
+        const headers = this.getBasicHeaders();
+        const actionUrlPart = `/_action/${this.getApiBasePath()}`;
+        const offsetParam = `offset=${offset}&deactivationFilter=${pluginDeactivationStrategy}`;
+
+        return this.httpClient
+            .get(`${actionUrlPart}/deactivate-plugins?${offsetParam}`, { headers })
+            .then((response) => {
+                return ApiService.handleResponse(response);
+            });
+    }
+
+    unpackUpdate(offset) {
         const headers = this.getBasicHeaders();
 
         return this.httpClient
             .get(
-                `/_action/${this.getApiBasePath()}/unpack?offset=${offset}&deactivationFilter=${pluginDeactivationStrategy}`,
+                `/_action/${this.getApiBasePath()}/unpack?offset=${offset}`,
                 { headers }
             ).then((response) => {
                 return ApiService.handleResponse(response);

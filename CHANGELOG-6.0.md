@@ -48,22 +48,10 @@ This can be useful when validate your commands in `PreWriteValidateEvent`s when 
     * Deprecated `sw-select-option` use `sw-result-option` instead
     * Moved the `sw-cms` from `State.getStore()` to `Repository` and added clientsided data resolver
     * Added translations for the `sw-cms` module
-    * Added `getComponentHelper` to global `Shopware` object
-    * Added async loading of plugins
-    * Added seperation of login and application boot
     * Replaced vanilla-colorpicker dependency with custom-build vuejs colorpicker
     * `EntityCollection.filter` returns a new `EntityCollection` object instead of a native array 
     * Added Sections which support sidebars to the `sw-cms`
-    * Navigation sidebar is now a globally expandable & collapsable with `this.$store.commit('adminMenu/collapseSidebar)` and `this.$store.commit('adminMenu/expandSidebar)`
-    * Added Services functions to Shopware object for easier access
-    * Added Context to Shopware object for easier access
-    * Added a new component `sw-many-to-many-assignment-card` which can be used to display many to many associations within a paginated grid
-    * The `sw-tree` component now emits the `editing-end` when the user finished adding new items. Eventdata is an object with `parentId` property 
-    * `sw-tree`'s `drag-end` event now emits information about the old and new parentId of the dragged element.
-    * The changeset generator now ommits write protected fields
-    * We added `fromCollection` and `fromCriteria` methods to criteria/collections to deep copy them if needed
-    * Due to the redesign of the cms blocks and elements you can now translate the label of your blocks and elements
-   
+    * Changed snippet path of `sw_cms_sidebar_section_config_sidebar_mobile` block.
 * Core
     * Added DAL support for multi primary keys.
     * Added API endpoints for translation definitions
@@ -99,12 +87,11 @@ This can be useful when validate your commands in `PreWriteValidateEvent`s when 
         - These services are now available in `\Shopware\Core\Framework\Plugin::activate` and `\Shopware\Core\Framework\Plugin::deactivate`
         - `\Shopware\Core\Framework\Plugin::deactivate` is now always called before `\Shopware\Core\Framework\Plugin::uninstall`
     * Renamed container service id `shopware.cache` to `cache.object` 
-    * Added new function to `\Shopware\Core\Framework\Cache\CacheClearer`. Please use this service to invalidate or delete cache items.
+    * Added new function to `\Shopware\Core\Framework\Adapter\Cache\CacheClearer`. Please use this service to invalidate or delete cache items.
     * We did some refactoring on how we use `WriteConstraintsViolationExceptions`.
     It's path `property` should now point to the object that is inspected by an validator while the `propertyPath` property in `WriteConstraint` objects should only point to the invalid property. 
     For more information read the updated "write command validation" article in the docs.
     * Added new function `\Shopware\Core\Framework\Migration\MigrationStep::registerIndexer`. This method registers an indexer that needs to run (after the update). See `\Shopware\Core\Migration\Migration1570684913ScheduleIndexer` for an example.
-    
 * Storefront
     * Changed the default storefront script path in `Bundle` to `Resources/dist/storefront/js`
     * Changed the name of `messages.<locale>.json` to `storefront.<locale>.json` and changed to **not** be a base file anymore.
@@ -123,13 +110,11 @@ This can be useful when validate your commands in `PreWriteValidateEvent`s when 
 * Administration
     * Removed `sw-tag-multi-select`
     * Removed `sw-multi-select-option` use `sw-result-option` instead
-    * Removed module export of `Shopware`
-    * Removed plugin functionality in login
-    * Removed direct component registration in modules
     * Removed `sw-single-select-option` use `sw-result-option` instead
     * Removed `Criteria.value` use `Criteria.terms` instead
     * Removed `Criteria.valueCount` use `Criteria.terms` instead
     * Removed `Criteria.addAssociationPath` use `Criteria.addAssociation` instead
+    * Deprecated `sw_product_detail_prices_price_card_price_group_empty_state_rule_select` twig block will be completely removed in the next minor version.
 * Core
     * Removed `\Shopware\Core\Checkout\Customer\SalesChannel\AddressService::getCountryList` function
     * Removed `\Shopware\Core\Framework\DataAbstractionLayer\Search\PaginationCriteria`
@@ -145,134 +130,3 @@ This can be useful when validate your commands in `PreWriteValidateEvent`s when 
 * Storefront
     * Removed `Shopware\Storefront\Framework\Seo\Entity\Field\CanonicalUrlField`, use the twig helper function `seoUrl` to get seo urls
     * Removed fields `isValid` and `autoIncrement` from `SeoUrlDefinition`
-
-
-### 6.1.0
-
-**Additions / Changes**
-
-* Administration
-    * Moved the sw-product-maintain-currencies-modal to sw-maintain-currencies-modal.
-    * Seperate the Shopware context to App-Context and Api-Context
-    * Rename old `State` to `StateDeprecated`
-    * Make vuex store initially available in global Shopware object `Shopware.State`
-    * Move context to the Store
-    * Make vuex store initially available
-    * Moved `Resources/administration` directory to `Resources/app/administration`
-* Core
-    * Moved the seo module from the storefront into the core.
-    * Switched the execution condition of `\Shopware\Core\Framework\Migration\MigrationStep::addBackwardTrigger()` and `\Shopware\Core\Framework\Migration\MigrationStep::addForwardTrigger()` to match the execution conditions in the methods documentation.
-    * When a sub entity is written or deleted, a written event is dispatched for the configured root entity. 
-        - Example for mapping entities: Writing a `product_category` entity now also dispatches a `product.written` and `category.written` event
-        - Example for simple sub entities: Writing a `product_price` entity now also dispatches a `product_category` event
-        - Example for nested sub entities: Writing a `order_delivery_position` entity now also dispatches a `order_delivery.written` and a `order.written` event
-    * Required authentication for requests to `/api/v{version}/_info/business-events.json` and `/api/v{version}/_info/entity-schema.json` routes
-    * Added `shopware.api.api_browser.auth_required` config value to configure if the access to the open api routes must be authenticated
-    * Added a `seoUrls` `OneToManyAssociationField` to `product` and `category`.
-    * Added a `SalesChannelSeoUrlDefinition` to filter by context language, sales channel and canonical.
-    * Fixed a bug that `SalesChannelDefinition`s are not used for associations.
-    * Added `metaTitle`, `metaDescription` and `keywords` columns to category entity
-    * Added `metaDescription` to product entity
-    * Added `campaignCode` and `affiliateCode` columns to customer and order entity
-    * Added `TaxRuleEntity` to define country specific taxes
-    * Added `TaxRuleTypeEntity` to define rule types for taxes
-    * Added `rules` Association to tax entity
-    * Added `buildTaxRules` to the `SalesChannelContext` to get the tax rules for the given `taxId` depending on the customer billing address
-    * Removed `getTaxRuleCollection` from Product entity
-    * Added `taxRuleTypeTranslations` association to Language entity
-    * Added `taxRules` association to country entity
-    * Changed the calling of `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getDefaults` which is now only called by newly created entities. The check `$existence->exists()` inside this method is not necessary anymore
-    * Added new method `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getChildDefaults`. Use it to define defaults for newly created child entities
-    * We adjusted the entry points for administration and storefront resources so that there are no naming conflicts anymore. It is no longer possible to adjust the paths to the corresponding sources. The new structure looks as follows:
-        ```
-        MyPlugin
-         └──Resources
-            ├── theme.json
-            ├── app
-            │   ├── administration
-            │   │   └── src
-            │   │       ├── main.js
-            │   │       └── scss
-            │   │           └── base.scss
-            │   └── storefront
-            │       ├── dist
-            │       └── src
-            │           ├── main.js
-            │           └── scss
-            │               └── base.scss
-            ├── config
-            │   ├── routes.xml
-            │   └── services.xml
-            ├── public
-            │   ├── administration
-            │   └── storefront
-            └── views
-                ├── administration
-                ├── documents
-                └── storefront
-        ```
-    * We unified the twig template directory structure of the core, administration and storefront bundle. Storefront template are now stored in a sub directory named `storefront`. This has an effect on the previous includes and extends:
-        Before: 
-        `{% sw_extends '@Storefront/base.html.twig' %}`
-        After:
-        `{% sw_extends '@Storefront/storefront/base.html.twig' %}`
-    * We removed the corresponding public functions in the `Bundle.php`:
-        * `getClassName`
-        * `getViewPaths`
-        * `getAdministrationEntryPath`
-        * `getStorefrontEntryPath`
-        * `getConfigPath`
-        * `getStorefrontScriptPath`
-        * `getStorefrontStylePath`
-        * `getAdministrationStyles`
-        * `getAdministrationScripts`
-        * `getRoutesPath`
-        * `getServicesFilePath`
-    * We changed the accessibility of different internal `Bundle.php` functions
-        * `registerContainerFile` from `protected` to `private`
-        * `registerEvents` from `protected` to `private`
-        * `registerFilesystem` from `protected` to `private`
-        * `getContainerPrefix` from `protected` to `final public`
-* Storefront
-    * Changed `\Shopware\Storefront\Framework\Cache\CacheWarmer\CacheRouteWarmer` signatures
-    * Moved most of the seo module into the core. Only storefront(route) specific logic/extensions remain
-    * Added twig function `sw_csrf` for creating CSRF tokens
-    * Added `Storefront/Resources/config/packages/storefront.yaml` configuration
-    * Added `csrf` section to `storefront.yaml` configuration
-    * Added `\Shopware\Storefront\Controller\CsrfController` for creating CSRF tokens(only if `csrf` `mode` is set to `ajax` in `storefront.yaml` configuration)
-    * Added JS plugin for handling csrf token generation in native forms(only if `csrf` `mode` is set to `ajax`)
-    * Added `MetaInformation` struct to handle meta information in `pageLoader`
-    * Renamed the `breadcrumb` variable used in category seo url templates. It can now be access using `category.seoBreadcrumb` to align it with all other variables.
-* Elasticsearch
-    * The env variables `SHOPWARE_SES_*` were renamed to `SHOPWARE_ES_*`.
-        * You can set them with a parameter.yml too.
-
-**Removals**
-
-* Administration
-* Core
-    * When a sub entity is written or deleted, a written event is dispatched for the configured root entity. 
-        - Example for mapping entities: Writing a `product_category` entity now also dispatches a `product.written` and `category.written` event
-        - Example for simple sub entities: Writing a `product_price` entity now also dispatches a `product_category` event
-        - Example for nested sub entities: Writing a `order_delivery_position` entity now also dispatches a `order_delivery.written` and a `order.written` event
-    * Removed seoUrls extensions in `product` and `category`. Use `product/category.seoUrls` instead 
-    * Removed `shopware.api.api_browser.public` config value
-    * Removed `Bundle::getAdministrationEntryPath`
-    * Removed `Bundle::getStorefrontEntryPath`
-    * Removed `Bundle::getConfigPath`
-    * Removed `Bundle::getStorefrontScriptPath`
-    * Removed `Bundle::getViewPaths`
-    * Removed `Bundle::getRoutesPath`
-    * Removed `Bundle::getServicesFilePath`
-    * When a sub entity is written or deleted, a written event is dispatched for the configured root entity. 
-        - Example for mapping entities: Writing a `product_category` entity now also dispatches a `product.written` and `category.written` event
-        - Example for simple sub entities: Writing a `product_price` entity now also dispatches a `product_category` event
-        - Example for nested sub entities: Writing a `order_delivery_position` entity now also dispatches a `order_delivery.written` and a `order.written` event
-    * Dropped `additionalText` column of product entity, use `metaDescription` instead
-    * Removed `EntityExistence $existence` parameter from `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition::getDefaults` as it is not necessary anymore
-* Storefront
-    * Removed `\Shopware\Storefront\Framework\Cache\CacheWarmer\Navigation\NavigationRouteMessage`
-    * Removed `\Shopware\Storefront\Framework\Cache\CacheWarmer\Product\ProductRouteMessage`
-    * Removed `\Shopware\Storefront\Framework\Cache\CacheWarmer\CacheWarmerSender`
-    * Removed `\Shopware\Storefront\Framework\Cache\CacheWarmer\IteratorMessage`
-    * Removed `\Shopware\Storefront\Framework\Cache\CacheWarmer\IteratorMessageHandler`

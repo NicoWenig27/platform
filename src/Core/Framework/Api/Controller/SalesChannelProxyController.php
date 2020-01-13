@@ -2,18 +2,38 @@
 
 namespace Shopware\Core\Framework\Api\Controller;
 
+use Shopware\Core\Checkout\Cart\Cart;
+use Shopware\Core\Checkout\Cart\CartBehavior;
+use Shopware\Core\Checkout\Cart\CartPersisterInterface;
+use Shopware\Core\Checkout\Cart\CartRuleLoader;
+use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
+use Shopware\Core\Checkout\Cart\Processor;
+use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Framework\Api\Exception\InvalidSalesChannelIdException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Validation\EntityExists;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\Framework\Routing\SalesChannelRequestContextResolver;
 use Shopware\Core\Framework\Util\Random;
+use Shopware\Core\Framework\Validation\DataBag\DataBag;
+use Shopware\Core\Framework\Validation\DataValidationDefinition;
+use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
+use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
@@ -24,6 +44,25 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class SalesChannelProxyController extends AbstractController
 {
+    private const CUSTOMER_ID = SalesChannelContextService::CUSTOMER_ID;
+
+    private const SALES_CHANNEL_ID = 'salesChannelId';
+
+    /**
+     * @var DataValidator
+     */
+    protected $validator;
+
+    /**
+     * @var SalesChannelContextPersister
+     */
+    protected $contextPersister;
+
+    /**
+     * @var Processor
+     */
+    protected $processor;
+
     /**
      * @var KernelInterface
      */
@@ -39,14 +78,55 @@ class SalesChannelProxyController extends AbstractController
      */
     private $requestContextResolver;
 
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    /**
+     * @var SalesChannelContextServiceInterface
+     */
+    private $contextService;
+
+    /**
+     * @var CartService
+     */
+    private $cartService;
+
+    /**
+     * @var CartPersisterInterface
+     */
+    private $cartPersister;
+
+    /**
+     * @var CartRuleLoader
+     */
+    private $cartRuleLoader;
+
     public function __construct(
         KernelInterface $kernel,
         EntityRepositoryInterface $salesChannelRepository,
-        SalesChannelRequestContextResolver $requestContextResolver
+        DataValidator $validator,
+        SalesChannelContextPersister $contextPersister,
+        SalesChannelRequestContextResolver $requestContextResolver,
+        SalesChannelContextServiceInterface $contextService,
+        EventDispatcherInterface $eventDispatcher,
+        CartService $cartService,
+        CartPersisterInterface $cartPersister,
+        Processor $processor,
+        CartRuleLoader $cartRuleLoader
     ) {
         $this->kernel = $kernel;
         $this->salesChannelRepository = $salesChannelRepository;
+        $this->validator = $validator;
+        $this->contextPersister = $contextPersister;
         $this->requestContextResolver = $requestContextResolver;
+        $this->contextService = $contextService;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->cartService = $cartService;
+        $this->cartPersister = $cartPersister;
+        $this->processor = $processor;
+        $this->cartRuleLoader = $cartRuleLoader;
     }
 
     /**
@@ -57,31 +137,221 @@ class SalesChannelProxyController extends AbstractController
      */
     public function proxy(string $_path, string $salesChannelId, Request $request, Context $context): Response
     {
-        /** @var SalesChannelEntity|null $salesChannel */
-        $salesChannel = $this->salesChannelRepository->search(new Criteria([$salesChannelId]), $context)->get($salesChannelId);
+        $salesChannel = $this->fetchSalesChannel($salesChannelId, $context);
 
-        if (!$salesChannel) {
-            throw new InvalidSalesChannelIdException($salesChannelId);
+        $salesChannelApiRequest = $this->setUpSalesChannelApiRequest($_path, $salesChannelId, $request, $salesChannel);
+
+        return $this->wrapInSalesChannelApiRoute($salesChannelApiRequest, function () use ($request, $salesChannelId, $salesChannelApiRequest): Response {
+            $response = $this->kernel->handle($salesChannelApiRequest, HttpKernelInterface::SUB_REQUEST);
+            //Process after request handle
+            $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request);
+            $token = $salesChannelContext->getToken();
+
+            try {
+                $cart = $this->cartPersister->load($token, $salesChannelContext);
+                // Recalculate Cart with update prices & tax for live checkout
+                $this->recalculateCartWithPersist($cart, $salesChannelContext, false);
+            } catch (CartTokenNotFoundException $e) {
+                //Token is not a token Cart, continue process
+            }
+
+            return $response;
+        });
+    }
+
+    /**
+     * @Route("/api/v{version}/_proxy/switch-customer", name="api.proxy.switch-customer", methods={"PATCH"})
+     *
+     * @throws InconsistentCriteriaIdsException
+     * @throws InvalidSalesChannelIdException
+     * @throws MissingRequestParameterException
+     */
+    public function assignCustomer(Request $request, Context $context): Response
+    {
+        if (!$request->request->has(self::SALES_CHANNEL_ID)) {
+            throw new MissingRequestParameterException(self::SALES_CHANNEL_ID);
         }
 
-        $contextToken = $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
-        if (!$contextToken) {
-            $contextToken = Random::getAlphanumericString(32);
+        $salesChannelId = $request->request->get('salesChannelId');
+
+        if (!$request->request->has(self::CUSTOMER_ID)) {
+            throw new MissingRequestParameterException(self::CUSTOMER_ID);
         }
 
-        $server = array_merge($request->server->all(), ['REQUEST_URI' => '/sales-channel-api/' . $_path]);
-        $cloned = $request->duplicate(null, null, [], null, null, $server);
-        $cloned->headers->set(PlatformRequest::HEADER_ACCESS_KEY, $salesChannel->getAccessKey());
-        $cloned->headers->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $contextToken);
-        $cloned->attributes->set(PlatformRequest::ATTRIBUTE_OAUTH_CLIENT_ID, $salesChannel->getAccessKey());
+        $this->fetchSalesChannel($salesChannelId, $context);
+
+        $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request);
+
+        $this->updateCustomerToContext($request->get(self::CUSTOMER_ID), $salesChannelContext);
+
+        $response = new Response();
+        $response->setContent(json_encode([
+            PlatformRequest::HEADER_CONTEXT_TOKEN => $salesChannelContext->getToken(),
+        ]));
+
+        return $response;
+    }
+
+    private function wrapInSalesChannelApiRoute(Request $request, callable $call): Response
+    {
+        /** @var RequestStack $requestStack */
+        $requestStack = $this->get('request_stack');
+
+        $requestStackBackup = $this->clearRequestStackWithBackup($requestStack);
+        $requestStack->push($request);
+
+        try {
+            return $call();
+        } finally {
+            $this->restoreRequestStack($requestStack, $requestStackBackup);
+        }
+    }
+
+    private function setUpSalesChannelApiRequest(string $path, string $salesChannelId, Request $request, SalesChannelEntity $salesChannel): Request
+    {
+        $contextToken = $this->getContextToken($request);
+
+        $server = array_merge($request->server->all(), ['REQUEST_URI' => '/sales-channel-api/' . $path]);
+        $subrequest = $request->duplicate(null, null, [], null, null, $server);
+
+        $subrequest->headers->set(PlatformRequest::HEADER_ACCESS_KEY, $salesChannel->getAccessKey());
+        $subrequest->headers->set(PlatformRequest::HEADER_CONTEXT_TOKEN, $contextToken);
+        $subrequest->attributes->set(PlatformRequest::ATTRIBUTE_OAUTH_CLIENT_ID, $salesChannel->getAccessKey());
 
         $this->requestContextResolver->handleSalesChannelContext(
-            $request,
-            $cloned,
+            $subrequest,
             $salesChannelId,
             $contextToken
         );
 
-        return $this->kernel->handle($cloned, HttpKernelInterface::SUB_REQUEST);
+        return $subrequest;
+    }
+
+    /**
+     * @throws InconsistentCriteriaIdsException
+     * @throws InvalidSalesChannelIdException
+     */
+    private function fetchSalesChannel(string $salesChannelId, Context $context): SalesChannelEntity
+    {
+        /** @var SalesChannelEntity|null $salesChannel */
+        $salesChannel = $this->salesChannelRepository->search(new Criteria([$salesChannelId]), $context)->get($salesChannelId);
+
+        if ($salesChannel === null) {
+            throw new InvalidSalesChannelIdException($salesChannelId);
+        }
+
+        return $salesChannel;
+    }
+
+    private function getContextToken(Request $request): string
+    {
+        $contextToken = $request->headers->get(PlatformRequest::HEADER_CONTEXT_TOKEN);
+
+        if (!$contextToken) {
+            $contextToken = Random::getAlphanumericString(32);
+        }
+
+        return (string) $contextToken;
+    }
+
+    private function clearRequestStackWithBackup(RequestStack $requestStack): array
+    {
+        $requestStackBackup = [];
+
+        while ($requestStack->getMasterRequest()) {
+            $requestStackBackup[] = $requestStack->pop();
+        }
+
+        return $requestStackBackup;
+    }
+
+    private function restoreRequestStack(RequestStack $requestStack, array $requestStackBackup): void
+    {
+        $this->clearRequestStackWithBackup($requestStack);
+
+        foreach ($requestStackBackup as $backedUpRequest) {
+            $requestStack->push($backedUpRequest);
+        }
+    }
+
+    private function fetchSalesChannelContext(string $salesChannelId, Request $request): SalesChannelContext
+    {
+        $contextToken = $this->getContextToken($request);
+
+        $salesChannelContext = $this->contextService->get(
+            $salesChannelId,
+            $contextToken,
+            $request->headers->get(PlatformRequest::HEADER_LANGUAGE_ID)
+        );
+
+        return $salesChannelContext;
+    }
+
+    private function recalculateCartWithPersist(Cart $cart, SalesChannelContext $context, bool $persist = false): Cart
+    {
+        $behavior = (new CartBehavior())
+            ->setIsRecalculation(true);
+
+        // all prices are now prepared for calculation -  starts the cart calculation
+        $cart = $this->processor->process($cart, $context, $behavior);
+
+        // validate cart against the context rules
+        $validated = $this->cartRuleLoader->loadByCart($context, $cart, $behavior);
+
+        $cart = $validated->getCart();
+
+        if ($persist) {
+            $this->cartPersister->save($cart, $context);
+        }
+
+        //Set Cart to Cache
+        $this->cartService->setCart($cart);
+
+        return $cart;
+    }
+
+    private function updateCustomerToContext(string $customerId, SalesChannelContext $context): void
+    {
+        $data = new DataBag();
+        $data->set(self::CUSTOMER_ID, $customerId);
+
+        $definition = new DataValidationDefinition('context_switch');
+        $parameters = $data->only(
+            self::CUSTOMER_ID
+        );
+
+        $customerCriteria = new Criteria();
+        $customerCriteria->addFilter(new EqualsFilter('customer.id', $parameters[self::CUSTOMER_ID]));
+
+        $definition
+            ->add(self::CUSTOMER_ID, new EntityExists(['entity' => 'customer', 'context' => $context->getContext(), 'criteria' => $customerCriteria]))
+        ;
+
+        $this->validator->validate($parameters, $definition);
+
+        $isSwitchNewCustomer = true;
+        if ($context->getCustomer()) {
+            // Check if customer switch to another customer or not
+            $isSwitchNewCustomer = $context->getCustomer()->getId() !== $parameters[self::CUSTOMER_ID];
+        }
+
+        if (!$isSwitchNewCustomer) {
+            return;
+        }
+
+        $this->contextPersister->save(
+            $context->getToken(),
+            [
+                'customerId' => $parameters[self::CUSTOMER_ID],
+                'billingAddressId' => null,
+                'shippingAddressId' => null,
+                'shippingMethodId' => null,
+                'paymentMethodId' => null,
+                'languageId' => null,
+                'currencyId' => null,
+            ]
+        );
+        $event = new SalesChannelContextSwitchEvent($context, $data);
+        $this->eventDispatcher->dispatch($event);
     }
 }

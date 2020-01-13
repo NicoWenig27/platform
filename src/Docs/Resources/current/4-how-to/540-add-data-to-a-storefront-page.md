@@ -42,9 +42,9 @@ The next thing we need to do is register our subscriber in the DI-Container and 
 
 ```xml
 <!-- in Resources/config/services.xml -->
-        <service id="Swag\ExtendPage\Storefront\Subscriber\FooterSubscriber">
-            <tag name="kernel.event_subscriber"/>
-        </service>
+<service id="Swag\ExtendPage\Storefront\Subscriber\FooterSubscriber">
+    <tag name="kernel.event_subscriber"/>
+</service>
 ```
 
 ## Add data to the page
@@ -52,6 +52,16 @@ The next thing we need to do is register our subscriber in the DI-Container and 
 Now that we have registered our Subscriber to the right event we first need to fetch the additional data we need and then add it as an extension to the pagelet:
 
 ```php
+    /**
+     * @var EntityRepositoryInterface
+     */
+    private $productRepository;
+
+    public function __construct(EntityRepositoryInterface $productRepository)
+    {
+        $this->productRepository = $productRepository;
+    }
+
     public function addActiveProductCount(FooterPageletLoadedEvent $event): void
     {
         $criteria = new Criteria();
@@ -68,6 +78,16 @@ Now that we have registered our Subscriber to the right event we first need to f
         $event->getPagelet()->addExtension('product_count', $productCountResult);
     }
 ```
+
+and we have to adjust our service definition to inject the product repository:
+
+```xml
+<service id="Swag\ExtendPage\Storefront\Subscriber\FooterSubscriber">
+    <argument type="service" id="product.repository"/>
+    <tag name="kernel.event_subscriber"/>
+</service>
+```
+
 
 The whole subscriber now looks like this:
 
@@ -121,6 +141,22 @@ class FooterSubscriber implements EventSubscriberInterface
 }
 ```
 
+and the services.xml looks like:
+
+```xml
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="Swag\ExtendPage\Storefront\Subscriber\FooterSubscriber">
+            <argument type="service" id="product.repository"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+    </services>
+</container>
+```
+
 ## Displaying the data in the storefront
 
 To display the additional data we need to override the footer template and render the data.
@@ -129,7 +165,7 @@ You can find detailed information on how to extend templates and override blocks
 For our case we extend the footer template and add a new column to the navigation block:
 
 ```twig
-<!-- in Resources/views/layout/footer/footer.html.twig -->
+<!-- in Resources/views/storefront/layout/footer/footer.html.twig -->
 {% sw_extends '@Storefront/storefront/layout/footer/footer.html.twig' %}
 
 {% block layout_footer_navigation_columns %}

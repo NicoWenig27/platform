@@ -10,6 +10,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PluginCreateCommand extends Command
 {
+    protected static $defaultName = 'plugin:create';
+
     private $composerTemplate = <<<EOL
 {
   "name": "swag/plugin-skeleton",
@@ -90,7 +92,7 @@ EOL;
      */
     protected function configure(): void
     {
-        $this->setName('plugin:create')
+        $this
             ->addArgument('name', InputArgument::REQUIRED)
             ->addOption('create-config', 'c', InputOption::VALUE_NONE, 'Create config.xml')
             ->setDescription('Creates a plugin skeleton');
@@ -99,7 +101,7 @@ EOL;
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $name = $input->getArgument('name');
         $name = ucfirst($name);
@@ -143,6 +145,6 @@ EOL;
             file_put_contents($configXmlFile, $configXml);
         }
 
-        return null;
+        return 0;
     }
 }

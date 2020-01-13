@@ -1,5 +1,7 @@
 {% block element_product_slider %}
-    {%  set sliderConfig = element.fieldConfig.elements %}
+    {% if not sliderConfig %}
+        {% set sliderConfig = element.fieldConfig.elements %}
+    {% endif %}
 
     <div class="cms-element-{{ element.type }}{% if sliderConfig.displayMode.value == "standard" and sliderConfig.verticalAlign.value %} has-vertical-alignment{% endif %}">
         {% block element_product_slider_alignment %}
@@ -23,7 +25,7 @@
                     {% block element_product_slider_title %}
                         {% if sliderConfig.title.value %}
                             <div class="cms-element-title">
-                                <p>{{ sliderConfig.title.value }}</p>
+                                <p class="cms-element-title-paragraph">{{ sliderConfig.title.value }}</p>
                             </div>
                         {% endif %}
                     {% endblock %}

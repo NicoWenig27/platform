@@ -6,13 +6,13 @@ use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Snippet\Files\SnippetFileCollection;
-use Shopware\Core\Framework\Snippet\Files\SnippetFileInterface;
-use Shopware\Core\Framework\Snippet\Filter\SnippetFilterFactory;
-use Shopware\Core\Framework\Snippet\SnippetService;
 use Shopware\Core\Framework\Test\Snippet\Mock\MockSnippetFile;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Snippet\Files\SnippetFileCollection;
+use Shopware\Core\System\Snippet\Files\SnippetFileInterface;
+use Shopware\Core\System\Snippet\Filter\SnippetFilterFactory;
+use Shopware\Core\System\Snippet\SnippetService;
 use Symfony\Component\Translation\MessageCatalogue;
 use Symfony\Component\Translation\MessageCatalogueInterface;
 
@@ -384,10 +384,12 @@ json
         foreach ($result['data']['foo.bar'] as $snippetSetData) {
             if ($snippetSetData['setId'] === Uuid::fromBytesToHex($fooId)) {
                 static::assertSame('foo_bar', $snippetSetData['value']);
+
                 continue;
             }
             if ($snippetSetData['setId'] === Uuid::fromBytesToHex($barId)) {
                 static::assertSame('bar_baz', $snippetSetData['value']);
+
                 continue;
             }
 

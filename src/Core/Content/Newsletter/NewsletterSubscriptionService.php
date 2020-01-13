@@ -117,7 +117,7 @@ class NewsletterSubscriptionService implements NewsletterSubscriptionServiceInte
 
         $data = $this->completeData($data, $context);
 
-        $this->newsletterRecipientRepository->upsert([$data], $context->getContext());
+        $this->newsletterRecipientRepository->create([$data], $context->getContext());
 
         $recipient = $this->getNewsletterRecipient('email', $data['email'], $context->getContext());
 
@@ -206,7 +206,7 @@ class NewsletterSubscriptionService implements NewsletterSubscriptionServiceInte
     private function getUpdateValidator(): DataValidationDefinition
     {
         $definition = new DataValidationDefinition('newsletter_recipient.update');
-        $definition->add('email', new isNull())
+        $definition->add('email', new IsNull())
             ->add('id', new NotBlank());
 
         return $definition;
@@ -297,7 +297,7 @@ class NewsletterSubscriptionService implements NewsletterSubscriptionServiceInte
                 hash('sha1', $data['email']),
                 $data['hash'],
             ],
-            '/newsletter/subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%'
+            '/newsletter-subscribe?em=%%HASHEDEMAIL%%&hash=%%SUBSCRIBEHASH%%'
         );
 
         return $url;

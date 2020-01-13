@@ -2,43 +2,43 @@ const { Directive } = Shopware;
 const { types } = Shopware.Utils;
 
 /**
- * An object representing the current drag element and config.
- * @type {?{ el: HTMLElement, dragConfig: DragConfig }} currentDrag
+ * @description An object representing the current drag element and config.
+ * @type {?{ el: HTMLElement, dragConfig: DragConfig }}
  */
 let currentDrag = null;
 
 /**
- * An object representing the current drop zone element and config.
- * @type {?{ el: HTMLElement, dropConfig: DropConfig }} currentDrop
+ * @description An object representing the current drop zone element and config.
+ * @type {?{ el: HTMLElement, dropConfig: DropConfig }}
  */
 let currentDrop = null;
 
 /**
- * The proxy element which is used to display the moved element.
+ * @description The proxy element which is used to display the moved element.
  * @type {?(HTMLElement|Node)}
  */
 let dragElement = null;
 
 /**
- * The x offset of the mouse position inside the dragged element.
+ * @description The x offset of the mouse position inside the dragged element.
  * @type {number}
  */
 let dragMouseOffsetX = 0;
 
 /**
- * The y offset of the mouse position inside the dragged element.
+ * @description The y offset of the mouse position inside the dragged element.
  * @type {number}
  */
 let dragMouseOffsetY = 0;
 
 /**
- * The timeout managing the delayed drag start.
+ * @description The timeout managing the delayed drag start.
  * @type {?number}
  */
 let delayTimeout = null;
 
 /**
- * A registry of all drop zones.
+ * @description A registry of all drop zones.
  * @type {Array}
  */
 const dropZones = [];
@@ -385,7 +385,8 @@ function validateDrag() {
 
 function mergeConfigs(defaultConfig, binding) {
     const mergedConfig = Object.assign({}, defaultConfig);
-    if (types.isObject(binding.value) && types.isObject(binding.value.data)) {
+
+    if (types.isObject(binding.value)) {
         Object.assign(mergedConfig, binding.value);
     } else {
         Object.assign(mergedConfig, { data: binding.value });

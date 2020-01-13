@@ -14,11 +14,11 @@ use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\ProductStreamDefinition;
 use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Content\Rule\RuleDefinition;
-use Shopware\Core\Framework\Console\ShopwareStyle;
+use Shopware\Core\Framework\Adapter\Console\ShopwareStyle;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\CustomField\Aggregate\CustomFieldSet\CustomFieldSetDefinition;
 use Shopware\Core\Framework\Demodata\DemodataRequest;
 use Shopware\Core\Framework\Demodata\DemodataService;
+use Shopware\Core\System\CustomField\Aggregate\CustomFieldSet\CustomFieldSetDefinition;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -26,6 +26,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class DemodataCommand extends Command
 {
+    protected static $defaultName = 'framework:demodata';
+
     /**
      * @var DemodataService
      */
@@ -45,7 +47,6 @@ class DemodataCommand extends Command
 
     protected function configure(): void
     {
-        $this->setName('framework:demodata');
         $this->addOption('products', 'p', InputOption::VALUE_REQUIRED, 'Product count', 60);
         $this->addOption('categories', 'c', InputOption::VALUE_REQUIRED, 'Category count', 7);
         $this->addOption('orders', 'o', InputOption::VALUE_REQUIRED, 'Order count', 60);
@@ -72,12 +73,12 @@ class DemodataCommand extends Command
         $this->addOption('media-attributes', null, InputOption::VALUE_REQUIRED, 'Media attribute count');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if ($this->kernelEnv !== 'prod') {
             $output->writeln('Demo data command should only be used in production environment. You can provide the environment as follow `APP_ENV=prod framework:demodata`');
 
-            return null;
+            return 0;
         }
 
         $io = new ShopwareStyle($input, $output);
@@ -114,7 +115,7 @@ class DemodataCommand extends Command
             $demoContext->getTimings()
         );
 
-        return null;
+        return 0;
     }
 
     private function getCustomFieldOptions(InputInterface $input): array

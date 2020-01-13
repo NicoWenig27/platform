@@ -8,6 +8,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\DefinitionNotFoundException;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineState\StateMachineStateDefinition;
 use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionEntity;
@@ -110,7 +111,7 @@ class StateMachineActionController extends AbstractController
         string $transition
     ): Response {
         $stateFieldName = $request->query->get('stateFieldName', 'stateId');
-        $toPlace = $this->stateMachineRegistry->transition(
+        $stateMachineStateCollection = $this->stateMachineRegistry->transition(
             new Transition(
                 $entityName,
                 $entityId,
@@ -121,7 +122,8 @@ class StateMachineActionController extends AbstractController
         );
 
         return $responseFactory->createDetailResponse(
-            $toPlace,
+            new Criteria(),
+            $stateMachineStateCollection->get('toPlace'),
             $this->definitionInstanceRegistry->get(StateMachineStateDefinition::class),
             $request,
             $context

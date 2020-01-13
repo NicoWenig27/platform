@@ -111,7 +111,7 @@ This way you'll eventually find the file `<platform root>/src/Storefront/Resourc
 for the detail page. That's it, you've found the right file and now know the path to it.
 
 Time for the next step, recreate this path in your plugin's `views` directory, so it looks like this:
-`<plugin root>/src/Resources/views/page/product-detail/index.html.twig`
+`<plugin root>/src/Resources/views/storefront/page/product-detail/index.html.twig`
 
 You've already got the template file, now make it extend from the original one.
 This is done using our custom Twig parser `sw_extends` to extend from the default file. It will also need the path to the original file.
@@ -341,6 +341,7 @@ it into a form element.
 This form has to add an line item to the cart by using the `frontend.checkout.line-item.add` API route for it. A line item is just a raw item in the cart, whatever that means.
 You need to recognize the `Bundle` line items later in the process, so also a `type` has to be submitted.
 Since you want your button to also open the off canvas cart, you have to add the `OffCanvasCart-Plugin` by adding the data attribute `data-add-to-cart` to your form element.
+To protect this form with CSRF-Protection you have to add `data-form-csrf-handler` data attribute to add the `Csrf-Plugin` and use the `sw_csrf` twig-function to generate a csrf-token for the given route name.
 
 Here's the example code, it will be explained afterwards
 ```twig
@@ -348,6 +349,7 @@ Here's the example code, it will be explained afterwards
     <form action="{{ path('frontend.checkout.line-item.add') }}"
         method="post"
         class="buy-widget js-add-to-cart"
+        data-form-csrf-handler="true"
         data-add-to-cart="true">
         <div class="form-row buy-widget-container">
             <button class="btn btn-primary btn-block buy-widget-submit" style="margin-top: 10px;">
@@ -359,6 +361,8 @@ Here's the example code, it will be explained afterwards
             <input type="hidden" name="lineItems[{{ bundle.id }}][quantity]" value="1">
             <input type="hidden" name="lineItems[{{ bundle.id }}][referencedId]" value="{{ bundle.id }}">
             <input type="hidden" name="redirectTo" value="frontend.cart.offcanvas"/>
+
+            {{ sw_csrf('frontend.checkout.line-item.add') }}
         </div>
     </form>
 </div>
@@ -453,7 +457,7 @@ It's not that much of a deal though, so don't worry.
 #### Adding SnippetFiles
 
 Adding snippets via plugins works by registering services via the DI container tag `shopware.snippet.file`.
-Those services implement the `Shopware\Core\Framework\Snippet\Files\SnippetFileInterface` interface, which needs five methods to be implemented:
+Those services implement the `Shopware\Core\System\Snippet\Files\SnippetFileInterface` interface, which needs five methods to be implemented:
 - `getName`: Return the name of the snippet file as a string here. Using this name, you can access the translations later. By default, you can return `storefront.en-GB` here.
 - `getPath`: Each SnippetFile class has to point to a `.json` file, which actually contains the translations. Return the path to this file here.
 - `getIso`: Return the ISO string of the supported locale here. This is important, because the `Translator` collects every snippet file with this locale and merges them to generate the snippet catalogue used by the storefront. 
@@ -471,7 +475,7 @@ Having implemented all methods mentioned above, your `SnippetFile_en_GB.php` sho
 
 namespace Swag\BundleExample\Resources\snippet\en_GB;
 
-use Shopware\Core\Framework\Snippet\Files\SnippetFileInterface;
+use Shopware\Core\System\Snippet\Files\SnippetFileInterface;
 
 class SnippetFile_en_GB implements SnippetFileInterface
 {

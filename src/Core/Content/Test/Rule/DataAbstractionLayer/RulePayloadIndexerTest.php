@@ -9,12 +9,14 @@ use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Migration\MigrationCollection;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\ActivateContext;
 use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
 use Shopware\Core\Framework\Plugin\Context\InstallContext;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 use Shopware\Core\Framework\Plugin\Context\UpdateContext;
+use Shopware\Core\Framework\Plugin\Event\PluginLifecycleEvent;
 use Shopware\Core\Framework\Plugin\Event\PluginPostActivateEvent;
 use Shopware\Core\Framework\Plugin\Event\PluginPostDeactivateEvent;
 use Shopware\Core\Framework\Plugin\Event\PluginPostInstallEvent;
@@ -422,7 +424,7 @@ class RulePayloadIndexerTest extends TestCase
     /**
      * @dataProvider dataProviderForTestPostEventNullsPayload
      */
-    public function testPostEventNullsPayload(Plugin\Event\PluginLifecycleEvent $event): void
+    public function testPostEventNullsPayload(PluginLifecycleEvent $event): void
     {
         $payload = serialize(new AndRule());
 
@@ -458,11 +460,11 @@ class RulePayloadIndexerTest extends TestCase
         $rulePlugin = new RulePlugin(false, '');
 
         return [
-            [new PluginPostInstallEvent($plugin, new InstallContext($rulePlugin, $context, '', ''))],
-            [new PluginPostActivateEvent($plugin, new ActivateContext($rulePlugin, $context, '', ''))],
-            [new PluginPostUpdateEvent($plugin, new UpdateContext($rulePlugin, $context, '', '', ''))],
-            [new PluginPostDeactivateEvent($plugin, new DeactivateContext($rulePlugin, $context, '', ''))],
-            [new PluginPostUninstallEvent($plugin, new UninstallContext($rulePlugin, $context, '', '', true))],
+            [new PluginPostInstallEvent($plugin, new InstallContext($rulePlugin, $context, '', '', $this->createMock(MigrationCollection::class)))],
+            [new PluginPostActivateEvent($plugin, new ActivateContext($rulePlugin, $context, '', '', $this->createMock(MigrationCollection::class)))],
+            [new PluginPostUpdateEvent($plugin, new UpdateContext($rulePlugin, $context, '', '', $this->createMock(MigrationCollection::class), ''))],
+            [new PluginPostDeactivateEvent($plugin, new DeactivateContext($rulePlugin, $context, '', '', $this->createMock(MigrationCollection::class)))],
+            [new PluginPostUninstallEvent($plugin, new UninstallContext($rulePlugin, $context, '', '', $this->createMock(MigrationCollection::class), true))],
         ];
     }
 }

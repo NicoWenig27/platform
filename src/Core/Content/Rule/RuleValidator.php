@@ -12,7 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\InsertCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\UpdateCommand;
-use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommandInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\WriteException;
 use Shopware\Core\Framework\Rule\Collector\RuleConditionRegistry;
@@ -79,11 +79,13 @@ class RuleValidator implements EventSubscriberInterface
 
             if ($command instanceof InsertCommand) {
                 $this->validateCondition(null, $command, $writeException);
+
                 continue;
             }
 
             if ($command instanceof UpdateCommand) {
                 $updateQueue[] = $command;
+
                 continue;
             }
 
@@ -97,7 +99,7 @@ class RuleValidator implements EventSubscriberInterface
 
     private function validateCondition(
         ?RuleConditionEntity $condition,
-        WriteCommandInterface $command,
+        WriteCommand $command,
         WriteException $writeException
     ): void {
         $payload = $command->getPayload();
@@ -180,7 +182,7 @@ class RuleValidator implements EventSubscriberInterface
             );
         }
 
-        foreach ($payload as $fieldName => $value) {
+        foreach ($payload as $fieldName => $_value) {
             if (!array_key_exists($fieldName, $fieldValidations) && $fieldName !== '_name') {
                 $violationList->add(
                     $this->buildViolation(
@@ -229,7 +231,7 @@ class RuleValidator implements EventSubscriberInterface
         $root = null,
         ?string $propertyPath = null,
         $invalidValue = null,
-        $code = null
+        ?string $code = null
     ): ConstraintViolationInterface {
         return new ConstraintViolation(
             str_replace(array_keys($parameters), array_values($parameters), $messageTemplate),
@@ -238,10 +240,8 @@ class RuleValidator implements EventSubscriberInterface
             $root,
             $propertyPath,
             $invalidValue,
-            $plural = null,
-            $code,
-            $constraint = null,
-            $cause = null
+            null,
+            $code
         );
     }
 }

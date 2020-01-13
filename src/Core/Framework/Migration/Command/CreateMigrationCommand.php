@@ -13,6 +13,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class CreateMigrationCommand extends Command
 {
+    protected static $defaultName = 'database:create-migration';
+
     /**
      * @var string
      */
@@ -38,7 +40,7 @@ class CreateMigrationCommand extends Command
 
     protected function configure(): void
     {
-        $this->setName('database:create-migration')
+        $this
             ->addArgument('directory', InputArgument::OPTIONAL)
             ->addArgument('namespace', InputArgument::OPTIONAL)
             ->addOption('plugin', 'p', InputOption::VALUE_REQUIRED)
@@ -50,7 +52,7 @@ class CreateMigrationCommand extends Command
             );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $output->writeln('Creating migration...');
         $directory = (string) $input->getArgument('directory');
@@ -73,7 +75,7 @@ class CreateMigrationCommand extends Command
         $pluginName = $input->getOption('plugin');
         if ($pluginName) {
             $pluginBundles = array_filter($this->kernelPluginCollection->all(), function (Plugin $value) use ($pluginName) {
-                return mb_strpos($value->getName(), $pluginName) === 0;
+                return (int) (mb_strpos($value->getName(), $pluginName) === 0);
             });
 
             if (count($pluginBundles) === 0) {
@@ -90,7 +92,6 @@ class CreateMigrationCommand extends Command
                 );
             }
 
-            /** @var Plugin $pluginBundle */
             $pluginBundle = array_values($pluginBundles)[0];
 
             $directory = $pluginBundle->getMigrationPath();
@@ -110,7 +111,7 @@ class CreateMigrationCommand extends Command
 
         $this->createMigrationFile($name, $output, $directory, $namespace);
 
-        return null;
+        return 0;
     }
 
     private function createMigrationFile(string $name, OutputInterface $output, string $directory, string $namespace): void

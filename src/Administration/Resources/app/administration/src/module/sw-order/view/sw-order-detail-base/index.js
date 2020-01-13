@@ -145,9 +145,16 @@ Component.register('sw-order-detail-base', {
                 .addAssociation('lineItems')
                 .addAssociation('currency')
                 .addAssociation('orderCustomer')
-                .addAssociation('language')
-                .addAssociation('salesChannel')
+                .addAssociation('language');
+
+            criteria
+                .getAssociation('salesChannel')
+                .getAssociation('mailTemplates')
+                .addAssociation('mailTemplateType');
+
+            criteria
                 .addAssociation('addresses.country')
+                .addAssociation('addresses.countryState')
                 .addAssociation('deliveries.shippingMethod')
                 .addAssociation('deliveries.shippingOrderAddress')
                 .addAssociation('transactions.paymentMethod')

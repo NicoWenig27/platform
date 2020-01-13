@@ -99,7 +99,7 @@ class Download
                 return -1;
             }
 
-            $partFile->fwrite($str);
+            $writtenBytes = $partFile->fwrite($str);
 
             if ($me->shouldHalt()) {
                 $isHalted = true;
@@ -107,7 +107,7 @@ class Download
                 return -1;
             }
 
-            return mb_strlen($str);
+            return $writtenBytes;
         });
 
         $result = curl_exec($ch);
@@ -158,6 +158,7 @@ class Download
         if (sha1_file($partFile->getPathname()) !== $hash) {
             // try to delete invalid file so a valid one can be downloaded
             @unlink($partFile->getPathname());
+
             throw new UpdateFailedException('Hash mismatch');
         }
 

@@ -1,11 +1,12 @@
 import template from './sw-first-run-wizard-shopware-domain.html.twig';
+import './sw-first-run-wizard-shopware-domain.scss';
 
 const { Component } = Shopware;
 
 Component.register('sw-first-run-wizard-shopware-domain', {
     template,
 
-    inject: ['firstRunWizardService', 'addNextCallback'],
+    inject: ['firstRunWizardService'],
 
     data() {
         return {
@@ -14,7 +15,8 @@ Component.register('sw-first-run-wizard-shopware-domain', {
             createShopDomain: false,
             newShopDomain: '',
             testEnvironment: false,
-            domainError: null
+            domainError: null,
+            isLoading: false
         };
     },
 
@@ -23,6 +25,16 @@ Component.register('sw-first-run-wizard-shopware-domain', {
             return this.createShopDomain
                 ? this.newShopDomain
                 : this.selectedShopDomain;
+        },
+
+        isDomainEmpty() {
+            return this.domainToVerify.length <= 0;
+        }
+    },
+
+    watch: {
+        isDomainEmpty() {
+            this.updateButtons();
         }
     },
 
@@ -32,7 +44,11 @@ Component.register('sw-first-run-wizard-shopware-domain', {
 
     methods: {
         createdComponent() {
-            const language = Shopware.State.get('adminLocale').currentLocale;
+            this.isLoading = true;
+            this.updateButtons();
+            this.setTitle();
+
+            const language = Shopware.State.get('session').currentLocale;
 
             this.firstRunWizardService.getLicenseDomains({
                 language
@@ -45,9 +61,39 @@ Component.register('sw-first-run-wizard-shopware-domain', {
 
                 this.licenceDomains = items;
                 this.selectedShopDomain = items[0].domain;
+            }).finally(() => {
+                if (this.licenceDomains.length <= 0) {
+                    this.createShopDomain = true;
+                }
+                this.isLoading = false;
             });
+        },
 
-            this.addNextCallback(this.verifyDomain);
+        setTitle() {
+            this.$emit('frw-set-title', this.$tc('sw-first-run-wizard.shopwareAccount.modalTitle'));
+        },
+
+        updateButtons() {
+            const buttonConfig = [
+                {
+                    key: 'back',
+                    label: this.$tc('sw-first-run-wizard.general.buttonBack'),
+                    position: 'left',
+                    variant: null,
+                    action: 'sw.first.run.wizard.index.shopware.account',
+                    disabled: false
+                },
+                {
+                    key: 'next',
+                    label: this.$tc('sw-first-run-wizard.general.buttonNext'),
+                    position: 'right',
+                    variant: 'primary',
+                    action: this.verifyDomain.bind(this),
+                    disabled: this.isDomainEmpty
+                }
+            ];
+
+            this.$emit('buttons-update', buttonConfig);
         },
 
         verifyDomain() {
@@ -60,6 +106,7 @@ Component.register('sw-first-run-wizard-shopware-domain', {
                 domain,
                 testEnvironment
             }).then(() => {
+                this.$emit('frw-redirect', 'sw.first.run.wizard.index.finish');
                 return false;
             }).catch((error) => {
                 const msg = error.response.data.errors.pop();

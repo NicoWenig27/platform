@@ -4,8 +4,8 @@ namespace Shopware\Core\Framework\Test\Api\Sync;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\Api\Converter\ConverterRegistry;
-use Shopware\Core\Framework\Api\Converter\ConverterService;
 use Shopware\Core\Framework\Api\Sync\SyncBehavior;
 use Shopware\Core\Framework\Api\Sync\SyncOperation;
 use Shopware\Core\Framework\Api\Sync\SyncOperationResult;
@@ -174,6 +174,8 @@ class SyncServiceTest extends TestCase
 
         $result = $this->service->sync([$operation], Context::createDefaultContext(), new SyncBehavior(true));
 
+        $this->connection->beginTransaction();
+
         static::assertFalse($result->isSuccess());
 
         $written = $this->connection->fetchAll(
@@ -193,8 +195,6 @@ class SyncServiceTest extends TestCase
         $written = $operation->get(1);
         static::assertEmpty($written['entities']);
         static::assertNotEmpty($written['errors']);
-
-        $this->connection->beginTransaction();
     }
 
     public function testFailOnErrorWithMultipleOperations(): void
@@ -252,8 +252,6 @@ class SyncServiceTest extends TestCase
 
     public function testWriteDeprecatedFieldLeadsToError(): void
     {
-        $this->connection->rollBack();
-
         $operations = [
             new SyncOperation('write', 'deprecated', SyncOperation::ACTION_UPSERT, [
                 ['id' => Uuid::randomHex(), 'price' => 10],
@@ -276,7 +274,7 @@ class SyncServiceTest extends TestCase
             ->with($deprecatedDefinition->getEntityName())
             ->willReturn($repoMock);
 
-        $converterService = new ConverterService(
+        $apiVersionConverter = new ApiVersionConverter(
             new ConverterRegistry([
                 new DeprecatedConverter(),
             ])
@@ -285,7 +283,7 @@ class SyncServiceTest extends TestCase
         $syncService = new SyncService(
             $definitionRegistry,
             $this->getContainer()->get(Connection::class),
-            $converterService
+            $apiVersionConverter
         );
 
         $result = $syncService->sync($operations, Context::createDefaultContext(), new SyncBehavior(true));
@@ -301,14 +299,10 @@ class SyncServiceTest extends TestCase
         $error = $errors[0];
         static::assertEquals('FRAMEWORK__WRITE_REMOVED_FIELD', $error['code']);
         static::assertEquals('/0/price', $error['source']['pointer']);
-
-        $this->connection->beginTransaction();
     }
 
     public function testWriteDeprecatedEntityLeadsToError(): void
     {
-        $this->connection->rollBack();
-
         $operations = [
             new SyncOperation('write', 'deprecated_entity', SyncOperation::ACTION_UPSERT, [
                 ['id' => Uuid::randomHex(), 'price' => 10],
@@ -329,7 +323,7 @@ class SyncServiceTest extends TestCase
             ->with($deprecatedEntityDefinition->getEntityName())
             ->willReturn($repositoryMock);
 
-        $converterService = new ConverterService(
+        $apiVersionConverter = new ApiVersionConverter(
             new ConverterRegistry([
                 new DeprecatedConverter(),
             ])
@@ -338,7 +332,7 @@ class SyncServiceTest extends TestCase
         $syncService = new SyncService(
             $definitionRegistry,
             $this->getContainer()->get(Connection::class),
-            $converterService
+            $apiVersionConverter
         );
         $result = $syncService->sync($operations, Context::createDefaultContext(), new SyncBehavior(true));
 
@@ -352,13 +346,10 @@ class SyncServiceTest extends TestCase
         $error = $errors[0];
         static::assertEquals('/0', $error['source']['pointer']);
         static::assertEquals('You entity deprecated_entity is not available or deprecated in api version 2.', $error['detail']);
-
-        $this->connection->beginTransaction();
     }
 
     public function testDeprecatedPayloadIsConverted(): void
     {
-        $this->connection->rollBack();
         $id = Uuid::randomHex();
 
         $operations = [
@@ -391,7 +382,7 @@ class SyncServiceTest extends TestCase
             ->with($deprecatedDefinition->getEntityName())
             ->willReturn($repoMock);
 
-        $converterService = new ConverterService(
+        $versionConverter = new ApiVersionConverter(
             new ConverterRegistry([
                 new DeprecatedConverter(),
             ])
@@ -400,13 +391,11 @@ class SyncServiceTest extends TestCase
         $syncService = new SyncService(
             $definitionRegistry,
             $this->getContainer()->get(Connection::class),
-            $converterService
+            $versionConverter
         );
         $result = $syncService->sync($operations, Context::createDefaultContext(), new SyncBehavior(true));
 
         static::assertTrue($result->isSuccess(), print_r($result, true));
-
-        $this->connection->beginTransaction();
     }
 
     private function dummyEntityWrittenEvent(string $id): EntityWrittenContainerEvent

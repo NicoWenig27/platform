@@ -16,6 +16,7 @@ class TwigDateFormatTest extends TestCase
     public function testFallbackBehavior(): void
     {
         static::markTestSkipped();
+
         try {
             $this->getKernel()->handle(new Request([], [], [], [TwigDateRequestListener::TIMEZONE_COOKIE => 'Invalid']), HttpKernelInterface::MASTER_REQUEST, false);
         } catch (\Error $e) {
@@ -31,6 +32,7 @@ class TwigDateFormatTest extends TestCase
     {
         static::markTestSkipped();
         $timezone = 'Europe/Berlin';
+
         try {
             $this->getKernel()->handle(new Request([], [], [], [TwigDateRequestListener::TIMEZONE_COOKIE => $timezone]), HttpKernelInterface::MASTER_REQUEST, false);
         } catch (\Error $e) {
@@ -48,7 +50,7 @@ class TwigDateFormatTest extends TestCase
 
         $originalLoader = $twig->getLoader();
         $twig->setLoader(new ArrayLoader([
-            'test.html.twig' => "{{ date|localizeddate('short', 'short')}}",
+            'test.html.twig' => "{{ date|format_datetime('short', 'short')}}",
         ]));
         $output = $twig->render('test.html.twig', ['date' => $dateTime]);
         $twig->setLoader($originalLoader);

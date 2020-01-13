@@ -4,10 +4,10 @@ namespace Shopware\Administration\Controller;
 
 use Shopware\Administration\Snippet\SnippetFinderInterface;
 use Shopware\Core\Defaults;
+use Shopware\Core\Framework\Adapter\Twig\TemplateFinder;
 use Shopware\Core\Framework\FeatureFlag\FeatureConfig;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Shopware\Core\Framework\Store\Services\FirstRunWizardClient;
-use Shopware\Core\Framework\Twig\TemplateFinder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +40,7 @@ class AdministrationController extends AbstractController
 
     /**
      * @RouteScope(scopes={"administration"})
-     * @Route("/admin", name="administration.index", methods={"GET"})
+     * @Route("/admin", defaults={"auth_required"=false}, name="administration.index", methods={"GET"})
      */
     public function index(): Response
     {

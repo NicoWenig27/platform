@@ -7,7 +7,6 @@ use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\Delivery\DeliveryCalculator;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\Delivery;
-use Shopware\Core\Checkout\Cart\Delivery\Struct\DeliveryPosition;
 use Shopware\Core\Checkout\Cart\Delivery\Struct\ShippingLocation;
 use Shopware\Core\Checkout\Cart\LineItem\CartDataCollection;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
@@ -28,7 +27,6 @@ use Shopware\Core\Checkout\Shipping\Aggregate\ShippingMethodPrice\ShippingMethod
 use Shopware\Core\Checkout\Shipping\ShippingMethodEntity;
 use Shopware\Core\Checkout\Test\Cart\Common\TrueRule;
 use Shopware\Core\Checkout\Test\Payment\Handler\SyncTestPaymentHandler;
-use Shopware\Core\Content\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\Cart\ProductLineItemFactory;
 use Shopware\Core\Defaults;
@@ -44,6 +42,7 @@ use Shopware\Core\Framework\Test\TestCaseHelper\ExtensionHelper;
 use Shopware\Core\Framework\Test\TestCaseHelper\ReflectionHelper;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\DeliveryTime\DeliveryTimeEntity;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -95,19 +94,24 @@ class RecalculationServiceTest extends TestCase
 
     public function testPersistOrderAndConvertToCart(): void
     {
-        $cart = $this->generateDemoCart();
+        $parentProductId = Uuid::randomHex();
+        $childProductId = Uuid::randomHex();
+        $rootProductId = Uuid::randomHex();
 
-        $id1 = Uuid::randomHex();
-        $id2 = Uuid::randomHex();
+        // to test the sorting rootProductId has to be smaller than parentProductId as the default sorting would be by id
+        while (strcasecmp($parentProductId, $rootProductId) < 0) {
+            $rootProductId = Uuid::randomHex();
+        }
 
-        $cart = $this->addProduct($cart, $id1);
-        $cart = $this->addProduct($cart, $id2);
+        $cart = $this->generateDemoCart($parentProductId, $rootProductId);
 
-        $product1 = $cart->get($id1);
-        $product2 = $cart->get($id2);
+        $cart = $this->addProduct($cart, $childProductId);
+
+        $product1 = $cart->get($parentProductId);
+        $product2 = $cart->get($childProductId);
 
         $product1->getChildren()->add($product2);
-        $cart->remove($id2);
+        $cart->remove($childProductId);
 
         $cart = $this->getContainer()->get(Processor::class)
             ->process($cart, $this->salesChannelContext, new CartBehavior());
@@ -125,9 +129,21 @@ class RecalculationServiceTest extends TestCase
             ->addAssociation('deliveries.shippingOrderAddress.country')
             ->addAssociation('deliveries.shippingOrderAddress.countryState');
 
+        /** @var OrderEntity $order */
         $order = $this->getContainer()->get('order.repository')
             ->search($criteria, $this->context)
             ->get($orderId);
+
+        // check lineItem sorting
+        $idx = 0;
+        foreach ($order->getNestedLineItems() as $lineItem) {
+            if ($idx === 0) {
+                static::assertEquals($parentProductId, $lineItem->getReferencedId());
+            } else {
+                static::assertEquals($rootProductId, $lineItem->getReferencedId());
+            }
+            ++$idx;
+        }
 
         $convertedCart = $this->getContainer()->get(OrderConverter::class)
             ->convertToCart($order, $this->context);
@@ -137,6 +153,16 @@ class RecalculationServiceTest extends TestCase
         static::assertNotEquals($cart->getToken(), $convertedCart->getToken());
         static::assertTrue(Uuid::isValid($convertedCart->getToken()));
 
+        // check lineItem sorting
+        $idx = 0;
+        foreach ($convertedCart->getLineItems() as $lineItem) {
+            if ($idx === 0) {
+                static::assertEquals($parentProductId, $lineItem->getId());
+            } else {
+                static::assertEquals($rootProductId, $lineItem->getId());
+            }
+            ++$idx;
+        }
         // set name and token to be equal for further comparison
         $cart->setName($convertedCart->getName());
         $cart->setToken($convertedCart->getToken());
@@ -151,13 +177,11 @@ class RecalculationServiceTest extends TestCase
 
         // remove delivery information from line items
 
-        /** @var Delivery $delivery */
         foreach ($cart->getDeliveries() as $delivery) {
             // remove address from ShippingLocation
             $property = ReflectionHelper::getProperty(ShippingLocation::class, 'address');
             $property->setValue($delivery->getLocation(), null);
 
-            /** @var DeliveryPosition $position */
             foreach ($delivery->getPositions() as $position) {
                 $position->getLineItem()->setDeliveryInformation(null);
                 $position->getLineItem()->setQuantityInformation(null);
@@ -171,7 +195,6 @@ class RecalculationServiceTest extends TestCase
             $delivery->getShippingMethod()->setPrices(new ShippingMethodPriceCollection());
         }
 
-        /** @var LineItem $lineItem */
         foreach ($cart->getLineItems()->getFlat() as $lineItem) {
             $lineItem->setDeliveryInformation(null);
             $lineItem->setQuantityInformation(null);
@@ -835,13 +858,13 @@ class RecalculationServiceTest extends TestCase
         return $customerId;
     }
 
-    private function generateDemoCart(): Cart
+    private function generateDemoCart(?string $productId1 = null, ?string $productId2 = null): Cart
     {
         $cart = new Cart('A', 'a-b-c');
 
-        $cart = $this->addProduct($cart, Uuid::randomHex());
+        $cart = $this->addProduct($cart, $productId1 ?? Uuid::randomHex());
 
-        $cart = $this->addProduct($cart, Uuid::randomHex(), [
+        $cart = $this->addProduct($cart, $productId2 ?? Uuid::randomHex(), [
             'tax' => ['id' => Uuid::randomHex(), 'taxRate' => 5, 'name' => 'test'],
         ]);
 

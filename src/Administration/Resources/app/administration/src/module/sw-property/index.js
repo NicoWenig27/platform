@@ -1,6 +1,3 @@
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
-
 import './page/sw-property-list';
 import './page/sw-property-detail';
 import './page/sw-property-create';
@@ -22,11 +19,6 @@ Module.register('sw-property', {
     favicon: 'icon-module-products.png',
     entity: 'property',
 
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB
-    },
-
     routes: {
         index: {
             components: {
@@ -38,6 +30,13 @@ Module.register('sw-property', {
         detail: {
             component: 'sw-property-detail',
             path: 'detail/:id',
+            props: {
+                default: (route) => {
+                    return {
+                        groupId: route.params.id
+                    };
+                }
+            },
             meta: {
                 parentPath: 'sw.property.index'
             }

@@ -2,7 +2,7 @@
 
 namespace Shopware\Core\Framework\Api\Serializer;
 
-use Shopware\Core\Framework\Api\Converter\ConverterService;
+use Shopware\Core\Framework\Api\Converter\ApiVersionConverter;
 use Shopware\Core\Framework\Api\Exception\UnsupportedEncoderInputException;
 use Shopware\Core\Framework\DataAbstractionLayer\Entity;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityCollection;
@@ -13,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationFiel
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Symfony\Component\Serializer\Serializer;
 
 class JsonEntityEncoder
@@ -23,48 +24,115 @@ class JsonEntityEncoder
     private $serializer;
 
     /**
-     * @var ConverterService
+     * @var ApiVersionConverter
      */
-    private $converterService;
+    private $apiVersionConverter;
 
-    public function __construct(Serializer $serializer, ConverterService $converterService)
+    public function __construct(Serializer $serializer, ApiVersionConverter $apiVersionConverter)
     {
         $this->serializer = $serializer;
-        $this->converterService = $converterService;
+        $this->apiVersionConverter = $apiVersionConverter;
     }
 
     /**
      * @param EntityCollection|Entity|null $data
      */
-    public function encode(EntityDefinition $definition, $data, string $baseUrl, int $apiVersion): array
+    public function encode(Criteria $criteria, EntityDefinition $definition, $data, string $baseUrl, int $apiVersion): array
     {
         if ((!$data instanceof EntityCollection) && (!$data instanceof Entity)) {
             throw new UnsupportedEncoderInputException();
         }
 
         if ($data instanceof EntityCollection) {
-            return $this->getDecodedCollection($data, $definition, $baseUrl, $apiVersion);
+            return $this->getDecodedCollection($criteria, $data, $definition, $baseUrl, $apiVersion);
         }
 
-        return $this->getDecodedEntity($data, $definition, $baseUrl, $apiVersion);
+        return $this->getDecodedEntity($criteria, $data, $definition, $baseUrl, $apiVersion);
     }
 
-    private function getDecodedCollection(EntityCollection $collection, EntityDefinition $definition, string $baseUrl, int $apiVersion): array
+    private function getDecodedCollection(Criteria $criteria, EntityCollection $collection, EntityDefinition $definition, string $baseUrl, int $apiVersion): array
     {
         $decoded = [];
 
         foreach ($collection as $entity) {
-            $decoded[] = $this->getDecodedEntity($entity, $definition, $baseUrl, $apiVersion);
+            $decoded[] = $this->getDecodedEntity($criteria, $entity, $definition, $baseUrl, $apiVersion);
         }
 
         return $decoded;
     }
 
-    private function getDecodedEntity(Entity $entity, EntityDefinition $definition, string $baseUrl, int $apiVersion): array
+    private function getDecodedEntity(Criteria $criteria, Entity $entity, EntityDefinition $definition, string $baseUrl, int $apiVersion): array
     {
         $decoded = $this->serializer->normalize($entity);
 
+        if ($criteria->getSource()) {
+            $source = $this->buildSource($criteria->getSource());
+
+            $decoded = $this->filterSource($source, $decoded);
+        }
+
         return $this->removeNotAllowedFields($decoded, $definition, $baseUrl, $apiVersion);
+    }
+
+    private function filterSource(array $properties, array $decoded): array
+    {
+        $filtered = [];
+
+        if (empty($decoded)) {
+            return $decoded;
+        }
+
+        foreach ($properties as $property => $nested) {
+            if (!array_key_exists($property, $decoded)) {
+                continue;
+            }
+            $value = $decoded[$property];
+            if ($nested === true) {
+                $filtered[$property] = $value;
+
+                continue;
+            }
+
+            if (!is_array($nested) || !is_array($value)) {
+                continue;
+            }
+
+            if (!isset($value[0])) {
+                $filtered[$property] = $this->filterSource($nested, $value);
+
+                continue;
+            }
+
+            foreach ($value as $loop) {
+                $filtered[$property][] = $this->filterSource($nested, $loop);
+            }
+        }
+
+        return $filtered;
+    }
+
+    private function buildSource(array $source): array
+    {
+        $nested = [];
+        foreach ($source as $property) {
+            $parts = explode('.', $property);
+
+            $cursor = &$nested;
+
+            foreach ($parts as $index => $part) {
+                if ($index === count($parts) - 1) {
+                    $cursor[$part] = true;
+
+                    continue;
+                }
+                if (!isset($cursor[$part])) {
+                    $cursor[$part] = [];
+                }
+                $cursor = &$cursor[$part];
+            }
+        }
+
+        return $nested;
     }
 
     private function removeNotAllowedFields(array $decoded, EntityDefinition $definition, string $baseUrl, int $apiVersion): array
@@ -78,7 +146,7 @@ class JsonEntityEncoder
                 continue;
             }
 
-            if (!$this->converterService->isAllowed($definition->getEntityName(), $key, $apiVersion)) {
+            if (!$this->apiVersionConverter->isAllowed($definition->getEntityName(), $key, $apiVersion)) {
                 unset($decoded[$key]);
 
                 continue;

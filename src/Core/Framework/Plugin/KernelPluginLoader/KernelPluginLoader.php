@@ -3,6 +3,8 @@
 namespace Shopware\Core\Framework\Plugin\KernelPluginLoader;
 
 use Composer\Autoload\ClassLoader;
+use Composer\Autoload\ClassMapGenerator;
+use Shopware\Core\Framework\Parameter\AdditionalBundleParameters;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Exception\KernelPluginLoaderException;
 use Shopware\Core\Framework\Plugin\KernelPluginCollection;
@@ -71,7 +73,7 @@ abstract class KernelPluginLoader extends Bundle
         return $this->pluginInstances;
     }
 
-    final public function getBundles(): iterable
+    final public function getBundles($kernelParameters = []): iterable
     {
         if (!$this->initialized) {
             return;
@@ -79,7 +81,15 @@ abstract class KernelPluginLoader extends Bundle
 
         foreach ($this->pluginInstances->getActives() as $plugin) {
             yield $plugin;
-            yield from $plugin->getExtraBundles($this->classLoader);
+
+            $copy = new KernelPluginCollection($this->getPluginInstances()->all());
+            $additionalBundleParameters = new AdditionalBundleParameters($this->classLoader, $copy, $kernelParameters);
+            $additionalBundles = $plugin->getAdditionalBundles($additionalBundleParameters);
+            if (empty($additionalBundles)) {
+                yield from $plugin->getExtraBundles($this->classLoader);
+            } else {
+                yield from $additionalBundles;
+            }
         }
 
         yield $this;
@@ -171,6 +181,7 @@ abstract class KernelPluginLoader extends Bundle
                     'Unable to register plugin "%s" in autoload. Required property `autoload` missing.',
                     $plugin['baseClass']
                 );
+
                 throw new KernelPluginLoaderException($pluginName, $reason);
             }
 
@@ -182,6 +193,7 @@ abstract class KernelPluginLoader extends Bundle
                     'Unable to register plugin "%s" in autoload. Required property `psr-4` or `psr-0` missing in property autoload.',
                     $plugin['baseClass']
                 );
+
                 throw new KernelPluginLoaderException($pluginName, $reason);
             }
 
@@ -191,6 +203,11 @@ abstract class KernelPluginLoader extends Bundle
                 }
                 $mappedPaths = $this->mapPsrPaths($pluginName, $paths, $projectDir, $plugin['path']);
                 $this->classLoader->addPsr4($namespace, $mappedPaths);
+                if ($this->classLoader->isClassMapAuthoritative()) {
+                    foreach ($mappedPaths as $mappedPath) {
+                        $this->classLoader->addClassMap(ClassMapGenerator::createMap($mappedPath));
+                    }
+                }
             }
 
             foreach ($psr0 as $namespace => $paths) {
@@ -200,6 +217,11 @@ abstract class KernelPluginLoader extends Bundle
                 $mappedPaths = $this->mapPsrPaths($pluginName, $paths, $projectDir, $plugin['path']);
 
                 $this->classLoader->add($namespace, $mappedPaths);
+                if ($this->classLoader->isClassMapAuthoritative()) {
+                    foreach ($mappedPaths as $mappedPath) {
+                        $this->classLoader->addClassMap(ClassMapGenerator::createMap($mappedPath));
+                    }
+                }
             }
         }
     }
@@ -252,6 +274,7 @@ abstract class KernelPluginLoader extends Bundle
 
             if (!$plugin instanceof Plugin) {
                 $reason = sprintf('Plugin class "%s" must extend "%s"', \get_class($plugin), Plugin::class);
+
                 throw new KernelPluginLoaderException($pluginData['name'], $reason);
             }
 

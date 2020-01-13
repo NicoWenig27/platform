@@ -21,6 +21,8 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class ThemeChangeCommand extends Command
 {
+    protected static $defaultName = 'theme:change';
+
     /**
      * @var ThemeService
      */
@@ -63,7 +65,7 @@ class ThemeChangeCommand extends Command
         EntityRepositoryInterface $themeRepository,
         EntityRepositoryInterface $themeSalesChannelRepository
     ) {
-        parent::__construct('theme:change');
+        parent::__construct();
 
         $this->themeService = $themeService;
         $this->pluginRegistry = $pluginRegistry;
@@ -75,12 +77,11 @@ class ThemeChangeCommand extends Command
 
     protected function configure(): void
     {
-        $this->setName('theme:change');
         $this->addArgument('theme-name', InputArgument::OPTIONAL, 'Theme name');
         $this->addOption('all', null, InputOption::VALUE_NONE, 'Set theme for all sales channel');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
         $helper = $this->getHelper('question');
@@ -131,14 +132,13 @@ class ThemeChangeCommand extends Command
             $this->themeService->compileTheme($salesChannel->getId(), $theme->getId(), $this->context);
         }
 
-        return null;
+        return 0;
     }
 
     protected function getSalesChannelChoices(SalesChannelCollection $salesChannels): array
     {
         $choices = [];
 
-        /** @var SalesChannelEntity $salesChannel */
         foreach ($salesChannels as $salesChannel) {
             $choices[] = $salesChannel->getName() . ' | ' . $salesChannel->getId();
         }

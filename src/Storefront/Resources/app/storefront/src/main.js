@@ -30,7 +30,8 @@ import SearchWidgetPlugin from 'src/plugin/header/search-widget.plugin';
 import AccountMenuPlugin from 'src/plugin/header/account-menu.plugin';
 import OffCanvasCartPlugin from 'src/plugin/offcanvas-cart/offcanvas-cart.plugin';
 import AddToCartPlugin from 'src/plugin/add-to-cart/add-to-cart.plugin';
-import CookiePermissionPlugin from 'src/plugin/cookie-permission/cookie-permission.plugin';
+import CookiePermissionPlugin from 'src/plugin/cookie/cookie-permission.plugin';
+import CookieConfigurationPlugin from 'src/plugin/cookie/cookie-configuration.plugin';
 import ScrollUpPlugin from 'src/plugin/scroll-up/scroll-up.plugin';
 import CollapseFooterColumnsPlugin from 'src/plugin/collapse/collapse-footer-columns.plugin';
 import FlyoutMenuPlugin from 'src/plugin/main-menu/flyout-menu.plugin';
@@ -61,10 +62,15 @@ import FilterBooleanPlugin from 'src/plugin/listing/filter-boolean.plugin';
 import FilterRangePlugin from 'src/plugin/listing/filter-range.plugin';
 import FilterRatingPlugin from 'src/plugin/listing/filter-rating.plugin';
 import ListingPlugin from 'src/plugin/listing/listing.plugin';
+import OffCanvasFilterPlugin from 'src/plugin/offcanvas-filter/offcanvas-filter.plugin';
 import RatingSystemPlugin from 'src/plugin/rating-system/rating-system.plugin';
 import ListingPaginationPlugin from 'src/plugin/listing/listing-pagination.plugin';
 import ListingSortingPlugin from 'src/plugin/listing/listing-sorting.plugin';
+import DatePickerPlugin from 'src/plugin/date-picker/date-picker.plugin';
 import FormCsrfHandlerPlugin from 'src/plugin/forms/form-csrf-handler.plugin';
+import FormCmsHandlerPlugin from 'src/plugin/forms/form-cms-handler.plugin';
+import CrossSellingPlugin from 'src/plugin/cross-selling/cross-selling.plugin';
+import CountryStateSelectPlugin from 'src/plugin/forms/form-country-state-select.plugin';
 
 window.eventEmitter = new NativeEventEmitter();
 
@@ -83,6 +89,7 @@ register plugins
 */
 PluginManager.register('DateFormat', DateFormat, '[data-date-format]');
 PluginManager.register('CookiePermission', CookiePermissionPlugin, '[data-cookie-permission]');
+PluginManager.register('CookieConfiguration', CookieConfigurationPlugin, '[data-cookie-permission]');
 PluginManager.register('ScrollUp', ScrollUpPlugin, '[data-scroll-up]');
 PluginManager.register('SearchWidget', SearchWidgetPlugin, '[data-search-form]');
 PluginManager.register('CartWidget', CartWidgetPlugin, '[data-cart-widget]');
@@ -113,6 +120,7 @@ PluginManager.register('AddressEditor', AddressEditorPlugin, '[data-address-edit
 PluginManager.register('SetBrowserClass', SetBrowserClassPlugin, 'html');
 PluginManager.register('RatingSystem', RatingSystemPlugin, '[data-rating-system]');
 PluginManager.register('Listing', ListingPlugin, '[data-listing]');
+PluginManager.register('OffCanvasFilter', OffCanvasFilterPlugin, '[data-offcanvas-filter]');
 PluginManager.register('FilterBoolean', FilterBooleanPlugin, '[data-filter-boolean]');
 PluginManager.register('FilterRange', FilterRangePlugin, '[data-filter-range]');
 PluginManager.register('FilterMultiSelect', FilterMultiSelectPlugin, '[data-filter-multi-select]');
@@ -120,7 +128,10 @@ PluginManager.register('FilterPropertySelect', FilterPropertySelectPlugin, '[dat
 PluginManager.register('FilterRating', FilterRatingPlugin, '[data-filter-rating]');
 PluginManager.register('ListingPagination', ListingPaginationPlugin, '[data-listing-pagination]');
 PluginManager.register('ListingSorting', ListingSortingPlugin, '[data-listing-sorting]');
-PluginManager.register('RatingSystemPlugin', RatingSystemPlugin, '[data-rating-system]');
+PluginManager.register('CrossSelling', CrossSellingPlugin, '[data-cross-selling]');
+PluginManager.register('DatePicker', DatePickerPlugin, '[data-date-picker]');
+PluginManager.register('FormCmsHandler', FormCmsHandlerPlugin, '.cms-element-form form');
+PluginManager.register('CountryStateSelect', CountryStateSelectPlugin, '[data-country-state-select]');
 
 if (window.csrf.enabled && window.csrf.mode === 'ajax') {
     PluginManager.register('FormCsrfHandler', FormCsrfHandlerPlugin, '[data-form-csrf-handler]');
@@ -129,7 +140,11 @@ if (window.csrf.enabled && window.csrf.mode === 'ajax') {
 /*
 run plugins
 */
-document.addEventListener('DOMContentLoaded', () => { PluginManager.initializePlugins() }, false);
+document.addEventListener('readystatechange', (event) => {
+    if (event.target.readyState === 'complete') {
+        PluginManager.initializePlugins();
+    }
+}, false);
 
 /*
 run utils

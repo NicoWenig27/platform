@@ -5,8 +5,10 @@ namespace Shopware\Elasticsearch\Framework\DataAbstractionLayer;
 
 use ONGR\ElasticsearchDSL\Aggregation\AbstractAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing;
+use ONGR\ElasticsearchDSL\Aggregation\Bucketing\CompositeAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Bucketing\NestedAggregation;
 use ONGR\ElasticsearchDSL\Aggregation\Metric;
+use ONGR\ElasticsearchDSL\Aggregation\Metric\ValueCountAggregation;
 use ONGR\ElasticsearchDSL\BuilderInterface;
 use ONGR\ElasticsearchDSL\Query\Compound\BoolQuery;
 use ONGR\ElasticsearchDSL\Query\FullText\MatchQuery;
@@ -58,26 +60,24 @@ class CriteriaParser
     {
         $root = $definition->getEntityName();
 
-        $accessor = $fieldName;
-        if (mb_strpos($fieldName, $root . '.') !== false) {
-            $accessor = str_replace($root . '.', '', $fieldName);
+        $parts = explode('.', $fieldName);
+        if ($root === $parts[0]) {
+            array_shift($parts);
         }
 
         $field = $this->helper->getField($fieldName, $definition, $root);
 
         if ($field instanceof TranslatedField) {
-            $parts = explode('.', $accessor);
             array_pop($parts);
             $parts[] = 'translated';
             $parts[] = $field->getPropertyName();
-            $accessor = implode('.', $parts);
         }
 
         if ($field instanceof PriceField) {
-            $accessor .= '.gross';
+            $parts[] = 'gross';
         }
 
-        return $accessor;
+        return implode('.', $parts);
     }
 
     public function parseSorting(FieldSorting $sorting, EntityDefinition $definition, Context $context): FieldSort
@@ -149,9 +149,9 @@ class CriteriaParser
         return $filter;
     }
 
-    protected function parseTermsAggregation(TermsAggregation $aggregation, string $fieldName, EntityDefinition $definition, Context $context): Bucketing\CompositeAggregation
+    protected function parseTermsAggregation(TermsAggregation $aggregation, string $fieldName, EntityDefinition $definition, Context $context): CompositeAggregation
     {
-        $composite = new Bucketing\CompositeAggregation($aggregation->getName());
+        $composite = new CompositeAggregation($aggregation->getName());
 
         if ($aggregation->getSorting()) {
             $accessor = $this->buildAccessor($definition, $aggregation->getSorting()->getField(), $context);
@@ -170,6 +170,9 @@ class CriteriaParser
             );
         }
 
+        // set default size to 10.000 => max for default configuration
+        $composite->addParameter('size', 10000);
+
         if ($aggregation->getLimit()) {
             $composite->addParameter('size', (string) $aggregation->getLimit());
         }
@@ -177,9 +180,9 @@ class CriteriaParser
         return $composite;
     }
 
-    protected function parseDateHistogramAggregation(DateHistogramAggregation $aggregation, string $fieldName, EntityDefinition $definition, Context $context): Bucketing\CompositeAggregation
+    protected function parseDateHistogramAggregation(DateHistogramAggregation $aggregation, string $fieldName, EntityDefinition $definition, Context $context): CompositeAggregation
     {
-        $composite = new Bucketing\CompositeAggregation($aggregation->getName());
+        $composite = new CompositeAggregation($aggregation->getName());
 
         if ($aggregation->getSorting()) {
             $accessor = $this->buildAccessor($definition, $aggregation->getSorting()->getField(), $context);
@@ -229,7 +232,7 @@ class CriteriaParser
                 return new Metric\SumAggregation($aggregation->getName(), $fieldName);
 
             case $aggregation instanceof CountAggregation:
-                return new Metric\ValueCountAggregation($aggregation->getName(), $fieldName);
+                return new ValueCountAggregation($aggregation->getName(), $fieldName);
 
             case $aggregation instanceof FilterAggregation:
                 return $this->parseFilterAggregation($aggregation, $definition, $context);
@@ -293,12 +296,15 @@ class CriteriaParser
 
     private function parseNotFilter(NotFilter $filter, EntityDefinition $definition, string $root, Context $context): BuilderInterface
     {
-        $nested = $this->parseMultiFilter($filter, $definition, $root, $context);
+        $bool = new BoolQuery();
+        foreach ($filter->getQueries() as $nested) {
+            $bool->add(
+                $this->parseFilter($nested, $definition, $root, $context),
+                BoolQuery::MUST_NOT
+            );
+        }
 
-        $not = new BoolQuery();
-        $not->add($nested, BoolQuery::MUST_NOT);
-
-        return $not;
+        return $bool;
     }
 
     private function parseMultiFilter(MultiFilter $filter, EntityDefinition $definition, string $root, Context $context): BuilderInterface

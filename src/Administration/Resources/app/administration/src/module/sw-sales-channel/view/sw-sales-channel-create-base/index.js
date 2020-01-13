@@ -6,6 +6,15 @@ Component.extend('sw-sales-channel-create-base', 'sw-sales-channel-detail-base',
     template,
 
     created() {
-        this.onGenerateKeys();
+        this.createdComponent();
+    },
+
+    methods: {
+        createdComponent() {
+            this.onGenerateKeys();
+            if (this.isProductComparison) {
+                this.onGenerateProductExportKey(false);
+            }
+        }
     }
 });

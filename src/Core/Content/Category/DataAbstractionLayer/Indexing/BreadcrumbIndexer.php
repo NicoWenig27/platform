@@ -8,7 +8,8 @@ use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Category\CategoryDefinition;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
 use Shopware\Core\Defaults;
-use Shopware\Core\Framework\Cache\CacheClearer;
+use Shopware\Core\Framework\Adapter\Cache\CacheClearer;
+use Shopware\Core\Framework\Api\Context\SystemSource;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
@@ -20,8 +21,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Event\ProgressAdvancedEvent;
 use Shopware\Core\Framework\Event\ProgressFinishedEvent;
 use Shopware\Core\Framework\Event\ProgressStartedEvent;
-use Shopware\Core\Framework\Language\LanguageEntity;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\Language\LanguageEntity;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class BreadcrumbIndexer implements IndexerInterface
@@ -86,7 +87,7 @@ class BreadcrumbIndexer implements IndexerInterface
         /** @var LanguageEntity $language */
         foreach ($languages as $language) {
             $context = new Context(
-                new Context\SystemSource(),
+                new SystemSource(),
                 [],
                 Defaults::CURRENCY,
                 [$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM],
@@ -139,7 +140,7 @@ class BreadcrumbIndexer implements IndexerInterface
         $language = $languages[$languageOffset];
 
         $context = new Context(
-            new Context\SystemSource(),
+            new SystemSource(),
             [],
             Defaults::CURRENCY,
             [$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM],
@@ -196,7 +197,7 @@ class BreadcrumbIndexer implements IndexerInterface
         /** @var LanguageEntity $language */
         foreach ($languages as $language) {
             $context = new Context(
-                new Context\SystemSource(),
+                new SystemSource(),
                 [],
                 Defaults::CURRENCY,
                 [$language->getId(), $language->getParentId(), Defaults::LANGUAGE_SYSTEM],

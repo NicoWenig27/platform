@@ -24,7 +24,7 @@
       "loggedIn": "Logged in as"
     },
     "errors": {
-      "messageToTheShopwareDocumentation": "Open Shopware documentation",
+      "messageToTheShopwareDocumentation": "<a href=\"{documentationLink}\" target=\"_blank\">Open Shopware Documentation</a>",
       "titleGenericFailure": "Error",
       "messageGenericFailure": "An error has occurred.",
       "titleUploadFailure": "Error",
@@ -34,7 +34,21 @@
       "titleLoginDataInvalid": "Error",
       "messageLoginDataInvalid": "Login data incomplete.",
       "titleStoreHostMissing": "Error",
-      "messageStoreLicenseDomainMissing": "Login failed. Did you provide the correct license domain from your Shopware Account in \"Settings/Shopware Account\"?"
+      "messageStoreLicenseDomainMissing": "Login failed. Did you provide the correct license domain from your Shopware Account in \"Settings/Shopware Account\"?",
+      "titleStoreNotAvailable": "Connection refused",
+      "messageStoreNotAvailable": "The Shopware Store is not available.",
+      "titlePluginBaseClassNotFound": "Error on loading the plugin",
+      "messagePluginBaseClassNotFound": "The plugin base class could not be loaded. Check your plugin composer.json regarding the class autoloading",
+      "titlePluginInstallationFailed": "Plugin installation failed",
+      "messagePluginInstallationFailed": "Plugin could not be installed due to error message \"{message}\"",
+      "titlePluginUninstallationFailed": "Plugin uninstallation failed",
+      "messagePluginUninstallationFailed": "Plugin could not be uninstalled due to error message \"{message}\"",
+      "titlePluginActivationFailed": "Plugin activation failed",
+      "messagePluginActivationFailed": "Plugin could not be activated due to error message \"{message}\"",
+      "titlePluginDeactivationFailed": "Plugin deactivation failed",
+      "messagePluginDeactivationFailed": "Plugin could not be deactivated due to error message \"{message}\"",
+      "titlePluginUpdateFailed": "Plugin update failed",
+      "messagePluginUpdateFailed": "Plugin could not be updated due to error message \"{message}\""
     },
     "fileUpload":{
       "buttonFileUpload":"Upload plugin",
@@ -99,7 +113,9 @@
       "messageDeleteConfirm":"Are you sure you really want to delete this plugin?",
       "deactivated": "Deactivated",
       "activated": "Activated",
-      "config": "Config"
+      "config": "Config",
+      "description": "Description",
+      "tooltipActivationDisabled": "You can only activate installed plugins."
     },
     "license-list":{
       "textMyPurchases":"Purchased licenses",
@@ -134,6 +150,9 @@
     "buttonCancel": "Abort",
     "titleSaveSuccess": "Success",
     "messageSaveSuccess": "Configuration has been saved.",
-    "titleSaveError": "Unable to save the configuration."
+    "titleSaveError": "Unable to save the configuration.",
+  },
+  "sw-plugin-description": {
+    "buttonBack": "Back"
   }
 }

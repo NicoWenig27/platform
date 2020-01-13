@@ -5,7 +5,7 @@ namespace Shopware\Core\Content\Product\SalesChannel;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\PriceCollection;
 use Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface;
-use Shopware\Core\Framework\Pricing\CalculatedListingPrice;
+use Shopware\Core\Framework\DataAbstractionLayer\Pricing\CalculatedListingPrice;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelEntityLoadedEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
@@ -55,7 +55,7 @@ class SalesChannelProductSubscriber implements EventSubscriberInterface
 
     private function calculatePrices(SalesChannelContext $context, SalesChannelProductEntity $product): void
     {
-        $markAsNewDayRange = $this->systemConfigService->get('core.listing.markAsNew');
+        $markAsNewDayRange = $this->systemConfigService->get('core.listing.markAsNew', $context->getSalesChannel()->getId());
 
         $now = new \DateTime();
 

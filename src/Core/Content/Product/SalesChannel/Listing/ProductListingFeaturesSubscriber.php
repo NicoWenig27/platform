@@ -6,15 +6,16 @@ use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\Events\ProductListingCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductListingResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchCriteriaEvent;
+use Shopware\Core\Content\Product\Events\ProductSearchResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
 use Shopware\Core\Content\Property\Aggregate\PropertyGroupOption\PropertyGroupOptionCollection;
+use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\FilterAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Bucket\TermsAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\EntityAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\MaxAggregation;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Aggregation\Metric\StatsAggregation;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\Bucket;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Bucket\TermsResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\AggregationResult\Metric\EntityResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -24,7 +25,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
-use Shopware\Core\Framework\Doctrine\FetchModeHelper;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,6 +32,7 @@ use Symfony\Component\HttpFoundation\Request;
 class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 {
     public const DEFAULT_SORT = 'name-asc';
+    public const DEFAULT_SEARCH_SORT = 'score';
 
     /**
      * @var EntityRepositoryInterface
@@ -59,7 +60,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     {
         return [
             ProductListingCriteriaEvent::class => [
-                ['handleRequest', 100],
+                ['handleListingRequest', 100],
                 ['switchFilter', -100],
             ],
             ProductSuggestCriteriaEvent::class => [
@@ -67,27 +68,12 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
                 ['switchFilter', -100],
             ],
             ProductSearchCriteriaEvent::class => [
-                ['handleRequest', 100],
+                ['handleSearchRequest', 100],
                 ['switchFilter', -100],
             ],
             ProductListingResultEvent::class => 'handleResult',
+            ProductSearchResultEvent::class => 'handleResult',
         ];
-    }
-
-    public function handleSuggestRequest(ProductListingCriteriaEvent $event): void
-    {
-        $criteria = $event->getCriteria();
-
-        // suggestion request supports no aggregations or filters
-        $criteria->addAssociation('cover.media');
-
-        $criteria->addGroupField(new FieldGrouping('displayGroup'));
-        $criteria->addFilter(
-            new NotFilter(
-                NotFilter::CONNECTION_AND,
-                [new EqualsFilter('displayGroup', null)]
-            )
-        );
     }
 
     public function switchFilter(ProductListingCriteriaEvent $event): void
@@ -120,12 +106,11 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         }
     }
 
-    public function handleRequest(ProductListingCriteriaEvent $event): void
+    public function handleSuggestRequest(ProductSuggestCriteriaEvent $event): void
     {
-        $request = $event->getRequest();
-
         $criteria = $event->getCriteria();
 
+        // suggestion request supports no aggregations or filters
         $criteria->addAssociation('cover.media');
 
         $criteria->addGroupField(new FieldGrouping('displayGroup'));
@@ -135,8 +120,69 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
                 [new EqualsFilter('displayGroup', null)]
             )
         );
+    }
+
+    public function handleListingRequest(ProductListingCriteriaEvent $event): void
+    {
+        $request = $event->getRequest();
+        $criteria = $event->getCriteria();
+
+        $criteria->addAssociation('cover.media');
 
         $this->handlePagination($request, $criteria);
+        $this->handleFilters($request, $criteria);
+        $this->handleSorting($request, $criteria, self::DEFAULT_SORT);
+    }
+
+    public function handleSearchRequest(ProductSearchCriteriaEvent $event): void
+    {
+        $request = $event->getRequest();
+        $criteria = $event->getCriteria();
+
+        $criteria->addAssociation('cover.media');
+
+        $this->handlePagination($request, $criteria);
+        $this->handleFilters($request, $criteria);
+        $this->handleSorting($request, $criteria, self::DEFAULT_SEARCH_SORT);
+    }
+
+    public function handleResult(ProductListingResultEvent $event): void
+    {
+        $this->groupOptionAggregations($event);
+
+        $this->addCurrentFilters($event);
+
+        $defaultSort = $event instanceof ProductSearchResultEvent ? self::DEFAULT_SEARCH_SORT : self::DEFAULT_SORT;
+        $currentSorting = $this->getCurrentSorting($event->getRequest(), $defaultSort);
+
+        $event->getResult()->setSorting($currentSorting);
+
+        $sortings = $this->sortingRegistry->getSortings();
+        /** @var ProductListingSorting $sorting */
+        foreach ($sortings as $sorting) {
+            $sorting->setActive($sorting->getKey() === $currentSorting);
+        }
+
+        if (!$event instanceof ProductSearchResultEvent) {
+            unset($sortings['score']);
+        }
+
+        $event->getResult()->setSortings($sortings);
+
+        $event->getResult()->setPage($this->getPage($event->getRequest()));
+
+        $event->getResult()->setLimit($this->getLimit($event->getRequest()));
+    }
+
+    private function handleFilters(Request $request, Criteria $criteria): void
+    {
+        $criteria->addGroupField(new FieldGrouping('displayGroup'));
+        $criteria->addFilter(
+            new NotFilter(
+                NotFilter::CONNECTION_AND,
+                [new EqualsFilter('displayGroup', null)]
+            )
+        );
 
         $this->handleManufacturerFilter($request, $criteria);
 
@@ -147,39 +193,6 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $this->handleShippingFreeFilter($request, $criteria);
 
         $this->handleRatingFilter($request, $criteria);
-
-        $this->handleSorting($request, $criteria);
-    }
-
-    public function handleResult(ProductListingResultEvent $event): void
-    {
-        $this->groupOptionAggregations($event);
-
-        $this->addCurrentFilters($event);
-
-        $event->getResult()->setSorting(
-            $this->getCurrentSorting($event->getRequest())
-        );
-
-        $sortings = $this->sortingRegistry->getSortings();
-        /** @var ProductListingSorting $sorting */
-        foreach ($sortings as $sorting) {
-            $sorting->setActive($sorting->getKey() === $this->getCurrentSorting($event->getRequest()));
-        }
-
-        $event->getResult()->setSortings($sortings);
-
-        $event->getResult()->setPage($this->getPage($event->getRequest()));
-
-        $event->getResult()->setLimit($this->getLimit($event->getRequest()));
-
-        /** @var TermsResult $result */
-        $result = $event->getResult()->getAggregations()->get('rating');
-        $result->sort(
-            function (Bucket $a, Bucket $b) {
-                return (int) $a->getKey() <=> (int) $b->getKey();
-            }
-        );
     }
 
     private function handlePagination(Request $request, Criteria $criteria): void
@@ -272,7 +285,11 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     private function handleRatingFilter(Request $request, Criteria $criteria): void
     {
         $criteria->addAggregation(
-            new TermsAggregation('rating', 'product.ratingAverage')
+            new FilterAggregation(
+                'rating-exists',
+                new MaxAggregation('rating', 'product.ratingAverage'),
+                [new RangeFilter('product.ratingAverage', [RangeFilter::GTE => 0])]
+            )
         );
 
         $filtered = $request->get('rating');
@@ -304,10 +321,16 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $criteria->addPostFilter(new EqualsFilter('product.shippingFree', true));
     }
 
-    private function handleSorting(Request $request, Criteria $criteria): void
+    private function handleSorting(Request $request, Criteria $criteria, string $defaultSorting): void
     {
+        $currentSorting = $this->getCurrentSorting($request, $defaultSorting);
+
+        if (!$currentSorting) {
+            return;
+        }
+
         $sorting = $this->sortingRegistry->get(
-            $this->getCurrentSorting($request)
+            $currentSorting
         );
 
         if (!$sorting) {
@@ -323,13 +346,16 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     {
         $aggregations = $event->getResult()->getAggregations();
 
-        /** @var TermsResult $properties */
+        /** @var TermsResult|null $properties */
         $properties = $aggregations->get('properties');
 
-        /** @var TermsResult $options */
+        /** @var TermsResult|null $options */
         $options = $aggregations->get('options');
 
-        return array_unique(array_filter(array_merge($options->getKeys(), $properties->getKeys())));
+        $options = $options ? $options->getKeys() : [];
+        $properties = $properties ? $properties->getKeys() : [];
+
+        return array_unique(array_filter(array_merge($options, $properties)));
     }
 
     private function groupOptionAggregations(ProductListingResultEvent $event): void
@@ -363,7 +389,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     {
         $event->getResult()->addCurrentFilter('manufacturer', $this->getManufacturerIds($event->getRequest()));
 
-        $event->getResult()->addCurrentFilter('properties', $this->getManufacturerIds($event->getRequest()));
+        $event->getResult()->addCurrentFilter('properties', $this->getPropertyIds($event->getRequest()));
 
         $event->getResult()->addCurrentFilter('shipping-free', $event->getRequest()->get('shipping-free'));
 
@@ -375,15 +401,19 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         ]);
     }
 
-    private function getCurrentSorting(Request $request): string
+    private function getCurrentSorting(Request $request, string $default): ?string
     {
-        $key = $request->get('sort', self::DEFAULT_SORT);
+        $key = $request->get('sort', $default);
 
-        if ($this->sortingRegistry->get($key)) {
+        if (!$key) {
+            return null;
+        }
+
+        if ($this->sortingRegistry->has($key)) {
             return $key;
         }
 
-        return self::DEFAULT_SORT;
+        return $default;
     }
 
     private function getManufacturerIds(Request $request): array

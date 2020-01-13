@@ -3,7 +3,10 @@ import './component/sw-first-run-wizard-modal';
 import './component/sw-plugin-card';
 import './page/index';
 import './view/sw-first-run-wizard-welcome';
-import './view/sw-first-run-wizard-demodata';
+import './view/sw-first-run-wizard-data-import';
+import './view/sw-first-run-wizard-mailer-base';
+import './view/sw-first-run-wizard-mailer-selection';
+import './view/sw-first-run-wizard-mailer-smtp';
 import './view/sw-first-run-wizard-paypal-base';
 import './view/sw-first-run-wizard-paypal-info';
 import './view/sw-first-run-wizard-paypal-credentials';
@@ -12,9 +15,6 @@ import './view/sw-first-run-wizard-shopware-base';
 import './view/sw-first-run-wizard-shopware-account';
 import './view/sw-first-run-wizard-shopware-domain';
 import './view/sw-first-run-wizard-finish';
-
-import deDE from './snippet/de-DE.json';
-import enGB from './snippet/en-GB.json';
 
 const { Module } = Shopware;
 
@@ -26,11 +26,6 @@ Module.register('sw-first-run-wizard', {
     version: '1.0.0',
     targetVersion: '1.0.0',
     color: '#F19D12',
-
-    snippets: {
-        'de-DE': deDE,
-        'en-GB': enGB
-    },
 
     routes: {
         index: {
@@ -44,9 +39,23 @@ Module.register('sw-first-run-wizard', {
                     component: 'sw-first-run-wizard-welcome',
                     path: ''
                 },
-                demodata: {
-                    component: 'sw-first-run-wizard-demodata',
-                    path: 'demodata'
+                'data-import': {
+                    component: 'sw-first-run-wizard-data-import',
+                    path: 'data-import'
+                },
+                mailer: {
+                    component: 'sw-first-run-wizard-mailer-base',
+                    path: 'mailer',
+                    children: {
+                        selection: {
+                            component: 'sw-first-run-wizard-mailer-selection',
+                            path: 'selection'
+                        },
+                        smtp: {
+                            component: 'sw-first-run-wizard-mailer-smtp',
+                            path: 'smtp'
+                        }
+                    }
                 },
                 paypal: {
                     component: 'sw-first-run-wizard-paypal-base',

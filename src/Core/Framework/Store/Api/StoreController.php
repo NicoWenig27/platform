@@ -3,9 +3,10 @@
 namespace Shopware\Core\Framework\Store\Api;
 
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
+use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Shopware\Core\Framework\Api\Context\Exception\InvalidContextSourceException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\Context\AdminApiSource;
-use Shopware\Core\Framework\Context\Exception\InvalidContextSourceException;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -96,7 +97,7 @@ class StoreController extends AbstractController
     {
         try {
             $this->storeClient->ping();
-        } catch (ClientException $exception) {
+        } catch (ClientException | ConnectException $exception) {
             throw new StoreNotAvailableException();
         }
 
@@ -208,6 +209,7 @@ class StoreController extends AbstractController
 
         /** @var PluginCollection $plugins */
         $plugins = $this->pluginRepo->search(new Criteria(), $context)->getEntities();
+
         try {
             $storeToken = $this->getUserStoreToken($context);
         } catch (StoreTokenMissingException $e) {
@@ -280,6 +282,7 @@ class StoreController extends AbstractController
 
         /** @var PluginCollection $plugins */
         $plugins = $this->pluginRepo->search(new Criteria(), $context)->getEntities();
+
         try {
             $storeToken = $this->getUserStoreToken($context);
         } catch (StoreTokenMissingException $e) {
@@ -309,8 +312,10 @@ class StoreController extends AbstractController
 
         /** @var PluginCollection $plugins */
         $plugins = $searchResult->getEntities();
+
         try {
             $language = $request->query->get('language', 'en-GB');
+
             try {
                 $storeToken = $this->getUserStoreToken($context);
             } catch (StoreTokenMissingException $e) {

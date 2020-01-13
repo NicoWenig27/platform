@@ -79,7 +79,7 @@
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="media_folder.repository"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <tag name="shopware.dal_indexing.indexer" priority="500"/>
         </service>
 
@@ -88,7 +88,7 @@
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="media_folder_configuration.repository"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <tag name="shopware.dal_indexing.indexer" priority="500"/>
         </service>
 
@@ -97,7 +97,7 @@
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory"/>
             <argument type="service" id="media.repository"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator"/>
-            <argument type="service" id="Shopware\Core\Framework\Cache\CacheClearer"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Cache\CacheClearer"/>
             <argument type="service" id="Shopware\Core\Content\Media\MediaDefinition"/>
             <tag name="shopware.dal_indexing.indexer"/>
             <tag name="kernel.event_subscriber"/>
@@ -160,20 +160,20 @@
             <argument type="service" id="media_folder.repository"/>
             <argument type="service" id="messenger.bus.shopware"/>
 
-            <tag name="console.command" command="media:generate-thumbnails"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Content\Media\Commands\GenerateMediaTypesCommand">
             <argument type="service" id="Shopware\Core\Content\Media\TypeDetector\TypeDetector"/>
             <argument type="service" id="media.repository"/>
 
-            <tag name="console.command" command="media:generate-media-types"/>
+            <tag name="console.command"/>
         </service>
 
         <service id="Shopware\Core\Content\Media\Commands\DeleteNotUsedMediaCommand">
             <argument type="service" id="Shopware\Core\Content\Media\DeleteNotUsedMediaService"/>
 
-            <tag name="console.command" command="media:delete-unused"/>
+            <tag name="console.command"/>
         </service>
 
         <!-- Pathname -->
@@ -193,6 +193,12 @@
         </service>
 
         <service id="Shopware\Core\Content\Media\Pathname\PathnameStrategy\FilenamePathnameStrategy">
+            <argument type="service" id="Shopware\Core\Content\Media\Pathname\PathnameStrategy\PlainPathnameStrategy"/>
+
+            <tag name="shopware.pathname.strategy"/>
+        </service>
+
+        <service id="Shopware\Core\Content\Media\Pathname\PathnameStrategy\PhysicalFilenamePathnameStrategy">
             <argument type="service" id="Shopware\Core\Content\Media\Pathname\PathnameStrategy\PlainPathnameStrategy"/>
 
             <tag name="shopware.pathname.strategy"/>
