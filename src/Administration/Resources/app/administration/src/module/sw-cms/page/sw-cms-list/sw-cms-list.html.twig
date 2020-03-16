@@ -135,6 +135,13 @@
                                                                         </sw-context-menu-item>
                                                                     {% endblock %}
 
+                                                                    {% block sw_cms_list_listing_list_data_grid_actions_edit_duplicate %}
+                                                                        <sw-context-menu-item
+                                                                            @click="onDuplicateCmsPage(item)">
+                                                                            {{ $tc('sw-cms.components.cmsListItem.duplicate') }}
+                                                                        </sw-context-menu-item>
+                                                                    {% endblock %}
+
                                                                     {% block sw_cms_list_listing_list_data_grid_actions_edit_delete %}
                                                                         <sw-context-menu-item
                                                                             variant="danger"
@@ -200,6 +207,13 @@
                                                                         </sw-context-menu-item>
                                                                     {% endblock %}
 
+                                                                    {% block sw_cms_list_listing_list_item_option_duplicate %}
+                                                                        <sw-context-menu-item
+                                                                            @click="onDuplicateCmsPage(cmsPage)">
+                                                                            {{ $tc('sw-cms.components.cmsListItem.duplicate') }}
+                                                                        </sw-context-menu-item>
+                                                                    {% endblock %}
+
                                                                     {% block sw_cms_list_listing_list_item_option_delete %}
                                                                         <sw-context-menu-item
                                                                                 v-if="!cmsPage.locked"
@@ -242,7 +256,7 @@
                 {% endblock %}
 
                 {% block sw_cms_list_media_modal %}
-                    <sw-media-modal
+                    <sw-media-modal-v2
                             variant="regular"
                             v-if="showMediaModal"
                             :caption="$tc('sw-cms.components.cmsListItem.modal.captionMediaUpload')"
@@ -250,7 +264,7 @@
                             :allowMultiSelect="false"
                             @media-modal-selection-change="onPreviewImageChange"
                             @modal-close="onModalClose">
-                    </sw-media-modal>
+                    </sw-media-modal-v2>
                 {% endblock %}
 
                 {% block sw_cms_list_delete_modal %}

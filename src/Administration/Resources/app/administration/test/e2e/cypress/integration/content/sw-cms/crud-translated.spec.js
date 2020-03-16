@@ -20,7 +20,7 @@ describe('CMS: Test crud operations of layouts', () => {
             });
     });
 
-    it.skip('@package @content: create, translate and read layout', () => {
+    it('@base @content: create, translate and read layout', () => {
         const page = new MediaPageObject();
 
         cy.server();
@@ -105,7 +105,7 @@ describe('CMS: Test crud operations of layouts', () => {
         cy.get('.sw-cms-list-item--0 .sw-cms-list-item__title').contains('Deutscher Titel');
     });
 
-    it('@package @content: update translation and read layout', () => {
+    it('@base @content: update translation and read layout', () => {
         const page = new MediaPageObject();
 
         cy.server();
@@ -161,7 +161,7 @@ describe('CMS: Test crud operations of layouts', () => {
         cy.get('.sw-cms-detail__save-action').click();
         cy.wait('@saveData').then((xhr) => {
             expect(xhr).to.have.property('status', 204);
-            cy.get('.sw-text-editor__content-editor h2').contains('Deutsch');
+            cy.get('.sw-text-editor__content-editor').contains('Deutsch');
         });
 
         cy.get('.sw-cms-toolbar__language-selection .sw-language-switch__select').click();
@@ -193,6 +193,6 @@ describe('CMS: Test crud operations of layouts', () => {
         cy.get('.cms-block h2').contains('Lorem Ipsum dolor sit amet');
         cy.get('#languagesDropdown-top-bar').click();
         cy.contains('Deutsch').click();
-        cy.get('.cms-block h2').contains('Deutsch');
+        cy.get('.cms-element-text').contains('Deutsch');
     });
 });

@@ -34,6 +34,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Query\ScoreQuery;
@@ -152,7 +153,7 @@ class ElasticsearchProductTest extends TestCase
             ->getContainer()
             ->get(Connection::class);
 
-        $connection->executeQuery('
+        $connection->executeUpdate('
             DROP TABLE IF EXISTS `extended_product`;
             CREATE TABLE `extended_product` (
                 `id` BINARY(16) NOT NULL,
@@ -180,7 +181,7 @@ class ElasticsearchProductTest extends TestCase
             ->get(Connection::class);
 
         $connection->rollBack();
-        $connection->executeQuery('DROP TABLE `extended_product`');
+        $connection->executeUpdate('DROP TABLE `extended_product`');
     }
 
     public function testIndexing()
@@ -554,8 +555,6 @@ class ElasticsearchProductTest extends TestCase
      */
     public function testTermsAggregationWithSorting(TestDataCollection $data): void
     {
-        static::markTestIncomplete('Requires ongr/dsl update. Waiting for https://github.com/ongr-io/ElasticsearchDSL/pull/296');
-
         $aggregator = $this->createEntityAggregator();
 
         // check simple search without any restrictions
@@ -1001,6 +1000,33 @@ class ElasticsearchProductTest extends TestCase
     /**
      * @depends testIndexing
      */
+    public function testEntityAggregationWithTermQuery(TestDataCollection $data): void
+    {
+        $aggregator = $this->createEntityAggregator();
+
+        // check simple search without any restrictions
+        $criteria = (new Criteria($data->prefixed('p')))->setTerm('Grouped');
+        $criteria->addAggregation(new EntityAggregation('manufacturers', 'product.manufacturerId', ProductManufacturerDefinition::ENTITY_NAME));
+
+        $aggregations = $aggregator->aggregate($this->productDefinition, $criteria, $data->getContext());
+
+        static::assertCount(1, $aggregations);
+
+        static::assertTrue($aggregations->has('manufacturers'));
+
+        /** @var EntityResult $result */
+        $result = $aggregations->get('manufacturers');
+        static::assertInstanceOf(EntityResult::class, $result);
+
+        static::assertCount(2, $result->getEntities());
+
+        static::assertTrue($result->getEntities()->has($data->get('m2')));
+        static::assertTrue($result->getEntities()->has($data->get('m3')));
+    }
+
+    /**
+     * @depends testIndexing
+     */
     public function testFilterAggregation(TestDataCollection $data): void
     {
         $aggregator = $this->createEntityAggregator();
@@ -1202,6 +1228,64 @@ class ElasticsearchProductTest extends TestCase
         static::assertSame(1, $products->getTotal());
     }
 
+    /**
+     * @depends testIndexing
+     */
+    public function testFilterCustomTextField(TestDataCollection $data): void
+    {
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('customFields.testField', 'Silk'));
+
+        $result = $this->productRepository->searchIds($criteria, Context::createDefaultContext());
+
+        static::assertEquals(1, $result->getTotal());
+        static::assertTrue($result->has($data->get('p1')));
+    }
+
+    /**
+     * @depends testIndexing
+     */
+    public function testXorQuery(TestDataCollection $data): void
+    {
+        $searcher = $this->createEntitySearcher();
+
+        $criteria = new Criteria();
+
+        $multiFilter = new MultiFilter(
+            MultiFilter::CONNECTION_XOR,
+            [
+                new EqualsFilter('taxId', $data->get('t1')),
+                new EqualsFilter('manufacturerId', $data->get('m2')),
+            ]
+        );
+        $criteria->addFilter($multiFilter);
+
+        $products = $searcher->search($this->productDefinition, $criteria, $data->getContext());
+        static::assertSame(3, $products->getTotal());
+    }
+
+    /**
+     * @depends testIndexing
+     */
+    public function testNegativXorQuery(TestDataCollection $data): void
+    {
+        $searcher = $this->createEntitySearcher();
+
+        $criteria = new Criteria();
+
+        $multiFilter = new MultiFilter(
+            MultiFilter::CONNECTION_XOR,
+            [
+                new EqualsFilter('taxId', 'foo'),
+                new EqualsFilter('manufacturerId', 'baa'),
+            ]
+        );
+        $criteria->addFilter($multiFilter);
+
+        $products = $searcher->search($this->productDefinition, $criteria, $data->getContext());
+        static::assertSame(0, $products->getTotal());
+    }
+
     protected function getDiContainer(): ContainerInterface
     {
         return $this->getContainer();
@@ -1235,6 +1319,9 @@ class ElasticsearchProductTest extends TestCase
             'manufacturer' => ['id' => $this->ids->create($manufacturerKey), 'name' => $manufacturerKey],
             'tax' => ['id' => $this->ids->create($taxKey),  'name' => 'test', 'taxRate' => 15],
             'releaseDate' => $releaseDate,
+            'customFields' => [
+                'testField' => $name,
+            ],
         ];
 
         if (!empty($categories)) {

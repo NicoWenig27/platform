@@ -6,16 +6,24 @@
 
     <services>
         <!-- Theme -->
+        <service id="Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory"/>
+
         <service id="Shopware\Storefront\Theme\StorefrontPluginRegistry" public="true">
             <argument type="service" id="kernel"/>
+            <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\ThemeCompiler">
             <argument type="service" id="shopware.filesystem.public"/>
+            <argument type="service" id="shopware.filesystem.temp"/>
             <argument type="service" id="Shopware\Storefront\Theme\ThemeFileResolver" />
             <argument>%kernel.cache_dir%</argument>
             <argument>%kernel.debug%</argument>
+            <argument type="service" id="Symfony\Component\EventDispatcher\EventDispatcherInterface" />
+            <argument type="service" id="Shopware\Storefront\Theme\ThemeFileImporter"/>
         </service>
+
+        <service id="Shopware\Storefront\Theme\ThemeFileImporter"/>
 
         <service id="Shopware\Storefront\Theme\ThemeLifecycleService">
             <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginRegistry"/>
@@ -33,26 +41,32 @@
             <argument type="service" id="theme.repository"/>
             <argument type="service" id="theme_sales_channel.repository"/>
             <argument type="service" id="media.repository"/>
-            <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginRegistry"/>
             <argument type="service" id="Shopware\Storefront\Theme\ThemeCompiler"/>
             <argument type="service" id="cache.object"/>
         </service>
 
+        <service id="Shopware\Storefront\Theme\ThemeLifecycleHandler">
+            <argument type="service" id="Shopware\Storefront\Theme\ThemeLifecycleService"/>
+            <argument type="service" id="Shopware\Storefront\Theme\ThemeService"/>
+            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="theme.repository"/>
+        </service>
+
         <!-- Entity definitions -->
         <service id="Shopware\Storefront\Theme\ThemeDefinition">
-            <tag name="shopware.entity.definition" entity="theme"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Aggregate\ThemeTranslationDefinition">
-            <tag name="shopware.entity.definition" entity="theme_translation"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Aggregate\ThemeSalesChannelDefinition">
-            <tag name="shopware.entity.definition" entity="theme_sales_channel"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Aggregate\ThemeMediaDefinition">
-            <tag name="shopware.entity.definition" entity="theme_media"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <!-- Entity extensions -->
@@ -118,12 +132,10 @@
 
         <!-- Subscriber -->
         <service id="Shopware\Storefront\Theme\Subscriber\PluginLifecycleSubscriber">
-            <argument type="service" id="Shopware\Storefront\Theme\ThemeLifecycleService"/>
             <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginRegistry"/>
-            <argument type="service" id="Shopware\Storefront\Theme\ThemeService"/>
             <argument>%kernel.project_dir%</argument>
-            <argument type="service" id="theme.repository"/>
-            <argument type="service" id="sales_channel.repository"/>
+            <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginConfiguration\StorefrontPluginConfigurationFactory"/>
+            <argument type="service" id="Shopware\Storefront\Theme\ThemeLifecycleHandler"/>
 
             <tag name="kernel.event_subscriber"/>
         </service>
@@ -131,6 +143,7 @@
         <service id="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilderInterface"
                  class="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilder">
             <argument type="service" id="kernel"/>
+            <argument type="service" id="Shopware\Storefront\Theme\StorefrontPluginRegistry"/>
         </service>
 
         <!-- Twig -->
@@ -141,12 +154,22 @@
             <argument type="service" id="twig.loader"/>
             <argument>%kernel.cache_dir%</argument>
             <argument type="service" id="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilderInterface"/>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder"/>
 
             <call method="registerBundles">
                 <argument type="service" id="kernel" />
             </call>
 
             <tag name="kernel.event_subscriber" />
+            <deprecated>tag:v6.3.0 the %service_id% service will be removed, use ThemeNamespaceHierarchyBuilder instead</deprecated>
+        </service>
+
+        <service id="Shopware\Storefront\Theme\Twig\ThemeNamespaceHierarchyBuilder">
+            <argument type="service" id="Shopware\Storefront\Theme\Twig\ThemeInheritanceBuilderInterface"/>
+
+            <tag name="kernel.event_subscriber" />
+            <!-- Make sure it runs after default `BundleHierarchyBuilder` -->
+            <tag name="shopware.twig.hierarchy_builder" priority="500"/>
         </service>
 
         <service id="Shopware\Storefront\Theme\Subscriber\FirstRunWizardSubscriber">

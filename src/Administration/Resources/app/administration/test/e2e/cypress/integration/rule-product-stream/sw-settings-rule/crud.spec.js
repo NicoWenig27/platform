@@ -16,7 +16,7 @@ describe('Rule builder: Test crud operations', () => {
             });
     });
 
-    it('@package @rule: create and read rule', () => {
+    it('@base @rule: create and read rule', () => {
         const page = new RulePageObject();
 
         // Request we want to wait for later
@@ -59,11 +59,9 @@ describe('Rule builder: Test crud operations', () => {
             cy.get('.sw-condition-type-select', { withinSubject: conditionElement })
                 .then((conditionTypeSelect) => {
                     cy.wrap(conditionTypeSelect).click();
-                    cy.get('.sw-select-result-list', { withinSubject: conditionTypeSelect })
-                        .should('be.visible');
+                    cy.get('.sw-select-result-list-popover-wrapper').should('be.visible');
 
-                    cy.get('.sw-select-result-list', { withinSubject: conditionTypeSelect })
-                        .contains('Time range')
+                    cy.get('.sw-select-result-list-popover-wrapper',).contains('Time range')
                         .click();
                 })
         });
@@ -80,7 +78,7 @@ describe('Rule builder: Test crud operations', () => {
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`).contains('Rule 1st');
     });
 
-    it('@package @rule: delete rule', () => {
+    it('@base @rule: delete rule', () => {
         const page = new RulePageObject();
 
         // Request we want to wait for later
@@ -91,7 +89,9 @@ describe('Rule builder: Test crud operations', () => {
         }).as('deleteData');
 
         // Delete rule
+        cy.get(`${page.elements.dataGridRow}--0`).should('be.visible');
         cy.get('.sw-search-bar__input').typeAndCheckSearchField('Ruler');
+        cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`).should('be.visible');
         cy.get(`${page.elements.dataGridRow}--0 .sw-data-grid__cell--name`).contains('Ruler');
         cy.clickContextMenuItem(
             '.sw-context-menu-item--danger',

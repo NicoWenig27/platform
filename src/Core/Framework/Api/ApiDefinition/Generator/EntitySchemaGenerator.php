@@ -27,7 +27,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListingPriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextWithHtmlField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ObjectField;
@@ -56,12 +55,12 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
 {
     public const FORMAT = 'entity-schema';
 
-    public function supports(string $format): bool
+    public function supports(string $format, int $version, string $api): bool
     {
         return $format === self::FORMAT;
     }
 
-    public function generate(array $definitions, int $version): array
+    public function generate(array $definitions, int $version, string $api): array
     {
         return $this->getSchema($definitions, $version);
     }
@@ -213,7 +212,6 @@ class EntitySchemaGenerator implements ApiDefinitionGeneratorInterface
             // long text fields
             case $field instanceof TreePathField:
             case $field instanceof LongTextField:
-            case $field instanceof LongTextWithHtmlField:
                 return ['type' => 'text', 'flags' => $flags];
 
             // date fields

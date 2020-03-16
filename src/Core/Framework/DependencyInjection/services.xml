@@ -11,6 +11,9 @@
             <parameter key="lowercase">false</parameter>
         </parameter>
 
+        <!-- Populated by RouteScopeCompilerPass with all route prefixes from the registers RouteScopes -->
+        <parameter key="shopware.routing.registered_api_prefixes" type="collection"/>
+
         <!-- Migration config -->
         <parameter key="core.migration.directories" type="collection" />
         <parameter key="migration.active" type="collection"/>
@@ -245,9 +248,20 @@
             <argument type="service" id="twig"/>
             <argument type="service" id="twig.loader"/>
             <argument>%kernel.cache_dir%</argument>
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder"/>
             <call method="registerBundles">
                 <argument type="service" id="kernel" />
             </call>
+        </service>
+
+        <service id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder">
+            <argument type="tagged" tag="shopware.twig.hierarchy_builder"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\BundleHierarchyBuilder">
+            <argument type="service" id="kernel"/>
+
+            <tag name="shopware.twig.hierarchy_builder" priority="1000"/>
         </service>
 
         <service id="Shopware\Core\Framework\Adapter\Twig\InheritanceExtension">
@@ -276,8 +290,17 @@
             <tag name="twig.extension"/>
         </service>
 
+        <service id="Shopware\Core\Framework\Adapter\Twig\Filter\ReplaceRecursiveFilter">
+            <tag name="twig.extension"/>
+        </service>
+
         <service id="Shopware\Core\Framework\Adapter\Twig\StringTemplateRenderer">
             <argument type="service" id="twig"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Adapter\Twig\TemplateIterator" decorates="twig.template_iterator">
+            <argument type="service" id="Shopware\Core\Framework\Adapter\Twig\TemplateIterator.inner"/>
+            <argument>%kernel.bundles%</argument>
         </service>
 
         <service id="Shopware\Core\Framework\Routing\ApiRequestContextResolver">
@@ -293,18 +316,21 @@
             <argument type="service" id="Shopware\Core\Framework\Routing\RouteScopeRegistry"/>
         </service>
 
+        <service id="Shopware\Administration\Service\AdminOrderCartService">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+        </service>
+
         <service id="Shopware\Core\Framework\Api\Controller\SalesChannelProxyController" public="true">
             <argument type="service" id="kernel"/>
             <argument type="service" id="sales_channel.repository"/>
             <argument type="service" id="Shopware\Core\Framework\Validation\DataValidator"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory"/>
             <argument type="service" id="Shopware\Core\Framework\Routing\SalesChannelRequestContextResolver"/>
             <argument type="service" id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextService"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartPersister"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\Processor"/>
-            <argument type="service" id="Shopware\Core\Checkout\Cart\CartRuleLoader"/>
+            <argument type="service" id="Shopware\Administration\Service\AdminOrderCartService"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -319,6 +345,10 @@
         </service>
 
         <service id="Shopware\Core\Framework\Routing\SalesChannelApiRouteScope">
+            <tag name="shopware.route_scope"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Routing\StoreApiRouteScope">
             <tag name="shopware.route_scope"/>
         </service>
 
@@ -338,7 +368,7 @@
         </service>
 
         <service id="Shopware\Core\Framework\Log\LogEntryDefinition">
-            <tag name="shopware.entity.definition" entity="log_entry"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <!-- Feature Flags -->

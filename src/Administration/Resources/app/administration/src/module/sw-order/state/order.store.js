@@ -1,19 +1,36 @@
 const { Utils, Service } = Shopware;
 const { get } = Utils;
 
+function filterEmptyLineItems(items) {
+    return items.filter(item => item.label === '');
+}
+
+function reverseLineItems(items) {
+    return items.slice().reverse();
+}
+
+function mergeEmptyAndExistingLineItems(emptyLineItems, lineItems) {
+    // Reverse the lineItems so the newly added are at the top for better UX
+    reverseLineItems(lineItems);
+
+    return [...emptyLineItems, ...lineItems];
+}
+
 export default {
     namespaced: true,
 
     state() {
         return {
             customer: null,
+            defaultSalesChannel: null,
             cart: {
                 token: null,
                 lineItems: []
             },
             currency: {
                 shortName: 'EUR'
-            }
+            },
+            promotionCodes: []
         };
     },
 
@@ -22,14 +39,18 @@ export default {
             state.customer = customer;
         },
 
+        setDefaultSalesChannel(state, salesChannel) {
+            state.defaultSalesChannel = salesChannel;
+        },
+
         setCartToken(state, token) {
             state.cart.token = token;
         },
 
         setCart(state, cart) {
-            const emptyLineItems = state.cart.lineItems.filter(item => item.label === '');
+            const emptyLineItems = filterEmptyLineItems(state.cart.lineItems);
             state.cart = cart;
-            state.cart.lineItems = cart.lineItems.concat(emptyLineItems).reverse();
+            state.cart.lineItems = mergeEmptyAndExistingLineItems(emptyLineItems, state.cart.lineItems);
         },
 
         setCartLineItems(state, lineItems) {
@@ -40,28 +61,48 @@ export default {
             state.currency = currency;
         },
 
+        setPromotionCodes(state, promotionCodes) {
+            state.promotionCodes = promotionCodes;
+        },
+
         removeEmptyLineItem(state, emptyLineItemKey) {
             state.cart.lineItems = state.cart.lineItems.filter(item => item.id !== emptyLineItemKey);
+        },
+
+        removeInvalidPromotionCodes(state) {
+            state.promotionCodes = state.promotionCodes.filter(item => !item.isInvalid);
         }
     },
 
     getters: {
         isCustomerActive(state) {
             return get(state, 'customer.active', false);
+        },
+
+        isCartTokenAvailable(state) {
+            return get(state, 'cart.token', null);
+        },
+
+        currencyId(state) {
+            return get(state, 'currency.id', '');
+        },
+
+        invalidPromotionCodes(state) {
+            return state.promotionCodes.filter(item => item.isInvalid);
         }
     },
 
     actions: {
         selectExistingCustomer({ commit }, { customer }) {
             commit('setCustomer', customer);
+            commit('setDefaultSalesChannel', { ...get(customer, 'salesChannel', null) });
         },
 
-        createCart({ commit, dispatch }, { salesChannelId }) {
+        createCart({ commit }, { salesChannelId }) {
             return Service('cartSalesChannelService')
                 .createCart(salesChannelId)
                 .then(response => {
                     commit('setCartToken', response.data['sw-context-token']);
-                    dispatch('dispatchUpdateCustomerContext');
                 });
         },
 
@@ -74,12 +115,6 @@ export default {
         cancelCart(_, { salesChannelId, contextToken }) {
             return Service('cartSalesChannelService')
                 .cancelCart(salesChannelId, contextToken);
-        },
-
-        dispatchUpdateCustomerContext({ state }) {
-            const { customer, cart } = state;
-            return Service('salesChannelContextService')
-                .updateCustomerContext(customer.id, customer.salesChannelId, cart.token);
         },
 
         updateCustomerContext(_, { customerId, salesChannelId, contextToken }) {
@@ -97,31 +132,27 @@ export default {
                 .checkout(salesChannelId, contextToken);
         },
 
-        addProductItem({ commit }, { salesChannelId, contextToken, productId, quantity }) {
+        removeLineItems({ commit }, { salesChannelId, contextToken, lineItemKeys }) {
             return Service('cartSalesChannelService')
-                .addProduct(salesChannelId, contextToken, productId, quantity)
+                .removeLineItems(salesChannelId, contextToken, lineItemKeys)
                 .then(response => commit('setCart', response.data.data));
         },
 
-        removeLineItem({ dispatch }, { salesChannelId, contextToken, lineItemKeys }) {
-            const deletionPromises = lineItemKeys.map((lineItemKey) => {
-                return Service('cartSalesChannelService').removeLineItem(salesChannelId, contextToken, lineItemKey);
-            });
-
-            return Promise.all(deletionPromises).then(() => {
-                dispatch('getCart', { salesChannelId, contextToken });
-            });
-        },
-
-        updateLineItem({ commit }, { salesChannelId, contextToken, item }) {
+        saveLineItem({ commit }, { salesChannelId, contextToken, item }) {
             return Service('cartSalesChannelService')
-                .updateLineItem(salesChannelId, contextToken, item)
+                .saveLineItem(salesChannelId, contextToken, item)
                 .then((response) => commit('setCart', response.data.data));
         },
 
-        addCustomItem({ commit }, { salesChannelId, contextToken, item }) {
+        addPromotionCode({ commit }, { salesChannelId, contextToken, code }) {
             return Service('cartSalesChannelService')
-                .addCustomItem(salesChannelId, contextToken, item)
+                .addPromotionCode(salesChannelId, contextToken, code)
+                .then(response => commit('setCart', response.data.data));
+        },
+
+        modifyShippingCosts({ commit }, { salesChannelId, contextToken, shippingCosts }) {
+            return Service('cartSalesChannelService')
+                .modifyShippingCosts(salesChannelId, contextToken, shippingCosts)
                 .then(response => commit('setCart', response.data.data));
         }
     }

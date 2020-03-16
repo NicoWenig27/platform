@@ -9,7 +9,15 @@
   "style": [
     {
       "app/storefront/src/scss/base.scss": {
-        "resolve": {"vendor": "app/storefront/vendor"}}
+        "resolve": {
+          "vendor": "app/storefront/vendor"
+        }
+      },
+      "app/storefront/src/scss/skin/shopware/_base.scss": {
+        "resolve": {
+          "vendor": "app/storefront/vendor"
+        }
+      }
     },
     "@Plugins"
   ],

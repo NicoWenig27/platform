@@ -1,8 +1,33 @@
 {% block sw_order_create %}
     <sw-card-view>
+        {% block sw_order_create_address_modal %}
+            <sw-order-create-address-modal
+                v-if="showAddressModal"
+                :address="address"
+                :addAddressModalTitle="addAddressModalTitle"
+                :editAddressModalTitle="editAddressModalTitle"
+                :customer="customer"
+                :cart="cart"
+                @close-modal="closeModal"
+                @set-customer-address="setCustomerAddress">
+            </sw-order-create-address-modal>
+        {% endblock %}
+
+        {% block sw_order_create_promotion_modal %}
+            <sw-order-create-promotion-modal
+                v-if="showPromotionModal"
+                :isLoading="isLoading"
+                :currency="currency"
+                @close="onClosePromotionModal"
+                @save="onSavePromotionModal"
+            >
+            </sw-order-create-promotion-modal>
+        {% endblock %}
+
         {% block sw_order_create_details %}
             <sw-card
                 :title="$tc('sw-order.createBase.labelDetailsCard')"
+                :isLoading="isLoadingDetail"
                 class="sw-order-create__card">
                 <template #grid>
                     <sw-container type="row" class="sw-order-user-card">
@@ -55,17 +80,35 @@
                                     :isCustomerActive="isCustomerActive"
                                     editable
                                     ref="sw-order-line-item-grid-sales-channel"
-                                    @on-add-item="onAddProductItem"
-                                    @on-add-custom-item="onAddCustomItem"
-                                    @on-remove-item="onRemoveItem"
-                                    @on-edit-item="onEditItem">
+                                    @on-save-item="onSaveItem"
+                                    @on-remove-items="onRemoveItems">
                                 </sw-order-line-items-grid-sales-channel>
                             {% endblock %}
 
                             {% block sw_order_create_base_line_items_summary %}
                                 <sw-card-section v-show="cartLineItems.length" divider="top" secondary slim>
                                     <sw-container columns="1fr 440px"
+                                                  gap="14px"
                                                   class="sw-order-create-summary">
+                                        <div>
+                                            {% block sw_order_create_base_line_items_switch_promotions %}
+                                                <sw-switch-field class="sw-order-create-summary__switch-promotions"
+                                                                 :label="$tc('sw-order.promotionModal.labelTitle')"
+                                                                 v-model="disabledAutoPromotionVisibility">
+                                                </sw-switch-field>
+                                            {% endblock %}
+                                            {% block sw_order_create_base_line_items_voucher_field %}
+                                                <sw-order-promotion-tag-field
+                                                    :disabled="!hasLineItem"
+                                                    :currency="currency"
+                                                    :label="$tc('sw-order.createBase.labelAddPromotion')"
+                                                    v-model="promotionCodeTags"
+                                                    :placeholder="$tc('sw-order.createBase.placeholderAddPromotion')"
+                                                    @on-remove-code="onRemoveExistingCode"
+                                                    :error="promotionError">
+                                                </sw-order-promotion-tag-field>
+                                            {% endblock %}
+                                        </div>
                                         <sw-description-list grid="265px 1fr"
                                                              class="sw-order-create-summary__data">
                                             {% block sw_order_create_base_line_items_summary_entries %}
@@ -80,10 +123,16 @@
                                                         <dd>
                                                             <sw-order-saveable-field type="number"
                                                                                      editable
-                                                                                     value="">
+                                                                                     v-tooltip="{ showDelay: 300, message: shippingCostsDetail }"
+                                                                                     :value="cartDelivery.shippingCosts.totalPrice"
+                                                                                     @value-change="onShippingChargeEdited">
                                                                 {{ cartDelivery.shippingCosts.totalPrice | currency(currency.shortName) }}
                                                             </sw-order-saveable-field>
-                                                    </dd>
+                                                        </dd>
+                                                    </template>
+                                                    <template v-if="cartDeliveryDiscounts" v-for="delivery in cartDeliveryDiscounts">
+                                                        <dt>{{ $tc('sw-order.createBase.discountLabelShippingCosts') }}</dt>
+                                                        <dd>{{ delivery.shippingCosts.totalPrice | currency(currency.shortName) }}</dd>
                                                     </template>
                                                 {% endblock %}
 

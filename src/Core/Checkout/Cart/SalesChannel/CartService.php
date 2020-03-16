@@ -234,11 +234,9 @@ class CartService
 
     private function calculate(Cart $cart, SalesChannelContext $context, bool $persist = false): Cart
     {
-        $behavior = new CartBehavior();
-
         // validate cart against the context rules
         $cart = $this->cartRuleLoader
-            ->loadByCart($context, $cart, $behavior)
+            ->loadByCart($context, $cart, new CartBehavior($context->getPermissions()))
             ->getCart();
 
         if ($persist) {

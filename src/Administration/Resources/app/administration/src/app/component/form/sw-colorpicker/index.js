@@ -23,7 +23,8 @@ Component.register('sw-colorpicker', {
     template,
 
     mixins: [
-        Mixin.getByName('sw-form-field')
+        Mixin.getByName('sw-form-field'),
+        Mixin.getByName('remove-api-error')
     ],
 
     props: {
@@ -52,6 +53,12 @@ Component.register('sw-colorpicker', {
         },
 
         disabled: {
+            type: Boolean,
+            required: false,
+            default: false
+        },
+
+        readonly: {
             type: Boolean,
             required: false,
             default: false
@@ -756,6 +763,14 @@ Component.register('sw-colorpicker', {
             }
 
             return hslValue;
+        },
+
+        onClickInput() {
+            if (!this.readonly) {
+                return;
+            }
+
+            this.toggleColorPicker();
         }
     }
 });

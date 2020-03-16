@@ -16,7 +16,7 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
 
     public function update(Connection $connection): void
     {
-        $connection->executeQuery('
+        $connection->executeUpdate('
             CREATE TABLE `import_export_profile` (
               `id` binary(16) NOT NULL,
               `name` varchar(255) NOT NULL,
@@ -89,7 +89,7 @@ class Migration1554199340AddImportExportProfile extends MigrationStep
             'delimiter' => ';',
             'enclosure' => '"',
             'mapping' => json_encode($mapping),
-            'created_at' => date(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ];
     }
 

@@ -4,16 +4,30 @@ namespace Shopware\Core\Content\MailTemplate\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
+/** @deprecated tag:v6.3.0 use MailerTransportFactory to build a transport layer instead */
 class MailerFactory
 {
     public function create(SystemConfigService $configService, \Swift_Mailer $mailer): \Swift_Mailer
     {
         $emailAgent = $configService->get('core.mailerSettings.emailAgent');
 
-        if ($emailAgent !== 'smtp') {
+        if ($emailAgent === null) {
             return $mailer;
         }
 
+        switch ($emailAgent) {
+            case 'smtp':
+                return $this->createSmtpMailer($configService);
+            case 'local':
+                return new \Swift_Mailer(new \Swift_SendmailTransport($this->getSendMailCommandLineArgument($configService)));
+
+            default:
+                throw new \RuntimeException('Invalid mail agent given "%s"', $emailAgent);
+        }
+    }
+
+    protected function createSmtpMailer($configService): \Swift_Mailer
+    {
         $transport = new \Swift_SmtpTransport(
             $configService->get('core.mailerSettings.host'),
             $configService->get('core.mailerSettings.port'),
@@ -32,9 +46,7 @@ class MailerFactory
             (string) $configService->get('core.mailerSettings.password')
         );
 
-        $mailer = new \Swift_Mailer($transport);
-
-        return $mailer;
+        return new \Swift_Mailer($transport);
     }
 
     private function getEncryption(SystemConfigService $configService): ?string
@@ -65,5 +77,22 @@ class MailerFactory
             default:
                 return null;
         }
+    }
+
+    private function getSendMailCommandLineArgument(SystemConfigService $configService): string
+    {
+        $command = '/usr/sbin/sendmail ';
+
+        $option = $configService->get('core.mailerSettings.sendMailOptions');
+
+        if (empty($option)) {
+            $option = '-t';
+        }
+
+        if ($option !== '-bs' && $option !== '-t') {
+            throw new \RuntimeException('Given sendmail option "%s" is invalid', $option);
+        }
+
+        return $command . $option;
     }
 }

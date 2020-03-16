@@ -10,12 +10,16 @@ module.exports = {
         'node': true,
         'es6': true,
     },
+    'globals': {
+        'gtag': true
+    },
     'parserOptions': {
         'ecmaVersion': 6,
         'sourceType': 'module',
     },
     'rules': {
-        'comma-dangle': ['error', 'always-multiline'],
+        'comma-dangle': ['error', 'never'],
+        'one-var': ['error', 'never'],
         'no-console': 0,
         'no-debugger': (isDevMode ? 0 : 2),
         'prefer-const': 'warn',

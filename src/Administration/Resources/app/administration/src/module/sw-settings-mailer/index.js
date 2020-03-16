@@ -1,12 +1,11 @@
-import './extension/sw-settings-index';
 import './component/sw-settings-mailer-smtp';
 import './page/sw-settings-mailer';
 
 Shopware.Module.register('sw-settings-mailer', {
     type: 'core',
     name: 'settings-mailer',
-    title: 'sw-settings-store.general.mainMenuItemGeneral', // TODO: Add title
-    description: 'sw-settings-store.general.description', // TODO: Add description
+    title: 'sw-settings-mailer.general.mainMenuItemGeneral',
+    description: 'sw-settings-mailer.general.description',
     color: '#9AA8B5',
     icon: 'default-communication-envelope',
     favicon: 'icon-module-settings.png',
@@ -19,5 +18,11 @@ Shopware.Module.register('sw-settings-mailer', {
                 parentPath: 'sw.settings.index'
             }
         }
+    },
+
+    settingsItem: {
+        group: 'system',
+        to: 'sw.settings.mailer.index',
+        icon: 'default-communication-envelope'
     }
 });

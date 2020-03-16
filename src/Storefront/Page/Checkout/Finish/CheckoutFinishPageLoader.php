@@ -13,7 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\Framework\Uuid\Exception\InvalidUuidException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Storefront\Page\GenericPageLoader;
+use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -30,14 +30,14 @@ class CheckoutFinishPageLoader
     private $orderRepository;
 
     /**
-     * @var GenericPageLoader
+     * @var GenericPageLoaderInterface
      */
     private $genericLoader;
 
     public function __construct(
         EventDispatcherInterface $eventDispatcher,
         EntityRepositoryInterface $orderRepository,
-        GenericPageLoader $genericLoader
+        GenericPageLoaderInterface $genericLoader
     ) {
         $this->eventDispatcher = $eventDispatcher;
         $this->orderRepository = $orderRepository;
@@ -87,8 +87,8 @@ class CheckoutFinishPageLoader
         $criteria = (new Criteria([$orderId]))
             ->addFilter(new EqualsFilter('order.orderCustomer.customerId', $customer->getId()))
             ->addAssociation('lineItems.cover')
-            ->addAssociation('transactions')
-            ->addAssociation('deliveries');
+            ->addAssociation('transactions.paymentMethod')
+            ->addAssociation('deliveries.shippingMethod');
 
         try {
             $searchResult = $this->orderRepository->search($criteria, $salesChannelContext->getContext());

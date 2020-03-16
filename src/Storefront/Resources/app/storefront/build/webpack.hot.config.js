@@ -4,6 +4,15 @@ const { existsSync } = require('fs');
 const FriendlyErrorsWebpackPlugin = require('friendly-errors-webpack-plugin');
 const utils = require('./utils');
 
+/**
+ * -------------------------------------------------------
+ * WEBPACK CONFIGURATION
+ * -------------------------------------------------------
+ * Impacts development hot mode
+ * https://webpack.js.org/configuration
+ * -------------------------------------------------------
+ */
+
 const themeFilesConfigPath = join(utils.getProjectRootPath(), 'var/theme-files.json');
 if (!existsSync(themeFilesConfigPath)) {
     throw new Error(`File "${themeFilesConfigPath}" not found`);
@@ -11,15 +20,6 @@ if (!existsSync(themeFilesConfigPath)) {
 
 // eslint-disable-next-line
 const themeFiles = require(themeFilesConfigPath);
-
-/**
- * -------------------------------------------------------
- * WEBPACK CONFIGURATIONS
- * -------------------------------------------------------
- * Impacts development hot mode
- * https://webpack.js.org/configuration
- * -------------------------------------------------------
- */
 
 /**
  * Webpack module configuration and how them will be treated
@@ -36,10 +36,14 @@ const modules = {
                 },
                 {
                     loader: 'css-loader',
+                    options: {
+                        sourceMap: true,
+                    },
                 },
                 {
                     loader: 'postcss-loader', // needs to be AFTER css/style-loader and BEFORE sass-loader
                     options: {
+                        sourceMap: true,
                         config: {
                             path: join(__dirname, '..'),
                         },
@@ -47,18 +51,8 @@ const modules = {
                 },
                 {
                     loader: 'sass-loader',
-                },
-                // Provides our theme variables to the hot replacement mode
-                {
-                    loader: 'sass-resources-loader',
                     options: {
-                        resources: [
-                            // Dumped theme variables
-                            join(utils.getProjectRootPath(), 'var/theme-variables.scss'),
-
-                            // Storefront & vendor variables + mixins + functions
-                            join(__dirname, '..', 'src/scss/variables.scss'),
-                        ],
+                        sourceMap: true,
                     },
                 },
             ],
@@ -114,6 +108,20 @@ const devServer = {
     headers: {
         'Access-Control-Allow-Origin': '*',
     },
+    before(app, server) {
+        const chokidar = require('chokidar');
+        const themePattern = `${themeFiles.basePath}/**/*.twig`;
+
+        chokidar
+            .watch([themePattern], {
+                persistent: true,
+                cwd: utils.getProjectRootPath(),
+                ignorePermissionErrors: true
+            })
+            .on('all', () => {
+                server.sockWrite(server.sockets, 'content-changed');
+            });
+    }
 };
 
 /**
@@ -131,7 +139,12 @@ const config = {
     plugins: plugins,
 };
 
-config.entry.storefront = [...themeFiles.script, ...themeFiles.style].map((file) => {
+const scssEntryFilePath = join(utils.getProjectRootPath(), 'var/theme-entry.scss');
+const scssDumpedVariables = join(utils.getProjectRootPath(), 'var/theme-variables.scss');
+const scssEntryFileContent = utils.getScssEntryContent(scssDumpedVariables, themeFiles.style);
+const scssEntry = utils.writeScssEntryFile(scssEntryFilePath, scssEntryFileContent);
+
+config.entry.storefront = [...themeFiles.script, scssEntry].map((file) => {
     return file.filepath;
 });
 

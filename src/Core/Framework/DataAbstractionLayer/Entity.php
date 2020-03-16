@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer;
 
 use Shopware\Core\Framework\Struct\ArrayEntity;
+use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Core\Framework\Struct\Struct;
 
 class Entity extends Struct
@@ -31,6 +32,11 @@ class Entity extends Struct
      * @var \DateTimeInterface|null
      */
     protected $updatedAt;
+
+    /**
+     * @var string|null
+     */
+    protected $_entityName;
 
     public function setUniqueIdentifier(string $identifier): void
     {
@@ -62,9 +68,9 @@ class Entity extends Struct
             return $this->getExtension($property);
         }
 
-        /** @var Entity|null $extension */
+        /** @var ArrayStruct|null $extension */
         $extension = $this->getExtension('foreignKeys');
-        if ($extension && $extension instanceof self && $extension->has($property)) {
+        if ($extension && $extension instanceof ArrayStruct && $extension->has($property)) {
             return $extension->get($property);
         }
 
@@ -122,6 +128,8 @@ class Entity extends Struct
     {
         $data = parent::jsonSerialize();
 
+        unset($data['_entityName']);
+
         if (!$this->hasExtension('foreignKeys')) {
             return $data;
         }
@@ -140,5 +148,20 @@ class Entity extends Struct
         }
 
         return $data;
+    }
+
+    public function getApiAlias(): string
+    {
+        return $this->_entityName;
+    }
+
+    /**
+     * @internal
+     */
+    public function internalSetEntityName(string $entityName): self
+    {
+        $this->_entityName = $entityName;
+
+        return $this;
     }
 }

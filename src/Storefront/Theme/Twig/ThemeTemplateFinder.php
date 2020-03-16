@@ -2,6 +2,7 @@
 
 namespace Shopware\Storefront\Theme\Twig;
 
+use Shopware\Core\Framework\Adapter\Twig\NamespaceHierarchy\NamespaceHierarchyBuilder;
 use Shopware\Core\Framework\Adapter\Twig\TemplateFinder;
 use Shopware\Core\SalesChannelRequest;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -9,8 +10,11 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
+use Twig\Loader\LoaderInterface;
 
+/**
+ * @deprecated tag:v6.3.0 will be removed, use ThemeNamespaceHierarchyBuilder instead
+ */
 class ThemeTemplateFinder extends TemplateFinder implements EventSubscriberInterface
 {
     /**
@@ -20,11 +24,12 @@ class ThemeTemplateFinder extends TemplateFinder implements EventSubscriberInter
 
     public function __construct(
         Environment $twig,
-        FilesystemLoader $loader,
+        LoaderInterface $loader,
         string $cacheDir,
-        ThemeInheritanceBuilderInterface $inheritanceBuilder
+        ThemeInheritanceBuilderInterface $inheritanceBuilder,
+        ?NamespaceHierarchyBuilder $hierarchyBuilder = null
     ) {
-        parent::__construct($twig, $loader, $cacheDir);
+        parent::__construct($twig, $loader, $cacheDir, $hierarchyBuilder);
         $this->inheritanceBuilder = $inheritanceBuilder;
     }
 

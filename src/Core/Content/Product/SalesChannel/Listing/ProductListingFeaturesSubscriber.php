@@ -26,6 +26,8 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -49,11 +51,21 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
      */
     private $connection;
 
-    public function __construct(Connection $connection, EntityRepositoryInterface $optionRepository, ProductListingSortingRegistry $sortingRegistry)
-    {
+    /**
+     * @var SystemConfigService
+     */
+    private $systemConfigService;
+
+    public function __construct(
+        Connection $connection,
+        EntityRepositoryInterface $optionRepository,
+        ProductListingSortingRegistry $sortingRegistry,
+        SystemConfigService $systemConfigService
+    ) {
         $this->optionRepository = $optionRepository;
         $this->connection = $connection;
         $this->sortingRegistry = $sortingRegistry;
+        $this->systemConfigService = $systemConfigService;
     }
 
     public static function getSubscribedEvents()
@@ -110,6 +122,8 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     {
         $criteria = $event->getCriteria();
 
+        $this->handleAvailableStock($criteria, $event->getSalesChannelContext());
+
         // suggestion request supports no aggregations or filters
         $criteria->addAssociation('cover.media');
 
@@ -132,6 +146,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $this->handlePagination($request, $criteria);
         $this->handleFilters($request, $criteria);
         $this->handleSorting($request, $criteria, self::DEFAULT_SORT);
+        $this->handleAvailableStock($criteria, $event->getSalesChannelContext());
     }
 
     public function handleSearchRequest(ProductSearchCriteriaEvent $event): void
@@ -144,6 +159,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $this->handlePagination($request, $criteria);
         $this->handleFilters($request, $criteria);
         $this->handleSorting($request, $criteria, self::DEFAULT_SEARCH_SORT);
+        $this->handleAvailableStock($criteria, $event->getSalesChannelContext());
     }
 
     public function handleResult(ProductListingResultEvent $event): void
@@ -172,6 +188,27 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $event->getResult()->setPage($this->getPage($event->getRequest()));
 
         $event->getResult()->setLimit($this->getLimit($event->getRequest()));
+    }
+
+    private function handleAvailableStock(Criteria $criteria, SalesChannelContext $context): void
+    {
+        $salesChannelId = $context->getSalesChannel()->getId();
+
+        $hide = $this->systemConfigService->get('core.listing.hideCloseoutProductsWhenOutOfStock', $salesChannelId);
+
+        if (!$hide) {
+            return;
+        }
+
+        $criteria->addFilter(
+            new NotFilter(
+                NotFilter::CONNECTION_AND,
+                [
+                    new EqualsFilter('product.isCloseout', true),
+                    new EqualsFilter('product.available', false),
+                ]
+            )
+        );
     }
 
     private function handleFilters(Request $request, Criteria $criteria): void
@@ -377,6 +414,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
         // group options by their property-group
         $grouped = $options->groupByPropertyGroups();
+        $grouped->sortByPositions();
 
         // remove id results to prevent wrong usages
         $event->getResult()->getAggregations()->remove('properties');
@@ -419,6 +457,10 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     private function getManufacturerIds(Request $request): array
     {
         $ids = $request->query->get('manufacturer', '');
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $ids = $request->request->get('manufacturer', '');
+        }
+
         $ids = explode('|', $ids);
 
         return array_filter($ids);
@@ -427,6 +469,10 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     private function getPropertyIds(Request $request): array
     {
         $ids = $request->query->get('properties', '');
+        if ($request->isMethod(Request::METHOD_POST)) {
+            $ids = $request->request->get('properties', '');
+        }
+
         $ids = explode('|', $ids);
 
         return array_filter($ids);

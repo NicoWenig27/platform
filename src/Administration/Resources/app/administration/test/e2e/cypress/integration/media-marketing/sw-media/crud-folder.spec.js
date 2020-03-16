@@ -16,13 +16,13 @@ describe('Media: Test crud operations of folders', () => {
             });
     });
 
-    it('@package @content: create and read folder', () => {
+    it('@base @media: create and read folder', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v1/media-folder?_response=true',
+            url: '/api/v1/media-folder',
             method: 'post'
         }).as('saveData');
 
@@ -30,13 +30,13 @@ describe('Media: Test crud operations of folders', () => {
         cy.get(page.elements.loader).should('not.exist');
         page.createFolder('1 thing to fold about');
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
         cy.get('.sw-media-base-item__name[title="1 thing to fold about"]')
             .should('be.visible');
     });
 
-    it('@package @content: update and read folder using rename', () => {
+    it('@base @media: update and read folder using rename', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
@@ -60,18 +60,18 @@ describe('Media: Test crud operations of folders', () => {
         cy.get(`${page.elements.folderNameInput}`).type('{enter}');
 
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
         cy.get('.sw-media-base-item__name[title="An Edith gets a new name"]').should('be.visible');
     });
 
-    it('@package @content: create a subfolder and check configuration', () => {
+    it('@base @media: create a subfolder and check configuration', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v1/media-folder?_response=true',
+            url: '/api/v1/media-folder',
             method: 'post'
         }).as('saveData');
 
@@ -84,11 +84,11 @@ describe('Media: Test crud operations of folders', () => {
         page.createFolder('new child');
 
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
     });
 
-    it('@package @content: delete folder', () => {
+    it('@base @media: delete folder', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later

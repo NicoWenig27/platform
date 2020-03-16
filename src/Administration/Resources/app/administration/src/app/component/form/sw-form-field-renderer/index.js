@@ -1,8 +1,8 @@
 import template from './sw-form-field-renderer.html.twig';
-import './sw-form-field-renderer.scss';
 
 const { Component, Mixin } = Shopware;
 const { LocalStore } = Shopware.DataDeprecated;
+const { types } = Shopware.Utils;
 
 /**
  * @public
@@ -66,7 +66,7 @@ const { LocalStore } = Shopware.DataDeprecated;
  *         }"
  *         v-model="yourValue">
  * </sw-form-field-renderer>
-*/
+ */
 Component.register('sw-form-field-renderer', {
     template,
     inheritAttrs: false,
@@ -74,6 +74,8 @@ Component.register('sw-form-field-renderer', {
     mixins: [
         Mixin.getByName('sw-inline-snippet')
     ],
+
+    inject: ['repositoryFactory'],
 
     props: {
         type: {
@@ -93,16 +95,7 @@ Component.register('sw-form-field-renderer', {
         return {
             currentComponentName: '',
             swFieldConfig: {},
-            currentValue: this.value,
-            translatedFields: {
-                'sw-field': ['label', 'placeholder', 'helpText'],
-                'sw-text-editor': ['label', 'placeholder', 'helpText'],
-                'sw-media-field': ['label'],
-                'sw-select': ['label', 'placeholder', 'helpText'],
-                'sw-single-select': ['label', 'placeholder', 'helpText'],
-                'sw-multi-select': ['label', 'placeholder', 'helpText'],
-                'sw-entity-single-select': ['label', 'placeholder', 'helpText']
-            }
+            currentValue: this.value
         };
     },
 
@@ -119,6 +112,10 @@ Component.register('sw-form-field-renderer', {
             // create stores for sw-select
             if (this.componentName === 'sw-select') {
                 this.addSwSelectStores(bind);
+            }
+
+            if (this.componentName === 'sw-entity-multi-id-select') {
+                bind.repository = this.createRepository(this.config.entity);
             }
 
             return bind;
@@ -161,6 +158,14 @@ Component.register('sw-form-field-renderer', {
                 return { type: 'date', dateType: 'datetime' };
             }
 
+            if (this.type === 'date') {
+                return { type: 'date', dateType: 'date' };
+            }
+
+            if (this.type === 'time') {
+                return { type: 'date', dateType: 'time' };
+            }
+
             return { type: this.type };
         },
 
@@ -170,29 +175,32 @@ Component.register('sw-form-field-renderer', {
 
         optionTranslations() {
             if (['sw-single-select', 'sw-multi-select'].includes(this.componentName)) {
-                if (this.config.hasOwnProperty('options')) {
-                    const options = [];
-                    let labelProperty = 'label';
-
-                    // Use custom label property if defined
-                    if (this.config.hasOwnProperty('labelProperty')) {
-                        labelProperty = this.config.labelProperty;
-                    }
-
-                    this.config.options.forEach(option => {
-                        const translation = this.getTranslations(
-                            'options',
-                            option,
-                            [labelProperty]
-                        );
-                        // Merge original option with translation
-                        const translatedOption = { ...option, ...translation };
-                        options.push(translatedOption);
-                    });
-
-                    return { options };
+                if (!this.config.hasOwnProperty('options')) {
+                    return {};
                 }
+
+                const options = [];
+                let labelProperty = 'label';
+
+                // Use custom label property if defined
+                if (this.config.hasOwnProperty('labelProperty')) {
+                    labelProperty = this.config.labelProperty;
+                }
+
+                this.config.options.forEach(option => {
+                    const translation = this.getTranslations(
+                        'options',
+                        option,
+                        [labelProperty]
+                    );
+                    // Merge original option with translation
+                    const translatedOption = { ...option, ...translation };
+                    options.push(translatedOption);
+                });
+
+                return { options };
             }
+
             return {};
         }
     },
@@ -217,7 +225,7 @@ Component.register('sw-form-field-renderer', {
     },
 
     methods: {
-        getTranslations(componentName, config = this.config, translatableFields = this.translatedFields[componentName]) {
+        getTranslations(componentName, config = this.config, translatableFields = ['label', 'placeholder', 'helpText']) {
             if (!translatableFields) {
                 return {};
             }
@@ -239,14 +247,6 @@ Component.register('sw-form-field-renderer', {
 
             if (this.type === 'multi-select') {
                 return 'sw-multi-select';
-            }
-
-            if (this.type === 'media') {
-                return 'sw-media-field';
-            }
-
-            if (this.type === 'entity-single-select') {
-                return 'sw-entity-single-select';
             }
 
             return 'sw-field';
@@ -272,6 +272,7 @@ Component.register('sw-form-field-renderer', {
 
             this.refreshSwSelectSelections();
         },
+
         addSwSelectAssociationStore(bind, override) {
             if (bind.associationStore && override === false) {
                 return;
@@ -284,12 +285,21 @@ Component.register('sw-form-field-renderer', {
             }
             bind.associationStore = new LocalStore(entities);
         },
+
         refreshSwSelectSelections() {
             this.$nextTick(() => {
                 if (this.$refs.component) {
                     this.$refs.component.loadSelected(true);
                 }
             });
+        },
+
+        createRepository(entity) {
+            if (types.isUndefined(entity)) {
+                throw new Error('sw-form-field-renderer - sw-entity-multi-id-select component needs entity property');
+            }
+
+            return this.repositoryFactory.create(entity);
         }
     }
 });

@@ -2,10 +2,10 @@ import AccountPageObject from '../../support/pages/account.page-object';
 
 describe('Account: Forgot password', () => {
     beforeEach(() => {
-        return cy.createCustomerFixture()
+        return cy.createCustomerFixtureStorefront()
     });
 
-    it('Request a new password with existing customer mail', () => {
+    it('R@customer: equest a new password with existing customer mail', () => {
         const page = new AccountPageObject();
         cy.visit('/account/login');
         cy.get(page.elements.loginCard).should('be.visible');
@@ -20,7 +20,7 @@ describe('Account: Forgot password', () => {
         });
     });
 
-    it('Request a new password without existing customer mail', () => {
+    it('@customer: Request a new password without existing customer mail', () => {
         const page = new AccountPageObject();
         cy.visit('/account/login');
         cy.get(page.elements.loginCard).should('be.visible');

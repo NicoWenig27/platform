@@ -85,7 +85,7 @@ PHP analysis:
         - php dev-ops/analyze/generate-composer.php
         - php dev-ops/analyze/vendor/bin/ecs check vendor/shopware/platform/src --config vendor/shopware/platform/easy-coding-standard.yml
         - php dev-ops/analyze/phpstan-config-generator.php
-        - php dev-ops/analyze/vendor/bin/phpstan analyze --configuration vendor/shopware/platform/phpstan.neon --error-format gitlab | tee phpstan-report.json
+        - php dev-ops/analyze/vendor/bin/phpstan analyze --autoload-file=dev-ops/analyze/vendor/autoload.php --configuration vendor/shopware/platform/phpstan.neon --error-format gitlab | tee phpstan-report.json
         - >
             for module in $(ls vendor/shopware/platform/src/); do
                 echo "[PSALM: scan $module]"
@@ -107,7 +107,7 @@ PHP analysis:
             alias: elasticsearch
             command: [ "bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node" ]
     variables:
-        TEST_SUITES: "administration storefront checkout content framework migration system elasticsearch docs"
+        TEST_SUITES: "administration storefront checkout content framework profiling migration system elasticsearch docs"
     script:
         - ./psh.phar init
         - if [[ ! -h vendor/shopware/platform ]]; then echo 'vendor/shopware/platform should be a symlink'; exit 1; fi
@@ -279,7 +279,6 @@ Storefront (Jest):
 
 .job_template: &e2e_definition
     stage: E2E
-    needs: [Administration (Jest)]
     services:
         -   name: docker:18.09.7-dind
             alias: docker
@@ -293,41 +292,34 @@ Storefront (Jest):
         reports:
             junit: development/build/artifacts/e2e/*.xml
 
-.storefront_script:
-    script:  &storefront_definition
-        - ./psh.phar init --APP_ENV="prod"
-        - ./psh.phar storefront:init --APP_ENV="prod" --DB_NAME="shopware_e2e"
-        - ./psh.phar e2e:dump-db --APP_ENV="prod"
-        - chown -R 1000:1000 .
-        - docker run --name cypress -d -t --add-host="docker.vm:$(hostname -I)" -e CYPRESS_baseUrl=http://docker.vm:8000 -v $(pwd)/vendor/shopware/platform/src/Storefront/Resources/app/storefront/test/e2e:/e2e-Storefront -v $(pwd):/app cypress/browsers:node10.11.0-chrome75
-        - docker exec cypress npm clean-install --prefix /e2e-Storefront
-        - forever start vendor/shopware/platform/src/Storefront/Resources/app/storefront/test/e2e/routes/cypress.js
-        - docker exec cypress npx cypress run --project /e2e-Storefront --browser chrome --config baseUrl=http://docker.vm:8000
-        - docker rm -f cypress
-
-.administration_script:
-    script: &administration_definition
-        - ./psh.phar init --APP_ENV="prod"
-        - ./psh.phar administration:init --APP_ENV="prod"
-        - ./psh.phar e2e:dump-db --APP_ENV="prod"
-        - chown -R 1000:1000 .
-        - docker run --name cypress -d -t --add-host="docker.vm:$(hostname -I)" -e CYPRESS_baseUrl=http://docker.vm:8000 -v $(pwd)/vendor/shopware/platform/src/Administration/Resources/app/administration/test/e2e:/e2e-Administration -v $(pwd):/app cypress/browsers:node10.11.0-chrome75
-        - docker exec cypress npm clean-install --prefix /e2e-Administration
-        - forever start vendor/shopware/platform/src/Administration/Resources/app/administration/test/e2e/routes/cypress.js
-        - docker exec cypress npx cypress run --project /e2e-Administration --browser chrome --config baseUrl=http://docker.vm:8000 --config numTestsKeptInMemory=0 --spec $TEST_DIRECTORY
-        - docker rm -f cypress
-
 .mixed_script:
     script: &mixed_definition
         - ./psh.phar init --APP_ENV="prod"
         - ./psh.phar administration:init --APP_ENV="prod"
         - ./psh.phar storefront:init --APP_ENV="prod" --DB_NAME="shopware_e2e"
         - ./psh.phar e2e:dump-db --APP_ENV="prod"
+        - E2E_BASE_PATH=vendor/shopware/platform/src/${SECTION}/Resources/app/$(echo ${SECTION} | tr '[:upper:]' '[:lower:]')/test/e2e
+        - npm i @shopware-ag/e2e-testsuite-platform@1.2.0-beta.1 --prefix $E2E_BASE_PATH
+        - forever start ${E2E_BASE_PATH}/node_modules/@shopware-ag/e2e-testsuite-platform/routes/cypress.js
         - chown -R 1000:1000 .
-        - docker run --name cypress -d -t --add-host="docker.vm:$(hostname -I)" -e CYPRESS_baseUrl=http://docker.vm:8000 -v $(pwd)/vendor/shopware/platform/src/Administration/Resources/app/administration/test/e2e:/e2e-Administration -v $(pwd):/app cypress/browsers:node10.11.0-chrome75
-        - docker exec cypress npm clean-install --prefix /e2e-Administration
-        - forever start vendor/shopware/platform/src/Administration/Resources/app/administration/test/e2e/routes/cypress.js
-        - docker exec cypress npx cypress run --project /e2e-Administration --browser chrome --config baseUrl=http://docker.vm:8000 --config numTestsKeptInMemory=0 --spec $TEST_DIRECTORY
+        - docker run --name cypress --add-host="docker.vm:$(hostname -I)" -e CYPRESS_baseUrl=http://docker.vm:8000 -v $(pwd)/${E2E_BASE_PATH}:/e2e -v $(pwd):/app -w /e2e --entrypoint "sh" cypress/included:4.0.0 -c "npm install --production --prefix /e2e && cypress run --project /e2e --browser $BROWSER --headless --config baseUrl=http://docker.vm:8000 --config numTestsKeptInMemory=0 --spec $TEST_DIRECTORY"
+
+.scheduled_script:
+    script: &scheduled_definition
+        - ./psh.phar init --APP_ENV="prod"
+        - ./psh.phar administration:init --APP_ENV="prod"
+        - ./psh.phar storefront:init --APP_ENV="prod" --DB_NAME="shopware_e2e"
+        - ./psh.phar e2e:dump-db --APP_ENV="prod"
+        - E2E_BASE_PATH=vendor/shopware/platform/src/${SECTION}/Resources/app/$(echo ${SECTION} | tr '[:upper:]' '[:lower:]')/test/e2e
+        - npm i @shopware-ag/e2e-testsuite-platform@1.2.0-beta.1 --prefix $E2E_BASE_PATH
+        - forever start ${E2E_BASE_PATH}/node_modules/@shopware-ag/e2e-testsuite-platform/routes/cypress.js
+        - chown -R 1000:1000 .
+        - docker run --name cypress --add-host="docker.vm:$(hostname -I)" -e CYPRESS_baseUrl=http://docker.vm:8000 -v $(pwd)/${E2E_BASE_PATH}:/e2e -v $(pwd):/app -w /e2e --entrypoint "sh" cypress/included:4.0.0 -c "npm install --production --prefix /e2e && cypress run --project /e2e --browser $BROWSER --headless --config baseUrl=http://docker.vm:8000"
+
+.generate_mochawesome_reports:
+    after_script: &mochawesome_report_definition
+        - npx mochawesome-merge development/build/artifacts/e2e/mochawesome/mochawesome*.json > development/build/artifacts/e2e/mochawesome/report-final.json
+        - npx mochawesome-report-generator development/build/artifacts/e2e/mochawesome/report-final.json --cdn true --reportDir development/build/artifacts/e2e/mochawesome
         - docker rm -f cypress
 
 General (Storefront):
@@ -335,89 +327,188 @@ General (Storefront):
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
-    script: *storefront_definition
     needs: [Storefront (Jest)]
+    script: *mixed_definition
+    after_script: *mochawesome_report_definition
+    variables:
+        BROWSER: 'chrome'
+        SECTION: 'Storefront'
+        TEST_DIRECTORY: "cypress/integration/**/*"
 
 Content (Mixed):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
+    needs: [Administration (Jest)]
     script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/content/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/content/**/*"
 
-Catalogues  (Mixed):
+Catalogues (Mixed):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
+    needs: [Administration (Jest)]
     script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/catalogue/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/catalogue/**/*"
 
 Customers (Mixed):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
+    needs: [Administration (Jest)]
     script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/customer/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/customer/**/*"
 
 Media and Marketing (Mixed):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
+    needs: [Administration (Jest)]
     script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/media-marketing/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/media-marketing/**/*"
 
 General (Administration):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
-    script: *administration_definition
+    needs: [Administration (Jest)]
+    script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/general/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/general/**/*"
 
 Orders (Administration):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
-    script: *administration_definition
+    needs: [Administration (Jest)]
+    script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/order/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/order/**/*"
 
 Rules and Product Groups (Administration):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
-    script: *administration_definition
+    needs: [Administration (Jest)]
+    script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/rule-product-stream/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/rule-product-stream/**/*"
 
 Settings (Administration):
     only:
         - merge_requests
         - master
         - "6.1"
+    except:
+        - schedules
     <<: *e2e_definition
-    script: *administration_definition
+    needs: [Administration (Jest)]
+    script: *mixed_definition
+    after_script: *mochawesome_report_definition
     variables:
-        TEST_DIRECTORY: e2e-Administration/cypress/integration/settings/**/*
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+        TEST_DIRECTORY: "cypress/integration/settings/**/*"
+
+Admin on FF (Total):
+    only:
+        - schedules
+    <<: *e2e_definition
+    timeout: 2h 00m
+    script: *scheduled_definition
+    after_script: *mochawesome_report_definition
+    variables:
+        BROWSER: 'firefox'
+        SECTION: 'Administration'
+
+Storefront on FF (Total):
+    only:
+        - schedules
+    <<: *e2e_definition
+    timeout: 2h 00m
+    script: *scheduled_definition
+    after_script: *mochawesome_report_definition
+    variables:
+        BROWSER: 'firefox'
+        SECTION: 'Storefront'
+
+Admin on Chrome (Total):
+    only:
+        - schedules
+    <<: *e2e_definition
+    timeout: 2h 00m
+    script: *scheduled_definition
+    after_script: *mochawesome_report_definition
+    variables:
+        BROWSER: 'chrome'
+        SECTION: 'Administration'
+
+Storefront on Chrome (Total):
+    only:
+        - schedules
+    <<: *e2e_definition
+    timeout: 2h 00m
+    script: *scheduled_definition
+    after_script: *mochawesome_report_definition
+    variables:
+        BROWSER: 'chrome'
+        SECTION: 'Storefront'
 
 # Stage: build
 
@@ -428,8 +519,8 @@ Component Library:
             - master
             - "6.1"
         changes:
-            - src/Administration/*
-            - src/Storefront/*
+            - src/Administration/**/*
+            - src/Storefront/**/*
     stage: Build
     image: node:10.8
     before_script: []
@@ -459,7 +550,7 @@ Generating docs:
             - master
             - "6.1"
         changes:
-            - src/Docs/*
+            - src/Docs/**/*
     stage: Generate docs
     dependencies: []
     services:
@@ -514,8 +605,12 @@ Upload Component Library:
     image: python:latest
     before_script: []
     only:
-        - master
-        - "6.1"
+        refs:
+            - master
+            - "6.1"
+        changes:
+            - src/Administration/**/*
+            - src/Storefront/**/*
     dependencies:
         - Component Library
     script:

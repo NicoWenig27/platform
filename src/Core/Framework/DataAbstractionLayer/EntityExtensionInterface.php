@@ -2,6 +2,9 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer;
 
+/**
+ * @deprecated tag:v6.3.0 extend from `EntityExtension` instead
+ */
 interface EntityExtensionInterface
 {
     /**

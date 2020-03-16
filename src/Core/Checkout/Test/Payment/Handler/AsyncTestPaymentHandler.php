@@ -11,6 +11,7 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 
+/** @deprecated tag:v6.3.0 use Shopware\Core\Checkout\Test\Payment\Handler\V630\AsyncTestPaymentHandler */
 class AsyncTestPaymentHandler implements AsynchronousPaymentHandlerInterface
 {
     public const REDIRECT_URL = 'https://shopware.com';

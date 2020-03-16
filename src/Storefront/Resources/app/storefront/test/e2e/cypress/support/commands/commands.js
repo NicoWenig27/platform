@@ -1,67 +1,282 @@
-// ***********************************************
-// This example commands.js shows you how to
-// create various custom commands and overwrite
-// existing commands.
-//
-// For more comprehensive examples of custom
-// commands please read more here:
-// https://on.cypress.io/custom-commands
-// ***********************************************
-//
-//
-// -- This is a parent command --
-// Cypress.Commands.add("login", (email, password) => { ... })
-//
-//
-// -- This is a child command --
-// Cypress.Commands.add("drag", { prevSubject: 'element'}, (subject, options) => { ... })
-//
-//
-// -- This is a dual command --
-// Cypress.Commands.add("dismiss", { prevSubject: 'optional'}, (subject, options) => { ... })
-//
-//
-// -- This is will overwrite an existing command --
-// Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+const uuid = require('uuid/v4');
+const RuleBuilderFixture = require('../service/fixture/rule-builder.fixture');
 
 /**
- * Types in an input element and checks if the content was correctly typed
+ * Search for an existing entity using Shopware API at the given endpoint
  * @memberOf Cypress.Chainable#
- * @name typeAndCheck
+ * @name setCustomerGroup
  * @function
- * @param {String} value - The value to type
+ * @param {String} endpoint - API endpoint for the request
+ * @param {Object} [options={}] - Options concerning deletion
  */
-Cypress.Commands.add('typeAndCheck', {
+Cypress.Commands.add('setCustomerGroup', (customerNumber, customerGroupData) => {
+    let customer = '';
+
+    return cy.fixture('customer-group').then((json) => {
+        return cy.createViaAdminApi({
+            endpoint: 'customer-group',
+            data: customerGroupData
+        });
+    }).then(() => {
+        return cy.searchViaAdminApi({
+            endpoint: 'customer',
+            data: {
+                field: 'customerNumber',
+                value: customerNumber
+            }
+        });
+    }).then((result) => {
+        customer = result;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'customer-group',
+            data: {
+                field: 'name',
+                value: customerGroupData.name
+            }
+        });
+    }).then((result) => {
+        return cy.updateViaAdminApi('customer', customer.id, {
+            data: {
+                groupId: result.id
+            }
+        })
+    });
+});
+
+/**
+ * Creates an entity using Shopware API at the given endpoint
+ * @memberOf Cypress.Chainable#
+ * @name createViaAdminApi
+ * @function
+ * @param {Object} data - Necessary  for the API request
+ */
+Cypress.Commands.add('createViaAdminApi', (data) => {
+    return cy.requestAdminApi(
+        'POST',
+        `${Cypress.env('apiPath')}/${data.endpoint}?response=true`,
+        data
+    ).then((responseData) => {
+        return responseData;
+    });
+});
+
+Cypress.Commands.add('createCustomerFixtureStorefront', (userData) => {
+    const addressId = uuid().replace(/-/g, '');
+    const customerId = uuid().replace(/-/g, '');
+    let customerJson = {};
+    let customerAddressJson = {};
+    let finalAddressRawData = {};
+    let countryId = '';
+    let groupId = '';
+    let paymentId = '';
+    let salesChannelId = '';
+    let salutationId = '';
+
+    return cy.fixture('customer').then((result) => {
+        customerJson = Cypress._.merge(result, userData);
+
+        return cy.fixture('customer-address')
+    }).then((result) => {
+        customerAddressJson = result;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'country',
+            data: {
+                field: 'iso',
+                value: 'DE'
+            }
+        });
+    }).then((result) => {
+        countryId = result.id;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'payment-method',
+            data: {
+                field: 'name',
+                value: 'Invoice'
+            }
+        });
+    }).then((result) => {
+        paymentId = result.id;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'sales-channel',
+            data: {
+                field: 'name',
+                value: 'Storefront'
+            }
+        });
+    }).then((result) => {
+        salesChannelId = result.id;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'customer-group',
+            data: {
+                field: 'name',
+                value: 'Standard customer group'
+            }
+        });
+    }).then((result) => {
+        groupId = result.id;
+
+        return cy.searchViaAdminApi({
+            endpoint: 'salutation',
+            data: {
+                field: 'displayName',
+                value: 'Mr.'
+            }
+        });
+    }).then((salutation) => {
+        salutationId = salutation.id;
+
+        finalAddressRawData = Cypress._.merge({
+            addresses: [{
+                customerId: customerId,
+                salutationId: salutationId,
+                id: addressId,
+                countryId: countryId
+            }]
+        }, customerAddressJson);
+    }).then(() => {
+        return Cypress._.merge(customerJson, {
+            salutationId: salutationId,
+            defaultPaymentMethodId: paymentId,
+            salesChannelId: salesChannelId,
+            groupId: groupId,
+            defaultBillingAddressId: addressId,
+            defaultShippingAddressId: addressId
+        });
+    }).then((result) => {
+        return Cypress._.merge(result, finalAddressRawData);
+    }).then((result) => {
+        return cy.createViaAdminApi({
+            endpoint: 'customer',
+            data: result
+        });
+    });
+});
+
+Cypress.Commands.add('typeAndCheckStorefront', {
     prevSubject: 'element'
 }, (subject, value) => {
     cy.wrap(subject).type(value).invoke('val').should('eq', value);
 });
 
-/**
- * Ticks a checkbox element and checks if it is behaving accordingly
- * @memberOf Cypress.Chainable#
- * @name tickAndCheckCheckbox
- * @function
- * @param {Boolean} checked - The value to type
- */
-Cypress.Commands.add('tickAndCheckCheckbox', {
-    prevSubject: 'element'
-}, (subject, checked) => {
-    cy.wrap(subject).click(checked);
-    checked ?
-        cy.wrap(subject).should('have.attr', 'checked')
-        : cy.wrap(subject).should('not.have.attr', 'checked');
-});
-
-/**
- * Types in the global search field and verify search terms in url
- * @memberOf Cypress.Chainable#
- * @name typeAndCheckSelectField
- * @function
- * @param {String} value - The value to type
- */
-Cypress.Commands.add('typeAndCheckSelectField', {
+Cypress.Commands.add('typeAndSelect', {
     prevSubject: 'element'
 }, (subject, value) => {
-    cy.wrap(subject).select(value).contains(value);
+    cy.wrap(subject).select(value);
 });
+
+Cypress.Commands.add('createRuleFixture', (userData, shippingMethodName = 'Standard') => {
+    const fixture = new RuleBuilderFixture();
+
+    return cy.fixture('rule-builder-shipping-payment.json').then((result) => {
+        return Cypress._.merge(result, userData);
+    }).then((data) => {
+        return fixture.setRuleFixture(data, shippingMethodName);
+    })
+});
+
+Cypress.Commands.add('addAnalyticsFixtureToSalesChannel', () => {
+    return cy.searchViaAdminApi({
+        endpoint: 'sales-channel',
+        data: {
+            field: 'name',
+            value: 'Storefront'
+        }
+    }).then((result) => {
+        return cy.updateViaAdminApi('sales-channel', result.id, {
+            data: {
+                analytics: {
+                    trackingId: 'UA-000000000-0',
+                    active: true,
+                    trackOrders: true
+                }
+            }
+        })
+    });
+});
+
+// WaitUntil command is from https://www.npmjs.com/package/cypress-wait-until
+const logCommand = ({ options, originalOptions }) => {
+    if (options.log) {
+        options.logger({
+            name: options.description,
+            message: options.customMessage,
+            consoleProps: () => originalOptions
+        });
+    }
+};
+const logCommandCheck = ({ result, options, originalOptions }) => {
+    if (!options.log || !options.verbose) return;
+
+    const message = [result];
+    if (options.customCheckMessage) {
+        message.unshift(options.customCheckMessage);
+    }
+    options.logger({
+        name: options.description,
+        message,
+        consoleProps: () => originalOptions
+    });
+};
+
+const waitUntil = (subject, checkFunction, originalOptions = {}) => {
+    if (!(checkFunction instanceof Function)) {
+        throw new Error("`checkFunction` parameter should be a function. Found: " + checkFunction);
+    }
+
+    const defaultOptions = {
+        // base options
+        interval: 200,
+        timeout: 5000,
+        errorMsg: "Timed out retrying",
+
+        // log options
+        description: "waitUntil",
+        log: true,
+        customMessage: undefined,
+        logger: Cypress.log,
+        verbose: false,
+        customCheckMessage: undefined
+    };
+    const options = { ...defaultOptions, ...originalOptions };
+
+    // filter out a falsy passed "customMessage" value
+    options.customMessage = [options.customMessage, originalOptions].filter(Boolean);
+
+    let retries = Math.floor(options.timeout / options.interval);
+
+    logCommand({ options, originalOptions });
+
+    const check = result => {
+        logCommandCheck({ result, options, originalOptions });
+        if (result) {
+            return result;
+        }
+        if (retries < 1) {
+            throw new Error(options.errorMsg);
+        }
+        cy.wait(options.interval, { log: false }).then(() => {
+            retries--;
+            return resolveValue();
+        });
+    };
+
+    const resolveValue = () => {
+        const result = checkFunction(subject);
+
+        const isAPromise = Boolean(result && result.then);
+        if (isAPromise) {
+            return result.then(check);
+        } else {
+            return check(result);
+        }
+    };
+
+    return resolveValue();
+};
+
+Cypress.Commands.add("waitUntil", { prevSubject: "optional" }, waitUntil);

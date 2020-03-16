@@ -11,6 +11,11 @@ class ArrayEntity extends Entity implements \ArrayAccess
      */
     protected $data;
 
+    /**
+     * @var string
+     */
+    protected $_entityName = 'array-entity';
+
     public function __construct(array $data = [])
     {
         $this->data = $data;

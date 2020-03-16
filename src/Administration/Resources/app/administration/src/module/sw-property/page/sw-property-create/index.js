@@ -1,4 +1,5 @@
 import template from './sw-property-create.html.twig';
+import './sw-property-create.scss';
 
 const { Component } = Shopware;
 
@@ -20,6 +21,7 @@ Component.extend('sw-property-create', 'sw-property-detail', {
             this.propertyGroup = this.propertyRepository.create(Shopware.Context.api);
             this.propertyGroup.sortingType = 'alphanumeric';
             this.propertyGroup.displayType = 'text';
+            this.propertyGroup.position = 1;
             this.newId = this.propertyGroup.id;
 
             this.isLoading = false;

@@ -10,7 +10,7 @@ class ThemeFixtures
             'themeColors' => [
                 'label' => 'themeColors',
                 'sections' => [
-                    '' => [
+                    'default' => [
                         'label' => '',
                         'sw-color-brand-primary' => [
                             'label' => [
@@ -54,7 +54,7 @@ class ThemeFixtures
             'typography' => [
                 'label' => 'typography',
                 'sections' => [
-                    '' => [
+                    'default' => [
                         'sw-font-family-base' => [
                             'label' => [
                                 'en-GB' => 'Fonttype text',
@@ -98,7 +98,7 @@ class ThemeFixtures
             'media' => [
                 'label' => 'media',
                 'sections' => [
-                    '' => [
+                    'default' => [
                         'label' => '',
                         'sw-logo-desktop' => [
                             'label' => [
@@ -160,7 +160,7 @@ class ThemeFixtures
             'eCommerce' => [
                 'label' => 'eCommerce',
                 'sections' => [
-                    '' => [
+                    'default' => [
                         'label' => '',
                         'sw-color-price' => [
                             'label' => [
@@ -195,7 +195,7 @@ class ThemeFixtures
             'statusColors' => [
                 'label' => 'statusColors',
                 'sections' => [
-                    '' => [
+                    'default' => [
                         'label' => '',
                         'sw-color-success' => [
                             'label' => [
@@ -239,6 +239,258 @@ class ThemeFixtures
             'unordered' => [
                 'label' => 'unordered',
                 'sections' => [
+                ],
+            ],
+        ];
+    }
+
+    public static function getThemeStructuredFields(): array
+    {
+        return [
+            'tabs' => [
+                'default' => [
+                    'label' => '',
+                    'blocks' => [
+                        'themeColors' => [
+                            'label' => 'themeColors',
+                            'sections' => [
+                                'default' => [
+                                    'label' => '',
+                                    'fields' => [
+                                        'sw-color-brand-primary' => [
+                                            'label' => [
+                                                'en-GB' => 'Primary colour',
+                                                'de-DE' => 'Primärfarbe',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-brand-secondary' => [
+                                            'label' => [
+                                                'en-GB' => 'Secondary colour',
+                                                'de-DE' => 'Sekundärfarbe',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-border-color' => [
+                                            'label' => [
+                                                'en-GB' => 'Border',
+                                                'de-DE' => 'Rahmen',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-background-color' => [
+                                            'label' => [
+                                                'en-GB' => 'Background',
+                                                'de-DE' => 'Hintergrund',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'statusColors' => [
+                            'label' => 'statusColors',
+                            'sections' => [
+                                'default' => [
+                                    'label' => '',
+                                    'fields' => [
+                                        'sw-color-success' => [
+                                            'label' => [
+                                                'en-GB' => 'Success',
+                                                'de-DE' => 'Erfolg',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-info' => [
+                                            'label' => [
+                                                'en-GB' => 'Information',
+                                                'de-DE' => 'Information',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-warning' => [
+                                            'label' => [
+                                                'en-GB' => 'Notice',
+                                                'de-DE' => 'Hinweis',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-danger' => [
+                                            'label' => [
+                                                'en-GB' => 'Error',
+                                                'de-DE' => 'Fehler',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'typography' => [
+                            'label' => 'typography',
+                            'sections' => [
+                                'default' => [
+                                    'label' => '',
+                                    'fields' => [
+                                        'sw-font-family-base' => [
+                                            'label' => [
+                                                'en-GB' => 'Fonttype text',
+                                                'de-DE' => 'Schriftart Text',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'fontFamily',
+                                            'custom' => null,
+                                        ],
+                                        'sw-text-color' => [
+                                            'label' => [
+                                                'en-GB' => 'Text colour',
+                                                'de-DE' => 'Textfarbe',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-font-family-headline' => [
+                                            'label' => [
+                                                'en-GB' => 'Fonttype headline',
+                                                'de-DE' => 'Schriftart Überschrift',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'fontFamily',
+                                            'custom' => null,
+                                        ],
+                                        'sw-headline-color' => [
+                                            'label' => [
+                                                'en-GB' => 'Headline colour',
+                                                'de-DE' => 'Überschriftfarbe',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'eCommerce' => [
+                            'label' => 'eCommerce',
+                            'sections' => [
+                                'default' => [
+                                    'label' => '',
+                                    'fields' => [
+                                        'sw-color-price' => [
+                                            'label' => [
+                                                'en-GB' => 'Price',
+                                                'de-DE' => 'Preis',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-buy-button' => [
+                                            'label' => [
+                                                'en-GB' => 'Buy button',
+                                                'de-DE' => 'Kaufen-Button',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                        'sw-color-buy-button-text' => [
+                                            'label' => [
+                                                'en-GB' => 'Buy button text',
+                                                'de-DE' => 'Kaufen-Button Text',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'color',
+                                            'custom' => null,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                        'media' => [
+                            'label' => 'media',
+                            'sections' => [
+                                'default' => [
+                                    'label' => '',
+                                    'fields' => [
+                                        'sw-logo-desktop' => [
+                                            'label' => [
+                                                'en-GB' => 'Desktop',
+                                                'de-DE' => 'Desktop',
+                                            ],
+                                            'helpText' => [
+                                                'en-GB' => 'Displayed for viewports of above 991px',
+                                                'de-DE' => 'Wird über einem Viewport von 991px angezeigt',
+                                            ],
+                                            'type' => 'media',
+                                            'custom' => null,
+                                        ],
+                                        'sw-logo-tablet' => [
+                                            'label' => [
+                                                'en-GB' => 'Tablet',
+                                                'de-DE' => 'Tablet',
+                                            ],
+                                            'helpText' => [
+                                                'en-GB' => 'Displayed between a viewport of 767px to 991px',
+                                                'de-DE' => 'Wird zwischen einem viewport von 767px bis 991px angezeigt',
+                                            ],
+                                            'type' => 'media',
+                                            'custom' => null,
+                                        ],
+                                        'sw-logo-mobile' => [
+                                            'label' => [
+                                                'en-GB' => 'Mobile',
+                                                'de-DE' => 'Mobil',
+                                            ],
+                                            'helpText' => [
+                                                'en-GB' => 'Displayed up to a viewport of 767px',
+                                                'de-DE' => 'Wird bis zu einem Viewport von 767px angezeigt',
+                                            ],
+                                            'type' => 'media',
+                                            'custom' => null,
+                                        ],
+                                        'sw-logo-share' => [
+                                            'label' => [
+                                                'en-GB' => 'App & share icon',
+                                                'de-DE' => 'App- & Share-Icon',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'media',
+                                            'custom' => null,
+                                        ],
+                                        'sw-logo-favicon' => [
+                                            'label' => [
+                                                'en-GB' => 'Favicon',
+                                                'de-DE' => 'Favicon',
+                                            ],
+                                            'helpText' => null,
+                                            'type' => 'media',
+                                            'custom' => null,
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
                 ],
             ],
         ];
@@ -303,6 +555,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-brand-secondary' => [
                     'name' => 'sw-color-brand-secondary',
@@ -321,6 +576,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-success' => [
                     'name' => 'sw-color-success',
@@ -339,6 +597,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-info' => [
                     'name' => 'sw-color-info',
@@ -357,6 +618,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-warning' => [
                     'name' => 'sw-color-warning',
@@ -375,6 +639,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-danger' => [
                     'name' => 'sw-color-danger',
@@ -393,6 +660,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-text-color' => [
                     'name' => 'sw-text-color',
@@ -411,6 +681,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-border-color' => [
                     'name' => 'sw-border-color',
@@ -429,6 +702,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-background-color' => [
                     'label' => [
@@ -447,6 +723,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-price' => [
                     'name' => 'sw-color-price',
@@ -465,6 +744,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-buy-button' => [
                     'name' => 'sw-color-buy-button',
@@ -483,6 +765,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-buy-button-text' => [
                     'label' => [
@@ -501,6 +786,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-font-family-base' => [
                     'name' => 'sw-font-family-base',
@@ -519,6 +807,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-font-family-headline' => [
                     'name' => 'sw-font-family-headline',
@@ -537,6 +828,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-headline-color' => [
                     'label' => [
@@ -555,6 +849,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-desktop' => [
                     'label' => [
@@ -576,6 +873,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-tablet' => [
                     'label' => [
@@ -597,6 +897,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-mobile' => [
                     'label' => [
@@ -618,6 +921,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-share' => [
                     'label' => [
@@ -636,6 +942,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-favicon' => [
                     'label' => [
@@ -654,6 +963,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
             ],
         ];
@@ -718,6 +1030,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-brand-secondary' => [
                     'name' => 'sw-color-brand-secondary',
@@ -736,6 +1051,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-success' => [
                     'name' => 'sw-color-success',
@@ -754,6 +1072,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-info' => [
                     'name' => 'sw-color-info',
@@ -772,6 +1093,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-warning' => [
                     'name' => 'sw-color-warning',
@@ -790,6 +1114,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-danger' => [
                     'name' => 'sw-color-danger',
@@ -808,6 +1135,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-text-color' => [
                     'name' => 'sw-text-color',
@@ -826,6 +1156,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-border-color' => [
                     'name' => 'sw-border-color',
@@ -844,6 +1177,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-background-color' => [
                     'label' => [
@@ -862,6 +1198,9 @@ class ThemeFixtures
                     'helpText' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-price' => [
                     'name' => 'sw-color-price',
@@ -880,6 +1219,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-buy-button' => [
                     'name' => 'sw-color-buy-button',
@@ -898,6 +1240,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-color-buy-button-text' => [
                     'label' => [
@@ -916,6 +1261,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-font-family-base' => [
                     'name' => 'sw-font-family-base',
@@ -934,6 +1282,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-font-family-headline' => [
                     'name' => 'sw-font-family-headline',
@@ -952,6 +1303,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-headline-color' => [
                     'label' => [
@@ -970,6 +1324,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-desktop' => [
                     'label' => [
@@ -991,6 +1348,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-tablet' => [
                     'label' => [
@@ -1012,6 +1372,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-mobile' => [
                     'label' => [
@@ -1033,6 +1396,9 @@ class ThemeFixtures
                     'blockOrder' => null,
                     'extensions' => [],
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-share' => [
                     'label' => [
@@ -1051,6 +1417,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
                 'sw-logo-favicon' => [
                     'label' => [
@@ -1069,6 +1438,9 @@ class ThemeFixtures
                     'extensions' => [],
                     'helpText' => null,
                     'custom' => null,
+                    'tab' => null,
+                    'tabOrder' => null,
+                    'scss' => null,
                 ],
             ],
         ];

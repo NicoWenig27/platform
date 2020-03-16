@@ -5,7 +5,7 @@ namespace Shopware\Core\Content\MailTemplate\Service;
 use Shopware\Core\Content\MailTemplate\Exception\MailTransportFailedException;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
-class MailSender
+class MailSender implements MailSenderInterface
 {
     /**
      * @var \Swift_Mailer
@@ -37,7 +37,7 @@ class MailSender
 
         $deliveryAddress = $this->configService->get('core.mailerSettings.deliveryAddress');
         if ($deliveryAddress) {
-            $message->setTo([$deliveryAddress]);
+            $message->addBcc($deliveryAddress);
         }
 
         $this->swiftMailer->send($message, $failedRecipients);

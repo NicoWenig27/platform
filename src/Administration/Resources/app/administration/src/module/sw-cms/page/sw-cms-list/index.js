@@ -155,7 +155,7 @@ Component.register('sw-cms-list', {
 
             return this.defaultFolderRepository.search(criteria, Shopware.Context.api).then((searchResult) => {
                 const defaultFolder = searchResult.first();
-                if (defaultFolder.folder.id) {
+                if (defaultFolder.folder && defaultFolder.folder.id) {
                     return defaultFolder.folder.id;
                 }
 
@@ -244,6 +244,16 @@ Component.register('sw-cms-list', {
         onDeleteCmsPage(page) {
             this.currentPage = page;
             this.showDeleteModal = true;
+        },
+
+        onDuplicateCmsPage(page) {
+            this.isLoading = true;
+            this.pageRepository.clone(page.id, Shopware.Context.api).then(() => {
+                this.resetList();
+                this.isLoading = false;
+            }).catch(() => {
+                this.isLoading = false;
+            });
         },
 
         onCloseDeleteModal() {

@@ -67,6 +67,10 @@ Component.register('sw-sales-channel-detail', {
         },
 
         isStoreFront() {
+            if (!this.salesChannel) {
+                return this.$route.params.typeId === Defaults.storefrontSalesChannelTypeId;
+            }
+
             return this.salesChannel.typeId === Defaults.storefrontSalesChannelTypeId;
         },
 
@@ -166,6 +170,7 @@ Component.register('sw-sales-channel-detail', {
             criteria.addAssociation('currencies');
             criteria.addAssociation('domains');
             criteria.addAssociation('languages');
+            criteria.addAssociation('analytics');
 
             criteria.addAssociation('productExports');
             criteria.addAssociation('productExports.salesChannelDomain.salesChannel');
@@ -217,7 +222,7 @@ Component.register('sw-sales-channel-detail', {
 
             criteria.addFilter(Criteria.equals('relations.entityName', 'sales_channel'));
             criteria.getAssociation('customFields')
-                .addSorting(Criteria.sort('config.customFieldPosition'));
+                .addSorting(Criteria.sort('config.customFieldPosition', 'ASC', true));
 
             this.customFieldRepository
                 .search(criteria, Context.api)

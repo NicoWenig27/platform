@@ -35,6 +35,8 @@
       "labelOptionName": "Name",
       "labelOptionColor": "Color",
       "labelOptionMedia": "Image",
+      "labelPosition": "Position",
+      "placeholderPosition": "Rank this group...",
       "placeholderOptionName": "Enter name...",
       "labelOptionPosition":  "Position",
       "placeholderOptionPosition":  "Rank this option...",
@@ -48,6 +50,7 @@
       "labelDescription": "Description",
       "placeholderDescription": "Enter a description...",
       "placeholderOptionSearch": "Search options...",
+      "cardTitle": "Options",
       "addOption": "Add option",
       "addOptionNotPossible": "Options can only be added in the default language",
       "contextMenuOptionResetDelete": "Restore",
@@ -57,7 +60,8 @@
       "titleSaveError": "Error",
       "messageSaveError": "Property \"{name}\" could not be saved",
       "messageOptionsEmpty": "No options yet",
-      "messageOptionsEmptySubline": "Add options here."
+      "messageOptionsEmptySubline": "Add options here.",
+      "optionEmptyStateSubline": "Save the property with the filled basic information to add more options."
     }
   }
 }

@@ -51,36 +51,47 @@
       }
     },
     "create": {
-      "textNewOrder": "New order",
-      "buttonSaveOrder": "Save order",
-      "buttonCancelOrder": "Cancel",
-      "titleSaveError": "Error",
-      "messageSaveError": "Order could not be saved."
+      "textNewOrder": "Neue Bestellung",
+      "buttonSaveOrder": "Bestellung speichern",
+      "buttonCancelOrder": "Abbrechen",
+      "titleSaveError": "Fehler",
+      "titleFetchError": "Fehler",
+      "messageSaveError": "Bestellung konnte nicht gespeichert werden",
+      "messageSwitchCustomerError": "Beim Kundenwechsel ist ein Fehler aufgetreten",
+      "messageFetchCustomerAddressesError": "Beim Abrufen der Kundenadresse ist ein Fehler aufgetreten"
     },
     "createBase": {
       "labelDetailsCard": "Details",
       "detailsHeader": {
-        "textCustomer": "Customer",
-        "placeholder": "Select customer...",
-        "buttonAddNewCustomer": "Add new customer"
+        "textCustomer": "Kunde",
+        "placeholder": "Wähle einen Kunden ...",
+        "buttonAddNewCustomer": "Kunden anlegen"
       },
       "detailsBody": {
-        "labelEmail": "Email",
-        "labelPhoneNumber": "Phone number",
-        "labelBillingAddress": "Billing address",
-        "labelShippingAddress": "Shipping address",
-        "placeholder": "Select or add cusomer first..."
+        "labelEmail": "E-Mail-Adresse",
+        "labelPhoneNumber": "Telefonnummer",
+        "placeholderEmail": "Gib eine E-Mail-Adresse ein ...",
+        "placeholderPhoneNumber": "Gib eine Telefonnummer ein ...",
+        "labelBillingAddress": "Rechnungsadresse",
+        "labelShippingAddress": "Lieferadresse",
+        "placeholder": "Kunden auswählen oder anlegen ...",
+        "textIdentical": "Rechnungs- und Lieferadresse sind identisch",
+        "buttonAddNewAddress": "Neue Adresse hinzufügen"
       },
       "detailsFooter": {
-        "labelSalesChannel": "Sales channel",
-        "labelPaymentMethod": "Payment method",
-        "labelShippingMethod": "Shipping method",
-        "labelOrderLanguage": "Order language",
-        "labelCurrency": "Currency"
+        "labelSalesChannel": "Verkaufskanäle",
+        "labelPaymentMethod": "Zahlungsart",
+        "labelShippingMethod": "Versandart",
+        "labelOrderLanguage": "Bestellsprache",
+        "labelCurrency": "Währung",
+        "placeholderSalesChannel": "Wähle Verkaufskanal ...",
+        "placeholderPaymentMethod": "Wähle Zahlart ...",
+        "placeholderShippingMethod": "Wähle Versandart ...",
+        "placeholderOrderLanguage": "Wähle Bestellsprache ...",
+        "placeholderCurrency": "Wähle Währung ..."
       },
       "cardTitleLineItems": "Positionen",
-      "placeholderSearchBarItem": "Search items...",
-      "labelDeleteOrderCard": "Delete order",
+      "placeholderSearchBarItem": "Durchsuche Positionen ...",
       "columnProductName": "Name",
       "columnQuantity": "Menge",
       "columnPriceGross": "Bruttopreis",
@@ -88,10 +99,11 @@
       "columnTotalPrice": "Gesamt",
       "columnTotalPriceGross": "Gesamt",
       "columnTax": "Steuersatz",
+      "textCreditTax": "auto",
       "columnPriceNet": "Nettopreis",
       "columnTotalPriceNet": "Gesamt",
       "contextMenuShowProduct": "Produkt anzeigen",
-      "messageEmptyItem": "No items added yet",
+      "messageEmptyItem": "Noch keine Positionen vorhanden",
       "buttonAddProduct" :"Produkt hinzufügen",
       "buttonAddBlankProduct" :"Leere Position hinzufügen",
       "buttonAddCredit" :"Gutschrift hinzufügen",
@@ -99,7 +111,39 @@
       "summaryLabelAmountWithoutTaxes": "Gesamtsumme ohne MwSt.",
       "summaryLabelAmountTotal": "Gesamtsumme inkl. MwSt.",
       "summaryLabelShippingCosts": "Versandkosten",
-      "summaryLabelTaxes": "zzgl. {taxRate}% MwSt."
+      "discountLabelShippingCosts": "Versandkostenrabatt",
+      "summaryLabelTaxes": "zzgl. {taxRate}% MwSt.",
+      "tax": "Enthaltene Steuern:",
+      "shippingCostsTax": "{taxRate}%: {tax}",
+      "labelAddPromotion": "Rabattaktion hinzufügen",
+      "placeholderAddPromotion": "Gutscheincode eingeben ...",
+      "textInvalidPromotionCode": "Ungültiger Aktionscode",
+      "textPromotionDescription": {
+        "cart": {
+          "percentage": "{value}% Rabatt auf den Warenkorb",
+          "absolute": "{value} Rabatt auf den Warenkorb",
+          "absoluteUpto": "Bis zu {value} Rabatt. ({totalPrice} Rabatt auf diesen Warenkorb)",
+          "fixed_unit": "Festpreis von {value} auf jeden Artikel im Warenkorb"
+        },
+        "delivery": {
+          "percentage": "{value}% Rabatt auf die Versandkosten",
+          "absolute": "{value} Rabatt auf die Versandkosten",
+          "fixed_unit": "Festpreis von {value} auf die Versandkosten",
+          "fixed": "Festpreis von {value} auf die Versandkosten"
+        },
+        "set": {
+          "percentage": "{value}% Rabatt auf Produkt-Set",
+          "absolute": "{value} Rabatt auf Produkt-Set",
+          "fixed_unit": "Fester Stückpreis von {value} auf jeden Artikel im Produkt-Set",
+          "fixed": "Festpreis von {value} auf Produkt-Set"
+        },
+        "setgroup": {
+          "percentage": "{value}% Rabatt auf die Set-Gruppe {groupId}",
+          "absolute": "{value} Rabatt auf die Set-Gruppe {groupId}",
+          "fixed_unit": "Fester Stückpreis von {value} auf jeden Artikel in der Set-Gruppe {groupId}",
+          "fixed": "Festpreis von {value} auf die Set-Gruppe {groupId}"
+        }
+      }
     },
     "detailBase": {
       "cardTitleDetails": "Details",
@@ -118,6 +162,7 @@
       "summaryLabelAmountWithoutTaxes": "Gesamtsumme ohne MwSt.",
       "summaryLabelAmountTotal": "Gesamtsumme inkl. MwSt.",
       "summaryLabelShippingCosts": "Versandkosten",
+      "discountLabelShippingCosts": "Versandkostenrabatt",
       "summaryLabelTaxes": "zzgl. {taxRate}% MwSt.",
       "labelOrderStatus": "Bestellstatus",
       "labelPaymentStatus": "Zahlungsstatus",
@@ -153,12 +198,25 @@
       "labelSameDeliveryAndBillingAddress" : "Rechnungs- und Lieferadresse sind identisch",
       "tax": "Enthaltene Steuern:",
       "shippingCostsTax": "{taxRate}%: {tax}",
-      "placeholderTagSelect": "Tags durchsuchen..."
+      "placeholderTagSelect": "Tags durchsuchen...",
+      "placeholderTrackingCodeSelect": "Tracking-Code hinzufügen ...",
+      "addTrackingCode": "Zum Hinzufügen hier klicken",
+      "enterValidTrackingCode": "Tracking-Code eingeben",
+      "textCreditTax": "auto"
     },
     "addressSelection": {
       "modalTitleEditAddress": "Adressen",
+      "modalTitleSelectAddress": "Adresse ändern",
+      "modalTitleAddBillingAddress": "Neue Rechnungsadresse hinzufügen",
+      "modalTitleEditBillingAddress": "Rechnungsadresse ändern",
+      "modalTitleAddShippingAddress": "Neue Lieferadresse hinzufügen",
+      "modalTitleEditShippingAddress": "Lieferadresse ändern",
       "headlineTabEditAddress" : "Adresse bearbeiten",
-      "headlineTabSelectAddress" :"Adresse auswählen"
+      "headlineTabSelectAddress" :"Adresse auswählen",
+      "headlineTabCreateAddress" :"Adresse erstellen",
+      "currentlySelected": "Aktuelle Auswahl",
+      "searchAddressToolbarPlaceholder": "Adressen suchen...",
+      "emptySearchResults": "Keine Adressen gefunden."
     },
     "leavePageModal" : {
       "headline" : "Warnung",
@@ -198,6 +256,7 @@
         "alertMessage": "Diese Zuweisung wirkt sich auf alle nachfolgenden Bestellungen dieses Verkaufskanals aus.",
         "buttonCreateMailTemplate": "Erstelle eine E-Mail-Vorlage",
         "buttonAssignMailTemplate": "E-Mail-Vorlage zuweisen",
+        "buttonNotAssignMailTemplate": "Keine E-Mail-Vorlage zuweisen",
         "gridColumnType": "Typ",
         "gridColumnDescription": "Beschreibung"
     },
@@ -240,7 +299,18 @@
     },
     "newCustomerModal": {
       "labelDetails": "Details",
-      "labelGuest": "Guest account"
+      "labelGuest": "Gastbesteller"
+    },
+    "invalidPromotionModal": {
+      "modalTitle": "Ungültige Aktionscodes werden entfernt",
+      "modalDescription": "Die folgenden, ungültigen Aktionscodes werden entfernt",
+      "buttonConfirm": "OK"
+    },
+    "promotionModal": {
+      "labelTitle": "Deaktivieren Sie automatische Werbeaktionen",
+      "message": "Die folgenden automatischen Werbeaktionen werden deaktiviert",
+      "messageNoItems": "Noch keine automatischen Werbeaktionen",
+      "buttonDisable": "Deaktivieren"
     }
   }
 }

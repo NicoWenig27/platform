@@ -7,10 +7,10 @@ use Shopware\Core\Content\Category\CategoryCollection;
 use Shopware\Core\Content\Category\CategoryEntity;
 use Shopware\Core\Content\Category\Event\NavigationLoadedEvent;
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
+use Shopware\Core\Content\Category\SalesChannel\NavigationRouteInterface;
 use Shopware\Core\Content\Category\Tree\Tree;
 use Shopware\Core\Content\Category\Tree\TreeItem;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\ContainsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
@@ -19,9 +19,10 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-class NavigationLoader
+class NavigationLoader implements NavigationLoaderInterface
 {
     /**
      * @var SalesChannelRepositoryInterface
@@ -43,47 +44,35 @@ class NavigationLoader
      */
     private $connection;
 
-    public function __construct(Connection $connection, SalesChannelRepositoryInterface $repository, EventDispatcherInterface $eventDispatcher)
-    {
+    /**
+     * @var NavigationRouteInterface
+     */
+    private $navigationRoute;
+
+    public function __construct(
+        Connection $connection,
+        SalesChannelRepositoryInterface $repository,
+        EventDispatcherInterface $eventDispatcher,
+        NavigationRouteInterface $navigationRoute
+    ) {
         $this->categoryRepository = $repository;
         $this->treeItem = new TreeItem(null, []);
         $this->eventDispatcher = $eventDispatcher;
         $this->connection = $connection;
+        $this->navigationRoute = $navigationRoute;
     }
 
     /**
-     * Returns the first two levels of the category tree, as well as all parents of the active category
-     * and the active categories first level of children.
-     * The provided active id will be marked as selected
+     * {@inheritdoc}
      *
      * @throws CategoryNotFoundException
-     * @throws InconsistentCriteriaIdsException
      */
     public function load(string $activeId, SalesChannelContext $context, string $rootId, int $depth = 2): Tree
     {
-        $metaInfo = $this->getCategoryMetaInfo($activeId, $rootId);
+        $request = new Request();
+        $request->query->set('buildTree', false);
 
-        $active = $this->getMetaInfoById($activeId, $metaInfo);
-
-        $root = $this->getMetaInfoById($rootId, $metaInfo);
-
-        // validate the provided category is part of the sales channel
-        $this->validate($activeId, $active['path'], $context);
-
-        $isChild = $this->isChildCategory($activeId, $active['path'], $rootId);
-
-        // If the provided activeId is not part of the rootId, a fallback to the rootId must be made here.
-        // The passed activeId is therefore part of another navigation and must therefore not be loaded.
-        // The availability validation has already been done in the `validate` function.
-        if (!$isChild) {
-            $activeId = $rootId;
-        }
-
-        // Load the first two levels without using the activeId in the query, so this can be cached
-        $categories = $this->loadLevels($rootId, (int) $root['level'], $context, $depth);
-
-        // if the active category is part of the provided root id, we have to load the children and the parents of the active id
-        $categories = $this->loadChildren($activeId, $context, $rootId, $metaInfo, $categories);
+        $categories = $this->navigationRoute->load($activeId, $rootId, $depth, $request, $context)->getCategories();
 
         $navigation = $this->getTree($rootId, $categories, $categories->get($activeId));
 
@@ -95,10 +84,9 @@ class NavigationLoader
     }
 
     /**
-     * Returns the category tree level for the provided category id.
+     * {@inheritdoc}
      *
      * @throws CategoryNotFoundException
-     * @throws InconsistentCriteriaIdsException
      */
     public function loadLevel(string $categoryId, SalesChannelContext $context): Tree
     {

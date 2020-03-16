@@ -6,15 +6,15 @@
 
     <services>
         <service id="Shopware\Core\Checkout\Payment\PaymentMethodDefinition">
-            <tag name="shopware.entity.definition" entity="payment_method"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition">
-            <tag name="shopware.sales_channel.entity.definition" entity="payment_method"/>
+            <tag name="shopware.sales_channel.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\Aggregate\PaymentMethodTranslation\PaymentMethodTranslationDefinition">
-            <tag name="shopware.entity.definition" entity="payment_method_translation"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\PaymentService">
@@ -46,8 +46,8 @@
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry">
-            <argument type="tagged" tag="shopware.payment.method.sync"/>
-            <argument type="tagged" tag="shopware.payment.method.async"/>
+            <argument type="tagged_locator" tag="shopware.payment.method.sync"/>
+            <argument type="tagged_locator" tag="shopware.payment.method.async"/>
         </service>
 
         <service id="Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PrePayment">
@@ -91,6 +91,13 @@
 
         <service id="Shopware\Core\Checkout\Payment\Cart\PaymentMethodValidator">
             <tag name="shopware.cart.validator"/>
+        </service>
+
+        <!-- Sales Channel API -->
+        <service id="Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute" public="true">
+            <argument type="service" id="sales_channel.payment_method.repository"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="Shopware\Core\Checkout\Payment\SalesChannel\SalesChannelPaymentMethodDefinition"/>
         </service>
     </services>
 </container>

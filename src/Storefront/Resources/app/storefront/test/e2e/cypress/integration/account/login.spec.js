@@ -2,16 +2,16 @@ import AccountPageObject from '../../support/pages/account.page-object';
 
 describe('Account: Login as customer', () => {
     beforeEach(() => {
-        return cy.createCustomerFixture()
+        return cy.createCustomerFixtureStorefront()
     });
 
-    it('Login with wrong credentials', () => {
+    it('@login: Login with wrong credentials', () => {
         const page = new AccountPageObject();
         cy.visit('/account/login');
 
         cy.get(page.elements.loginCard).should('be.visible');
-        cy.get('#loginMail').typeAndCheck('test@example.com');
-        cy.get('#loginPassword').typeAndCheck('Anything');
+        cy.get('#loginMail').typeAndCheckStorefront('test@example.com');
+        cy.get('#loginPassword').typeAndCheckStorefront('Anything');
         cy.get(`${page.elements.loginSubmit} [type="submit"]`).click();
 
         cy.get('.alert-danger').should((element) => {
@@ -19,13 +19,13 @@ describe('Account: Login as customer', () => {
         });
     });
 
-    it('Login with valid credentials', () => {
+    it('@package @login: Login with valid credentials', () => {
         const page = new AccountPageObject();
         cy.visit('/account/login');
 
         cy.get(page.elements.loginCard).should('be.visible');
-        cy.get('#loginMail').typeAndCheck('test@example.com');
-        cy.get('#loginPassword').typeAndCheck('shopware');
+        cy.get('#loginMail').typeAndCheckStorefront('test@example.com');
+        cy.get('#loginPassword').typeAndCheckStorefront('shopware');
         cy.get(`${page.elements.loginSubmit} [type="submit"]`).click();
 
         cy.get('.account-welcome h1').should((element) => {

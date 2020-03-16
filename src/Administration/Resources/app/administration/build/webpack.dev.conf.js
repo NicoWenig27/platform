@@ -2,7 +2,7 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 const FriendlyErrorsPlugin = require('friendly-errors-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const WebpackPluginInjector = require('@shopware/webpack-plugin-injector');
+const WebpackPluginInjector = require('@shopware-ag/webpack-plugin-injector');
 const AssetsPlugin = require('assets-webpack-plugin');
 const config = require('../config');
 const utils = require('./utils');
@@ -36,7 +36,8 @@ let mergedWebpackConfig = merge(baseWebpackConfig, {
         // https://github.com/ampedandwired/html-webpack-plugin
         utils.injectHtmlPlugin(
             baseWebpackConfig,
-            utils.loadFeatureFlags(process.env.ENV_FILE)
+            utils.loadFeatureFlags(process.env.ENV_FILE),
+            utils.getLatestApiVersion()
         ),
         new FriendlyErrorsPlugin(),
         new AssetsPlugin({

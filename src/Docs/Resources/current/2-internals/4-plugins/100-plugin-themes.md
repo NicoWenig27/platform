@@ -125,6 +125,10 @@ Defining the above configuration results in the following behavior:
 * `@Storefront` then defines that the shopware storefront theme should be used as the last inheritance level.
 
 ## Theme assets
+
+If your theme is installed and active, Shopware will automatically collect all your 
+script and style files. All SASS files (*.scss) in the style folder are compiled to css.
+
 You can add custom styles or javascript by using the `style` and `script` property in the `theme.json`.
 Example `theme.json`
 ```json
@@ -227,10 +231,29 @@ $modal-backdrop-bg: rgba(255, 0, 0, 0.5);
 
 Please only add variable overrides in this file. You should not write CSS code like `.container { background: #f00 }` in this file. When running `storefront:hot` or `storefront:hot-proxy` SCSS variables will be injected dynamically by webpack. When writing selectors and properties in the `overrides.scss` the code can appear multiple times in your built CSS.
 
+### Using Bootstrap SCSS only
+
+The Shopware default theme is using [Bootstrap](https://getbootstrap.com/) with additional custom styling.
+
+If you want to build your theme only upon the Bootstrap SCSS you can use the `@StorefrontBootstrap` placeholder instead of the `@Storefront` bundle in the `style` section of your `theme.json`.
+This gives you the ability to use the Bootstrap SCSS without the Shopware Storefront "skin". Therefore all the SCSS from `src/Storefront/Resources/app/storefront/src/scss/skin` will not be available in your theme.
+
+```json
+{
+  "style": [
+    "@StorefrontBootstrap",
+    "app/storefront/src/scss/base.scss"
+  ]
+}
+```
+* This option can only be used in the `style` section of the `theme.json`. You must not use it in `views` or `script`.
+* All theme variables like `$sw-color-brand-primary` are also available when using the Bootstrap option.
+* You can only use either `@StorefrontBootstrap` or `@Storefront`. They should not be used at the same time. The `@Storefront` bundle **includes** the Bootstrap SCSS already.
+
 ## Theme Configuration
 
 One of the benefits of creating a theme is that you can overwrite the theme configuration of 
-the default theme or add your own configuration.
+the default theme or add your own configurations.
 
 Example `theme.json`
 ```json
@@ -262,7 +285,7 @@ config and both configurations are merged. This also means that you only have to
 actually want to change. You can find a more detailed explanation of the configuration inheritance
 in the next section.
 
-The `theme.json` contains a `config` property which consists a list of blocks, sections and fields.
+The `theme.json` contains a `config` property which consists a list of tabs, blocks, sections and fields.
 
 The key of each config fields item is also the technical name which you use to access the config option
 in your theme or scss files. `config` entries will show up in the administration and 
@@ -270,19 +293,267 @@ can be customized by the enduser (if `editable` is set to `true`, see table belo
 
 The following parameters can be defined for a config field item:
 
-| Name         | Meaning                                                                              |
-|------------- |--------------------------------------------------------------------------------------|
-| label        | Array of translations with locale code as key                                        |
-| type         | Type of the config. Possible values: color, fontFamily and media                     |
-| value        | Value for the config                                                                 |
-| editable     | If set to false, the config option will not be displayed (e.g. in the administration |
-| block        | Name of a block to organize the config options                                       |
-| section      | Name of a section to organize the config options                                     |
-| custom       | The defined data will not be processed but is available via API                      |
+| Name         | Meaning                                                                                          |
+|------------- |--------------------------------------------------------------------------------------------------|
+| label        | Array of translations with locale code as key                                                    |
+| type         | Type of the config. Possible values: color, text, number, fontFamily, media, checkbox and switch |
+| editable     | If set to false, the config option will not be displayed (e.g. in the administration)            |
+| tab          | Name of a tab to organize the config options                                                     |
+| block        | Name of a block to organize the config options                                                   |
+| section      | Name of a section to organize the config options                                                 |
+| custom       | The defined data will not be processed but is available via API                                  |
+| scss         | If set to false, the config option will not be injected as a SCSS variable                       |
 
+### Field types
+You can use different field types in your theme manager:
 
-If your plugin is installed and active, Shopware will automatically collect all your 
-script and style files. All SASS files (*.scss) in the style folder are compiled to css.
+* A text field example:
+```json
+"modal-padding": {
+    "label": {
+      "en-GB": "Modal padding",
+      "de-DE": "Modal Innenabstand"
+    },
+    "type": "text",
+    "value": "(0, 0, 0, 0)",
+    "editable": true
+}
+```
+
+* A number field example: 
+```json
+"visible-slides": {
+    "label": {
+      "en-GB": "Number of visible slides",
+      "de-DE": "Anzahl an sichtbaren Slider Bildern"
+    },
+    "type": "number",
+    "custom": {
+      "numberType": "int",
+      "min": 1,
+      "max": 6
+    },
+    "value": 3,
+    "editable": true
+}
+```
+
+* Two boolean field examples:
+```json
+"navigation-fixed": {
+    "label": {
+      "en-GB": "Fix navigation",
+      "de-DE": "Navigation fixieren"
+    },
+    "type": "switch",
+    "value": true,
+    "editable": true
+}
+```
+
+or
+
+```json
+"navigation-fixed": {
+    "label": {
+      "en-GB": "Fix navigation",
+      "de-DE": "Navigation fixieren"
+    },
+    "type": "checkbox",
+    "value": true,
+    "editable": true
+}
+```
+
+### Examples for custom config fields
+
+* A custom single-select field example
+
+```json
+{
+  "name": "Just another theme",
+  "author": "Just another author",
+  "description": {
+    "en-GB": "Just another description",
+    "de-DE": "Nur eine weitere Beschreibung"
+  },
+  "views": [
+    "@Storefront",
+    "@Plugins",
+    "@SelectExample"
+  ],
+  "style": [
+    "app/storefront/src/scss/overrides.scss",
+    "@Storefront",
+    "app/storefront/src/scss/base.scss"
+  ],
+  "script": [
+    "@Storefront",
+    "app/storefront/dist/storefront/js/select-example.js"
+  ],
+  "asset": [
+    "app/storefront/src/assets"
+  ],
+  "config": {
+    "blocks": {
+      "exampleBlock": {
+        "label": {
+          "en-GB": "Example block",
+          "de-DE": "Beispiel Block"
+        }
+      }
+    },
+    "sections": {
+      "exampleSection": {
+        "label": {
+          "en-GB": "Example section",
+          "de-DE": "Beispiel Sektion"
+        }
+      }
+    },
+    "fields": {
+      "my-single-select-field": {
+        "label": {
+          "en-GB": "Select a font size",
+          "de-DE": "Wähle ein Schriftgröße"
+        },
+        "type": "text",
+        "value": "24",
+        "custom": {
+          "componentName": "sw-single-select",
+          "options": [
+            {
+              "value": "16",
+              "label": {
+                "en-GB": "16px",
+                "de-DE": "16px"
+              }
+            },
+            {
+              "value": "20",
+              "label": {
+                "en-GB": "20px",
+                "de-DE": "20px"
+              }
+            },
+            {
+              "value": "24",
+              "label": {
+                "en-GB": "24px",
+                "de-DE": "24px"
+              }
+            }
+          ]
+        },
+        "editable": true,
+        "block": "exampleBlock",
+        "section": "exampleSection"
+      }
+    }
+  }
+}
+```
+
+![Example of a custom single-select field](./img/example-single-select-config.png)
+
+* A custom multi-select field example
+
+````json
+{
+  "name": "Just another theme",
+  "author": "Just another author",
+  "description": {
+    "en-GB": "Just another description",
+    "de-DE": "Nur eine weitere Beschreibung"
+  },
+  "views": [
+    "@Storefront",
+    "@Plugins",
+    "@SelectExample"
+  ],
+  "style": [
+    "app/storefront/src/scss/overrides.scss",
+    "@Storefront",
+    "app/storefront/src/scss/base.scss"
+  ],
+  "script": [
+    "@Storefront",
+    "app/storefront/dist/storefront/js/select-example.js"
+  ],
+  "asset": [
+    "app/storefront/src/assets"
+  ],
+  "config": {
+    "blocks": {
+      "exampleBlock": {
+        "label": {
+          "en-GB": "Example block",
+          "de-DE": "Beispiel Block"
+        }
+      }
+    },
+    "sections": {
+      "exampleSection": {
+        "label": {
+          "en-GB": "Example section",
+          "de-DE": "Beispiel Sektion"
+        }
+      }
+    },
+    "fields": {
+      "my-multi-select-field": {
+        "label": {
+          "en-GB": "Select some colours",
+          "de-DE": "Wähle Farben aus"
+        },
+        "type": "text",
+        "editable": true,
+        "value": [
+          "green",
+          "blue"
+        ],
+        "custom": {
+          "componentName": "sw-multi-select",
+          "options": [
+            {
+              "value": "green",
+              "label": {
+                "en-GB": "green",
+                "de-DE": "grün"
+              }
+            },
+            {
+              "value": "red",
+              "label": {
+                "en-GB": "red",
+                "de-DE": "rot"
+              }
+            },
+            {
+              "value": "blue",
+              "label": {
+                "en-GB": "blue",
+                "de-DE": "blau"
+              }
+            },
+            {
+              "value": "yellow",
+              "label": {
+                "en-GB": "yellow",
+                "de-DE": "gelb"
+              }
+            }
+          ]
+        },
+        "block": "exampleBlock",
+        "section": "exampleSection"
+      }
+    }
+  }
+}
+````
+
+![Example of a custom multi-select field](./img/example-multi-select-config.png)
 
 ### Inheritance of theme config
 All custom themes inherit the config of the Shopware default theme. The main reason is that in case 
@@ -303,13 +574,13 @@ the values of these properties. So the chain would look like this:
 If the user duplicates a theme in administration, the configuration is copied. This also
 means that even if original theme changes, these change will not affect the duplicate.
 
-## Blocks and sections
-You can use blocks and sections to structure and group the config options.
+## Tabs, blocks and sections
+You can use tabs, blocks and sections to structure and group the config options.
 
-![Example of blocks and sections](./img/theme-config.png)
+![Example of tabs, blocks and sections](./img/theme-config.png)
 
-In the picture above is one block "Colors" which contains two sections named "General colors" and
-"Additional colors". You can define the block and section individually for each item. Example:
+In the picture above are four tabs. In the "Colours" tab there is one block "Theme colours" which contains two sections 
+named "Important colors" and "Other". You can define the block and section individually for each item. Example:
 ```json
 {
   "name": "Just another theme",
@@ -319,23 +590,24 @@ In the picture above is one block "Colors" which contains two sections named "Ge
     "fields": {
       "sw-color-brand-primary": {
         "label": {
-          "en-GB": "Primary",
+          "en-GB": "Primary colour",
           "de-DE": "Primär"
         },
         "type": "color",
         "value": "#399",
         "editable": true,
-        "block": "colors",
-        "section": "generalColors"
+        "tab": "colors",
+        "block": "themeColors",
+        "section": "importantColors"
       }
     }
   }
 }
 ```
 
-The section property is not required.
+The tab and section property is not required.
 
-You can extend the config to add translated labels for the blocks and sections:
+You can extend the config to add translated labels for the tabs, blocks and sections:
 ```json
 {
   "name": "Just another theme",
@@ -344,32 +616,41 @@ You can extend the config to add translated labels for the blocks and sections:
   "config": {
     "blocks": {
       "colors": {
-        "label": {
-          "en-GB": "Colors",
-          "de-DE": "Farben"
+        "themeColors": {
+          "en-GB": "Theme colours",
+          "de-DE": "Theme Farben"
         }
       }
     },
     "sections": {
-      "generalColors": {
+      "importantColors": {
         "label": {
-          "en-GB": "General colors",
-          "de-DE": "Allgemeine Farben"
+          "en-GB": "Important colors",
+          "de-DE": "Wichtige Farben"
         }
       }
     },
+    "tabs": {
+      "colors": {
+          "label": {
+              "en-GB": "Colours",
+              "de-DE": "Farben"
+          }
+      } 
+    },
     "fields": {
       "sw-color-brand-primary": {
-        "label": {
-          "en-GB": "Primary",
-          "de-DE": "Primär"
-        },
-        "type": "color",
-        "value": "#399",
-        "editable": true,
-        "block": "colors",
-        "section": "generalColors"
-      }
+          "label": {
+            "en-GB": "Primary colour",
+            "de-DE": "Primär"
+          },
+          "type": "color",
+          "value": "#399",
+          "editable": true,
+          "tab": "colors",
+          "block": "themeColors",
+          "section": "importantColors"
+        }
     }
   }
 }

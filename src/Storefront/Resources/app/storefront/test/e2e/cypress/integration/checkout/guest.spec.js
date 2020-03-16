@@ -7,8 +7,6 @@ describe(`Checkout as Guest`, () => {
         return cy.createProductFixture().then(() => {
             return cy.createDefaultFixture('category')
         }).then(() => {
-            return cy.setProductFixtureVisibility('Product name')
-        }).then(() => {
             return cy.fixture('product');
         }).then((result) => {
             product = result;
@@ -16,7 +14,7 @@ describe(`Checkout as Guest`, () => {
         });
     });
 
-    it('run checkout', () => {
+    it('@package @checkout: Run checkout', () => {
         const page = new CheckoutPageObject();
         const accountPage = new AccountPageObject();
 

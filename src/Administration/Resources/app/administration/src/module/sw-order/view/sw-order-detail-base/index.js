@@ -1,8 +1,8 @@
 import template from './sw-order-detail-base.html.twig';
 
-const { Component } = Shopware;
+const { Component, Utils } = Shopware;
 const { Criteria } = Shopware.Data;
-const format = Shopware.Utils.format;
+const { format, array } = Utils;
 
 Component.register('sw-order-detail-base', {
     template,
@@ -64,6 +64,10 @@ Component.register('sw-order-detail-base', {
 
         delivery() {
             return this.order.deliveries[0];
+        },
+
+        deliveryDiscounts() {
+            return array.slice(this.order.deliveries, 1) || [];
         },
 
         transaction() {
@@ -148,6 +152,10 @@ Component.register('sw-order-detail-base', {
                 .addAssociation('language');
 
             criteria
+                .getAssociation('deliveries')
+                .addSorting(Criteria.sort('shippingCosts.unitPrice', 'DESC'));
+
+            criteria
                 .getAssociation('salesChannel')
                 .getAssociation('mailTemplates')
                 .addAssociation('mailTemplateType');
@@ -215,9 +223,9 @@ Component.register('sw-order-detail-base', {
 
         destroyedComponent() {
             this.$root.$off('language-change', this.reloadEntityData);
-            this.$root.$on('order-edit-start', this.onStartEditing);
-            this.$root.$on('order-edit-save', this.onSaveEdits);
-            this.$root.$on('order-edit-cancel', this.onCancelEditing);
+            this.$root.$off('order-edit-start', this.onStartEditing);
+            this.$root.$off('order-edit-save', this.onSaveEdits);
+            this.$root.$off('order-edit-cancel', this.onCancelEditing);
         },
 
         reloadEntityData() {
@@ -295,12 +303,15 @@ Component.register('sw-order-detail-base', {
             this.$emit('loading-change', true);
             this.$emit('editing-change', false);
 
-            this.orderRepository.mergeVersion(this.versionContext.versionId, this.versionContext).catch((error) => {
-                this.$emit('error', error);
-            }).finally(() => {
-                this.versionContext.versionId = Shopware.Context.api.liveVersionId;
-                this.reloadEntityData();
-            });
+            this.orderRepository.save(this.order, this.versionContext)
+                .then(() => {
+                    return this.orderRepository.mergeVersion(this.versionContext.versionId, this.versionContext);
+                }).catch((error) => {
+                    this.$emit('error', error);
+                }).finally(() => {
+                    this.versionContext.versionId = Shopware.Context.api.liveVersionId;
+                    this.reloadEntityData();
+                });
         },
 
         onCancelEditing() {

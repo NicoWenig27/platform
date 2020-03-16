@@ -16,13 +16,13 @@ describe('Payment: Test crud operations', () => {
             });
     });
 
-    it('@settings: create and read payment method', () => {
+    it('@base @settings: create and read payment method', () => {
         const page = new PaymentPageObject();
 
         // Request we want to wait for later
         cy.server();
         cy.route({
-            url: '/api/v1/payment-method?_response=true',
+            url: '/api/v1/payment-method',
             method: 'post'
         }).as('saveData');
 
@@ -30,12 +30,12 @@ describe('Payment: Test crud operations', () => {
         cy.get('a[href="#/sw/settings/payment/create"]').click();
         cy.get('#sw-field--paymentMethod-name').typeAndCheck('Bar bei Abholung');
         cy.get('#sw-field--paymentMethod-position').type('10');
-        cy.get('#sw-field--paymentMethod-active').click();
+        cy.get('input[name="sw-field--paymentMethod-active"]').click();
         cy.get(page.elements.paymentSaveAction).click();
 
         // Verify and check usage of payment method
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
 
         cy.get(page.elements.smartBarBack).click();
@@ -45,7 +45,7 @@ describe('Payment: Test crud operations', () => {
             .contains('Bar bei Abholung');
     });
 
-    it('@settings: update and read payment method', () => {
+    it('@base @settings: update and read payment method', () => {
         const page = new PaymentPageObject();
 
         // Request we want to wait for later
@@ -68,7 +68,7 @@ describe('Payment: Test crud operations', () => {
 
         // Verify and check usage of payment method
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
 
         cy.get(page.elements.smartBarBack).click();
@@ -77,7 +77,7 @@ describe('Payment: Test crud operations', () => {
             .contains('In Schokoladentafeln');
     });
 
-    it('@settings: delete payment method', () => {
+    it('@base @settings: delete payment method', () => {
         const page = new PaymentPageObject();
 
         // Request we want to wait for later
@@ -105,6 +105,6 @@ describe('Payment: Test crud operations', () => {
         });
 
         cy.get(page.elements.modal).should('not.exist');
-        cy.get(`${page.elements.dataGridRow}--0`).should('not.exist')
+        cy.get(`${page.elements.dataGridRow}--0`).should('not.exist');
     });
 });

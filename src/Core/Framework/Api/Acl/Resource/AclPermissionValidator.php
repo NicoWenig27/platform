@@ -3,9 +3,11 @@
 namespace Shopware\Core\Framework\Api\Acl\Resource;
 
 use Shopware\Core\Framework\Api\Context\AdminApiSource;
+use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityTranslationDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\WriteCommand;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Validation\PreWriteValidationEvent;
+use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\WriteConstraintViolationException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -24,6 +26,10 @@ class AclPermissionValidator implements EventSubscriberInterface
 
     public function preValidate(PreWriteValidationEvent $event): void
     {
+        if ($event->getContext()->getScope() === Context::SYSTEM_SCOPE) {
+            return;
+        }
+
         $commands = $event->getCommands();
         $source = $event->getContext()->getSource();
         if (!$source instanceof AdminApiSource) {
@@ -34,11 +40,15 @@ class AclPermissionValidator implements EventSubscriberInterface
 
         foreach ($commands as $command) {
             $resource = $command->getDefinition()->getEntityName();
+            $privilege = $command->getPrivilege();
+
             if (is_subclass_of($command->getDefinition(), EntityTranslationDefinition::class)) {
                 $resource = $command->getDefinition()->getParentDefinition()->getEntityName();
-            }
 
-            $privilege = $command->getPrivilege();
+                if ($privilege !== AclResourceDefinition::PRIVILEGE_DELETE) {
+                    $privilege = $this->getPrivilegeForParentWriteOperation($command, $commands);
+                }
+            }
 
             if (!$source->isAllowed($resource, $privilege)) {
                 $this->violates($privilege, $resource, $command, $violationList);
@@ -93,5 +103,40 @@ class AclPermissionValidator implements EventSubscriberInterface
                 self::VIOLATION_NO_PERMISSION
             )
         );
+    }
+
+    /**
+     * @param WriteCommand[] $commands
+     */
+    private function getPrivilegeForParentWriteOperation(WriteCommand $command, array $commands): string
+    {
+        $pathSuffix = '/translations/' . Uuid::fromBytesToHex($command->getPrimaryKey()['language_id']);
+        $parentCommandPath = str_replace($pathSuffix, '', $command->getPath());
+        $parentCommand = $this->findCommandByPath($parentCommandPath, $commands);
+
+        // writes to translation need privilege from parent command
+        // if we update e.g. a product and add translations for a new language
+        // the writeCommand on the translation would be an insert
+        if ($parentCommand) {
+            return $parentCommand->getPrivilege();
+        }
+
+        // if we don't have a parentCommand it must be a update,
+        // because the parentEntity must already exist
+        return AclResourceDefinition::PRIVILEGE_UPDATE;
+    }
+
+    /**
+     * @param WriteCommand[] $commands
+     */
+    private function findCommandByPath(string $commandPath, array $commands): ?WriteCommand
+    {
+        foreach ($commands as $command) {
+            if ($command->getPath() === $commandPath) {
+                return $command;
+            }
+        }
+
+        return null;
     }
 }

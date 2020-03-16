@@ -12,7 +12,6 @@
             "email": "p.schuch@shopware.com"
         }
     ],
-    "private": true,
     "scripts": {
         "dev": "node build/dev-server.js",
         "build": "node build/build.js",
@@ -29,10 +28,10 @@
     },
     "dependencies": {
         "@babel/runtime": "7.5.5",
-        "@shopware/eslint-config-base": "1.0.0",
-        "@shopware/webpack-copy-after-build": "1.0.0",
-        "@shopware/webpack-kill-process-on-failed-build": "1.0.0",
-        "@shopware/webpack-plugin-injector": "1.0.0",
+        "@shopware-ag/eslint-config-base": "1.0.0",
+        "@shopware-ag/webpack-copy-after-build": "1.0.0",
+        "@shopware-ag/webpack-kill-process-on-failed-build": "1.0.0",
+        "@shopware-ag/webpack-plugin-injector": "1.0.3",
         "@vue/component-compiler-utils": "2.6.0",
         "@vue/test-utils": "1.0.0-beta.29",
         "ace-builds": "1.4.5",
@@ -80,6 +79,7 @@
         "@babel/plugin-transform-runtime": "7.5.5",
         "@babel/preset-env": "7.5.5",
         "@babel/register": "7.5.5",
+        "@shopware-ag/jest-preset-sw6-admin": "1.0.3",
         "assets-webpack-plugin": "3.9.10",
         "autoprefixer": "9.6.1",
         "axios-mock-adapter": "1.17.0",
@@ -121,7 +121,7 @@
         "launch-editor-middleware": "2.2.1",
         "less": "3.9.0",
         "less-loader": "5.0.0",
-        "node-sass": "4.12.0",
+        "node-sass": "4.13.0",
         "opn": "6.0.0",
         "prismjs": "1.17.1",
         "sass-loader": "7.1.0",
@@ -130,7 +130,7 @@
         "stylelint-config-standard": "18.3.0",
         "stylelint-scss": "3.9.2",
         "stylelint-webpack-plugin": "0.10.5",
-        "svg-inline-loader": "0.8.0",
+        "svg-inline-loader": "0.8.2",
         "url-loader": "2.1.0",
         "vue-style-loader": "4.1.2",
         "webpack-dev-middleware": "3.7.0",

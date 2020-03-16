@@ -69,9 +69,13 @@
                             </sw-container>
 
                             {% block sw_profile_index_info_card_email_field %}
-                                <sw-text-field v-model="user.email"
-                                               validation="email"
-                                               :label="$tc('sw-profile.index.labelEmailField')">
+                                <sw-text-field
+                                    v-model="user.email"
+                                    validation="email"
+                                    required
+                                    name="sw-field--email"
+                                    :error="userEmailError"
+                                    :label="$tc('sw-profile.index.labelEmailField')">
                                 </sw-text-field>
                             {% endblock %}
                         </sw-card>
@@ -82,12 +86,12 @@
                                  :title="$tc('sw-profile.index.titleImageCard')"
                                  :isLoading="isUserLoading || !languageId">
                             {% block sw_profile_index_image_card_image %}
-                                <sw-upload-store-listener
+                                <sw-upload-listener
                                     :uploadTag="uploadTag"
                                     autoUpload
                                     @media-upload-finish="setMediaItem">
-                                </sw-upload-store-listener>
-                                <sw-media-upload
+                                </sw-upload-listener>
+                                <sw-media-upload-v2
                                     variant="regular"
                                     class="sw-profile-index__user-image-upload"
                                     :uploadTag="uploadTag"
@@ -95,10 +99,11 @@
                                     :allowMultiSelect="false"
                                     :label="$tc('sw-profile.index.labelUploadAvatar')"
                                     :defaultFolder="userRepository.schema.entity"
+                                    :sourceContext="user"
                                     @media-drop="onDropMedia"
                                     @media-upload-sidebar-open="openMediaSidebar"
                                     @media-upload-remove-image="onUnlinkAvatar">
-                                </sw-media-upload>
+                                </sw-media-upload-v2>
                             {% endblock %}
                         </sw-card>
                     {% endblock %}

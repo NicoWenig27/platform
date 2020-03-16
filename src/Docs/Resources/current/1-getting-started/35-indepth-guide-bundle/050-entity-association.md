@@ -16,7 +16,7 @@ So, let's start with this table, its only columns have to be `bundle_id`, `produ
 Since a product's primary key consists of two columns, `id` and `version_id`, you have to add them both to your table as well.
 You name the table `swag_bundle_product` then, so it's quite clear what it contains.
 
-#### Migration
+## Migration
 
 In order to setup this, you can adjust your existing Migration file, so it also creates the
 mapping table.
@@ -38,7 +38,7 @@ class Migration1554708925Bundle extends MigrationStep
     {
         ...
 
-        $connection->executeQuery('
+        $connection->executeUpdate('
             CREATE TABLE IF NOT EXISTS `swag_bundle_product` (
               `bundle_id` BINARY(16) NOT NULL,
               `product_id` BINARY(16) NOT NULL,
@@ -63,7 +63,7 @@ Those rows will most likely never be updated, but rather deleted and newly creat
 The last few lines only create the necessary foreign keys to the `swag_bundle` and the `product` table.
 Since those constraints have to be unique, the following pattern is used: `fk.table_name.column_name`
 
-#### EntityDefinition
+## EntityDefinition
 
 Just like your custom entity, you're required to set up a new `EntityDefinition` class for your new table.
 This time it extends from the class `Shopware\Core\Framework\DataAbstractionLayer\MappingEntityDefinition` though. Mainly this is done
@@ -138,12 +138,12 @@ In your entity you also have two properties for each association:
 This way you could use both `$bundle->getProductIds()` as well as `$bundle->getProducts()` in order to either get an array of IDs
 or a collection of actual entities.
 
-### Adding product to BundleEntity and BundleDefinition
+## Adding product to BundleEntity and BundleDefinition
 
 A single association always connects **two** entities, yet you've only defined the association in one definition, which is your `BundleProductDefinition`.
 You have to add those associations to the connected definitions themselves, `BundleDefinition` and `ProductDefinition` that is.
 
-#### Adjusting the BundleDefinition
+### Adjusting the BundleDefinition
 
 Adding those required changes to your own definition is a bit straight forward, since you own the code, so let's start with this. 
 
@@ -166,7 +166,7 @@ protected function defineFields(): FieldCollection
 
 Make sure to import the classes `ManyToManyAssociationField`, `ProductDefinition` and `BundleProductDefinition` into your `BundleDefinition`.
 
-#### Adjusting the BundleEntity
+### Adjusting the BundleEntity
 
 Since you've got a new property now, you also need to adjust your `BundleEntity` to know this new property.
 That's quite simple, just add a new property with the same name like the string you just provided for the `propertyName`, so that's `$products`.
@@ -201,18 +201,18 @@ class BundleEntity extends Entity
 }
 ```
 
-### Extending the ProductDefinition
+## Extending the ProductDefinition
 
 Now it's time to add the new association to the `ProductDefinition`. This is done by writing an `EntityExtension` in your plugin.
 Extensions should be placed into the same directory structure like the extended entity itself.
 In this case this would be `Core/Content/Product` starting from your plugin's base class' directory.
-Create a new file called `ProductExtension.php` in there and have the class implement the interface `Shopware\Core\Framework\DataAbstractionLayer\EntityExtensionInterface`.  
+Create a new file called `ProductExtension.php` in there and have the class extend the abstract `Shopware\Core\Framework\DataAbstractionLayer\EntityExtension`.  
 
-This interface will automatically force you to implement the two methods `extendFields` and `getDefinitionClass`, while the latter should be self-explaining again.
+This abstract class will automatically force you to implement `getDefinitionClass`.
 Simply return the FQCN to the extended definition here.
 
-The `extendFields` method though provides you with a `FieldCollection` parameter, which contains all fields from the original definition class.
-Add the `ManyToManyAssociationField` here as well, quite similar to the same field in your `BundleDefinition`, of course with adjusted parameters to be passed to the constructor.
+Additionally you can implement the `extendFields` method, which provides you with a `FieldCollection` parameter.
+Add the `ManyToManyAssociationField` to the `FieldCollection`, quite similar to the same field in your `BundleDefinition`, of course with adjusted parameters to be passed to the constructor.
 Also note that you have to mark the association as an Inherited field, otherwise it would not work for variant products.
 
 ```php
@@ -221,14 +221,14 @@ Also note that you have to mark the association as an Inherited field, otherwise
 namespace Swag\BundleExample\Core\Content\Product;
 
 use Shopware\Core\Content\Product\ProductDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityExtensionInterface;
+use Shopware\Core\Framework\DataAbstractionLayer\EntityExtension;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Inherited;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\FieldCollection;
 use Swag\BundleExample\Core\Content\Bundle\Aggregate\BundleProduct\BundleProductDefinition;
 use Swag\BundleExample\Core\Content\Bundle\BundleDefinition;
 
-class ProductExtension implements EntityExtensionInterface
+class ProductExtension extends EntityExtension
 {
     public function extendFields(FieldCollection $collection): void
     {
@@ -296,7 +296,7 @@ class BundleExample extends Plugin
 }
 ```
 
-### Registering both services
+## Registering both services
 
 Since the last time you've adjusted the `services.xml` file, you created two new classes that need to be registered in the DI container again:
 `BundleProductDefinition` and the `ProductExtension`.

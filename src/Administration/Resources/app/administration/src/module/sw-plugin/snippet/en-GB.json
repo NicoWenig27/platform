@@ -48,7 +48,8 @@
       "titlePluginDeactivationFailed": "Plugin deactivation failed",
       "messagePluginDeactivationFailed": "Plugin could not be deactivated due to error message \"{message}\"",
       "titlePluginUpdateFailed": "Plugin update failed",
-      "messagePluginUpdateFailed": "Plugin could not be updated due to error message \"{message}\""
+      "messagePluginUpdateFailed": "Plugin could not be updated due to error message \"{message}\". {pluginDeactivatedHint}",
+      "pluginDeactivatedHint": "Plugin was deactivated."
     },
     "fileUpload":{
       "buttonFileUpload":"Upload plugin",
@@ -146,11 +147,9 @@
     }
   },
   "sw-plugin-config": {
-    "buttonSave": "Save",
-    "buttonCancel": "Abort",
     "titleSaveSuccess": "Success",
     "messageSaveSuccess": "Configuration has been saved.",
-    "titleSaveError": "Unable to save the configuration.",
+    "titleSaveError": "Unable to save the configuration."
   },
   "sw-plugin-description": {
     "buttonBack": "Back"

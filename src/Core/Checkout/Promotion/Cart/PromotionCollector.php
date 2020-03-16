@@ -25,6 +25,9 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class PromotionCollector implements CartDataCollectorInterface
 {
+    public const SKIP_PROMOTION = 'skipPromotion';
+    public const SKIP_AUTOMATIC_PROMOTIONS = 'skipAutomaticPromotions';
+
     /**
      * @var PromotionGatewayInterface
      */
@@ -70,7 +73,7 @@ class PromotionCollector implements CartDataCollectorInterface
     {
         // if we are in recalculation,
         // we must not re-add any promotions. just leave it as it is.
-        if ($behavior->isRecalculation()) {
+        if ($behavior->hasPermission(self::SKIP_PROMOTION)) {
             return;
         }
 
@@ -81,8 +84,10 @@ class PromotionCollector implements CartDataCollectorInterface
 
         $allPromotions = $this->searchPromotionsByCodes($data, $allCodes, $context);
 
-        // add auto promotions
-        $allPromotions->addAutomaticPromotions($this->searchPromotionsAuto($data, $context));
+        if (!$behavior->hasPermission(self::SKIP_AUTOMATIC_PROMOTIONS)) {
+            // add auto promotions
+            $allPromotions->addAutomaticPromotions($this->searchPromotionsAuto($data, $context));
+        }
 
         // check if max allowed redemption of promotion have been reached or not
         // if max redemption has been reached promotion will not be added

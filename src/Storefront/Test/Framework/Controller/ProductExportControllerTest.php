@@ -13,6 +13,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Test\TestCaseBase\SalesChannelFunctionalTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
+use Symfony\Component\HttpFoundation\Response;
 
 class ProductExportControllerTest extends TestCase
 {
@@ -35,7 +36,7 @@ class ProductExportControllerTest extends TestCase
         $client = $this->createSalesChannelBrowser(null, true);
         $client->request('GET', getenv('APP_URL') . '/export/foo/bar');
 
-        static::assertEquals(500, $client->getResponse()->getStatusCode());
+        static::assertEquals(Response::HTTP_NOT_FOUND, $client->getResponse()->getStatusCode());
     }
 
     public function testUtf8CsvExport(): void
@@ -70,6 +71,8 @@ class ProductExportControllerTest extends TestCase
 
         $client = $this->createSalesChannelBrowser(null, true);
         $client->request('GET', getenv('APP_URL') . sprintf('/export/%s/%s', $productExport->getAccessKey(), $productExport->getFileName()));
+
+        static::assertEquals(200, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
 
         $xml = simplexml_load_string($client->getResponse()->getContent());
 
@@ -115,7 +118,7 @@ class ProductExportControllerTest extends TestCase
                 'fileFormat' => ProductExportEntity::FILE_FORMAT_CSV,
                 'interval' => 0,
                 'headerTemplate' => 'name,url',
-                'bodyTemplate' => '{{ product.name }},{{ productUrl(product) }}',
+                'bodyTemplate' => "{{ product.name }},{{ seoUrl('frontend.detail.page', {'productId': product.id}) }}",
                 'productStreamId' => '137b079935714281ba80b40f83f8d7eb',
                 'storefrontSalesChannelId' => $this->getSalesChannelDomain()->getSalesChannelId(),
                 'salesChannelId' => Defaults::SALES_CHANNEL,
@@ -143,7 +146,7 @@ class ProductExportControllerTest extends TestCase
                 'fileFormat' => ProductExportEntity::FILE_FORMAT_XML,
                 'interval' => 0,
                 'headerTemplate' => '<root>',
-                'bodyTemplate' => '<product><name>{{ product.name }}</name><url>{{ productUrl(product) }}</url></product>',
+                'bodyTemplate' => "<product><name>{{ product.name }}</name><url>{{ seoUrl('frontend.detail.page', {'productId': product.id}) }}</url></product>",
                 'footerTemplate' => '</root>',
                 'productStreamId' => '137b079935714281ba80b40f83f8d7eb',
                 'storefrontSalesChannelId' => $this->getSalesChannelDomain()->getSalesChannelId(),

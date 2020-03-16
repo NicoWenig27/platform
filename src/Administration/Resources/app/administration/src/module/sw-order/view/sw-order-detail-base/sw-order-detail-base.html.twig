@@ -1,5 +1,5 @@
 {% block sw_order_detail_base %}
-    <div v-if="order && !isLoading" class="sw-order-detail-base">
+    <sw-card-view v-if="order && !isLoading" class="sw-order-detail-base">
         {% block sw_order_detail_base_leave_page_modal %}
             <sw-order-leave-page-modal v-if="isDisplayingLeavePageWarning"
                                        @page-leave-cancel="onLeaveModalClose"
@@ -108,6 +108,10 @@
                                                         </sw-order-saveable-field>
                                                     </dd>
                                                 </template>
+                                                <template v-if="deliveryDiscounts" v-for="delivery in deliveryDiscounts">
+                                                    <dt>{{ $tc('sw-order.detailBase.discountLabelShippingCosts') }}</dt>
+                                                    <dd>{{ delivery.shippingCosts.totalPrice | currency(order.currency.translated.shortName) }}</dd>
+                                                </template>
                                             {% endblock %}
 
                                             {% block sw_order_detail_base_line_items_summary_amount_without_tax %}
@@ -180,5 +184,5 @@
                 </sw-custom-field-set-renderer>
             </sw-card>
         {% endblock %}
-    </div>
+    </sw-card-view>
 {% endblock %}

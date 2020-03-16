@@ -15,6 +15,7 @@ use Shopware\Core\Framework\Test\TestCaseBase\TaxAddToSalesChannelTestBehaviour;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Page\Product\CrossSelling\CrossSellingLoader;
 
 class CrossSellingLoaderTest extends TestCase
@@ -97,7 +98,7 @@ class CrossSellingLoaderTest extends TestCase
         $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
 
         $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
-        $result = $this->crossSellingLoader->loadForProduct($product, $this->salesChannelContext);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
 
         static::assertEquals(1, $result->count());
 
@@ -110,6 +111,170 @@ class CrossSellingLoaderTest extends TestCase
             static::assertGreaterThanOrEqual($lastPrice, $product->getCurrencyPrice(Defaults::CURRENCY)->getGross());
             $lastPrice = $product->getCurrencyPrice(Defaults::CURRENCY)->getGross();
         }
+    }
+
+    public function testLoadForProductWithCloseoutAndFilterDisabled(): void
+    {
+        // disable hideCloseoutProductsWhenOutOfStock filter
+        $this->getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', false);
+
+        $productId = Uuid::randomHex();
+
+        $productData = $this->getProductData($productId);
+        $productData['crossSellings'] = [[
+            'name' => 'Test Cross Selling',
+            'sortBy' => ProductCrossSellingDefinition::SORT_BY_PRICE,
+            'sortDirection' => FieldSorting::ASCENDING,
+            'active' => true,
+            'limit' => 3,
+            'productStreamId' => $this->createProductStream(true),
+        ]];
+
+        $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
+
+        static::assertEquals(1, $result->count());
+
+        $element = $result->first();
+
+        static::assertEquals(3, $element->getTotal());
+        static::assertEquals('Test Cross Selling', $element->getCrossSelling()->getName());
+
+        $lastPrice = 0;
+        foreach ($element->getProducts() as $product) {
+            static::assertGreaterThanOrEqual($lastPrice, $product->getCurrencyPrice(Defaults::CURRENCY)->getGross());
+            $lastPrice = $product->getCurrencyPrice(Defaults::CURRENCY)->getGross();
+        }
+    }
+
+    public function testLoadForProductWithCloseoutAndFilterEnabled(): void
+    {
+        // enable hideCloseoutProductsWhenOutOfStock filter
+        $this->getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', true);
+
+        $productId = Uuid::randomHex();
+
+        $productData = $this->getProductData($productId);
+        $productData['crossSellings'] = [[
+            'name' => 'Test Cross Selling',
+            'sortBy' => ProductCrossSellingDefinition::SORT_BY_PRICE,
+            'sortDirection' => FieldSorting::ASCENDING,
+            'active' => true,
+            'limit' => 3,
+            'productStreamId' => $this->createProductStream(true),
+        ]];
+
+        $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
+
+        static::assertEquals(1, $result->count());
+
+        $element = $result->first();
+
+        static::assertEquals(1, $element->getTotal());
+        static::assertEquals('Test Cross Selling', $element->getCrossSelling()->getName());
+
+        $lastPrice = 0;
+        foreach ($element->getProducts() as $product) {
+            static::assertGreaterThanOrEqual($lastPrice, $product->getCurrencyPrice(Defaults::CURRENCY)->getGross());
+            $lastPrice = $product->getCurrencyPrice(Defaults::CURRENCY)->getGross();
+        }
+    }
+
+    public function testLoadForProductWithCloseoutAndFilterEnabledAllProductsOfOfStock(): void
+    {
+        // enable hideCloseoutProductsWhenOutOfStock filter
+        $this->getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', true);
+
+        $productId = Uuid::randomHex();
+
+        $productData = $this->getProductData($productId);
+        $productData['crossSellings'] = [[
+            'name' => 'Test Cross Selling',
+            'sortBy' => ProductCrossSellingDefinition::SORT_BY_PRICE,
+            'sortDirection' => FieldSorting::ASCENDING,
+            'active' => true,
+            'limit' => 3,
+            'productStreamId' => $this->createProductStream(true, true),
+        ]];
+
+        $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
+
+        static::assertEquals(0, $result->count());
+    }
+
+    public function testLoadForProductWithProductCrossSellingAssignedProducts(): void
+    {
+        // enable hideCloseoutProductsWhenOutOfStock filter
+        $this->getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', false);
+
+        $productId = Uuid::randomHex();
+
+        $productData = $this->getProductData($productId);
+        $productData['crossSellings'] = [[
+            'name' => 'Test Cross Selling',
+            'sortBy' => ProductCrossSellingDefinition::SORT_BY_PRICE,
+            'sortDirection' => FieldSorting::ASCENDING,
+            'active' => true,
+            'limit' => 3,
+            'type' => 'productList',
+            'assignedProducts' => $this->createAssignedProducts(true, true),
+        ]];
+
+        $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
+
+        static::assertEquals(1, $result->count());
+
+        $element = $result->first();
+
+        static::assertEquals(5, $element->getProducts()->count());
+        static::assertEquals(5, $element->getCrossSelling()->getAssignedProducts()->count());
+    }
+
+    public function testLoadForProductWithProductCrossSellingAssignedProductsOutOfStock(): void
+    {
+        // enable hideCloseoutProductsWhenOutOfStock filter
+        $this->getContainer()->get(SystemConfigService::class)
+            ->set('core.listing.hideCloseoutProductsWhenOutOfStock', true);
+
+        $productId = Uuid::randomHex();
+
+        $productData = $this->getProductData($productId);
+        $productData['crossSellings'] = [[
+            'name' => 'Test Cross Selling',
+            'sortBy' => ProductCrossSellingDefinition::SORT_BY_PRICE,
+            'sortDirection' => FieldSorting::ASCENDING,
+            'active' => true,
+            'limit' => 3,
+            'type' => 'productList',
+            'assignedProducts' => $this->createAssignedProducts(true, true),
+        ]];
+
+        $this->productRepository->create([$productData], $this->salesChannelContext->getContext());
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $this->salesChannelContext->getContext())->get($productId);
+        $result = $this->crossSellingLoader->load($product->getId(), $this->salesChannelContext);
+
+        static::assertEquals(1, $result->count());
+
+        $element = $result->first();
+
+        static::assertEquals(0, $element->getProducts()->count());
+        static::assertEquals(5, $element->getCrossSelling()->getAssignedProducts()->count());
     }
 
     /**
@@ -209,12 +374,12 @@ class CrossSellingLoaderTest extends TestCase
         }
     }
 
-    private function createProductStream(): string
+    private function createProductStream(?bool $includesIsCloseoutProducts = false, ?bool $noStock = false): string
     {
         /** @var EntityRepositoryInterface $streamRepository */
         $streamRepository = $this->getContainer()->get('product_stream.repository');
         $id = Uuid::randomHex();
-        $randomProductIds = implode('|', array_column($this->createProducts(), 'id'));
+        $randomProductIds = implode('|', array_column($this->createProducts($includesIsCloseoutProducts, $noStock), 'id'));
 
         $streamRepository->create([
             [
@@ -233,14 +398,41 @@ class CrossSellingLoaderTest extends TestCase
         return $id;
     }
 
-    private function createProducts(): array
+    private function createAssignedProducts(?bool $includesIsCloseoutProducts = false, ?bool $noStock = false): array
+    {
+        $assignedProducts = [];
+        $randomProductIds = array_column($this->createProducts($includesIsCloseoutProducts, $noStock), 'id');
+
+        foreach ($randomProductIds as $index => $productId) {
+            $assignedProducts[] = [
+                'productId' => $productId,
+                'position' => $index + 1,
+            ];
+        }
+
+        return $assignedProducts;
+    }
+
+    private function createProducts(?bool $isCloseout = false, ?bool $noStock = false): array
     {
         $manufacturerId = Uuid::randomHex();
         $taxId = Uuid::randomHex();
         $products = [];
 
-        for ($i = 0; $i < 5; ++$i) {
-            $products[] = $this->getProductData(null, $manufacturerId, $taxId);
+        if ($isCloseout) {
+            for ($i = 0; $i < 5; ++$i) {
+                if ($noStock) {
+                    $stock = 0;
+                } else {
+                    $stock = $i > 0 ? 0 : 1;
+                }
+
+                $products[] = $this->getProductData(null, $manufacturerId, $taxId, $stock, $isCloseout);
+            }
+        } else {
+            for ($i = 0; $i < 5; ++$i) {
+                $products[] = $this->getProductData(null, $manufacturerId, $taxId);
+            }
         }
 
         $this->productRepository->create($products, $this->salesChannelContext->getContext());
@@ -249,15 +441,16 @@ class CrossSellingLoaderTest extends TestCase
         return $products;
     }
 
-    private function getProductData(?string $id = null, ?string $manufacturerId = null, ?string $taxId = null): array
+    private function getProductData(?string $id = null, ?string $manufacturerId = null, ?string $taxId = null, ?int $stock = 1, ?bool $isCloseout = false): array
     {
         $price = random_int(0, 10);
 
         $product = [
             'id' => $id ?? Uuid::randomHex(),
             'productNumber' => Uuid::randomHex(),
-            'stock' => 1,
+            'stock' => $stock,
             'name' => 'Test',
+            'isCloseout' => $isCloseout,
             'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => $price, 'net' => $price, 'linked' => false]],
             'manufacturer' => ['id' => $manufacturerId ?? Uuid::randomHex(), 'name' => 'test'],
             'tax' => ['id' => $taxId ?? Uuid::randomHex(), 'taxRate' => 17, 'name' => 'with id'],

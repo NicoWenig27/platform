@@ -3,6 +3,7 @@
 namespace Shopware\Core\System\SystemConfig\Service;
 
 use Shopware\Core\Framework\Bundle;
+use Shopware\Core\Framework\FeatureFlag\FeatureConfig;
 use Shopware\Core\System\SystemConfig\Exception\BundleConfigNotFoundException;
 use Shopware\Core\System\SystemConfig\Exception\BundleNotFoundException;
 use Shopware\Core\System\SystemConfig\Util\ConfigReader;
@@ -59,11 +60,24 @@ class ConfigurationService
             foreach ($card['elements'] as $j => $field) {
                 $newField = ['name' => $domain . $field['name']];
 
+                if (\array_key_exists('flag', $field)) {
+                    try {
+                        if (!FeatureConfig::isActive($field['flag'])) {
+                            continue;
+                        }
+                    } catch (\RuntimeException $e) {
+                        continue;
+                    }
+                }
+
                 if (array_key_exists('type', $field)) {
                     $newField['type'] = $field['type'];
                 }
 
                 unset($field['type'], $field['name']);
+                if ($field === []) {
+                    $field = new \stdClass();
+                }
                 $newField['config'] = $field;
                 $card['elements'][$j] = $newField;
             }

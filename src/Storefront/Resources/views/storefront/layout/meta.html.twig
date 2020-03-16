@@ -65,7 +65,9 @@
             {% endblock %}
 
             {% block layout_head_meta_tags_hreflangs %}
-                {#TODO: NEXT-1891 - hreflang#}
+                {% for link in hrefLang %}
+                    <link rel="alternate" hreflang="{{ link.locale }}" href="{{ link.url }}" />
+                {% endfor %}
             {% endblock %}
         {% endblock %}
 
@@ -110,6 +112,8 @@
         {% endblock %}
 
         {# Block for tracking scripts which are required to include in the `head` section of the document #}
-        {% block layout_head_javascript_tracking %}{% endblock %}
+        {% block layout_head_javascript_tracking %}
+            {% sw_include "@Storefront/storefront/component/analytics.html.twig" %}
+        {% endblock %}
     </head>
 {% endblock %}

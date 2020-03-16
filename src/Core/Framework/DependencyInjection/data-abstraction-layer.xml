@@ -25,7 +25,6 @@
         </service>
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator" public="true">
-            <argument type="service" id="Shopware\Core\System\Language\LanguageDefinition"/>
             <argument>%kernel.cache.hash%</argument>
         </service>
 
@@ -242,15 +241,15 @@
         </service>
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Version\VersionDefinition">
-            <tag name="shopware.entity.definition" entity="version"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommit\VersionCommitDefinition">
-            <tag name="shopware.entity.definition" entity="version_commit"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Version\Aggregate\VersionCommitData\VersionCommitDataDefinition">
-            <tag name="shopware.entity.definition" entity="version_commit_data"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IndexTableOperator">
@@ -628,6 +627,10 @@
 
         <service id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\ExceptionHandlerRegistry">
             <argument type="tagged" tag="shopware.dal.exception_handler"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionValidator">
+            <tag name="kernel.event_subscriber"/>
         </service>
     </services>
 </container>

@@ -37,21 +37,27 @@
             <xs:element name="helpText" type="translatableString" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="defaultValue" type="xs:string" minOccurs="0"/>
             <xs:element name="options" type="option-collection" minOccurs="0"/>
+            <xs:element name="flag" type="xs:string" minOccurs="0"/>
             <xs:any processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="type" type="type" default="text"/>
     </xs:complexType>
     <xs:simpleType name="type">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="int"/>
             <xs:enumeration value="text"/>
-            <xs:enumeration value="bool"/>
-            <xs:enumeration value="float"/>
-            <xs:enumeration value="datetime"/>
+            <xs:enumeration value="textarea"/>
+            <xs:enumeration value="url"/>
             <xs:enumeration value="password"/>
+            <xs:enumeration value="int"/>
+            <xs:enumeration value="float"/>
+            <xs:enumeration value="bool"/>
+            <xs:enumeration value="checkbox"/>
+            <xs:enumeration value="datetime"/>
+            <xs:enumeration value="date"/>
+            <xs:enumeration value="time"/>
+            <xs:enumeration value="colorpicker"/>
             <xs:enumeration value="single-select"/>
             <xs:enumeration value="multi-select"/>
-            <xs:enumeration value="textarea"/>
         </xs:restriction>
     </xs:simpleType>
     <xs:complexType name="translatableString">

@@ -13,7 +13,7 @@ describe('Media: Test crud operations', () => {
             });
     });
 
-    it('@package @content: "create" via file upload and read medium', () => {
+    it('@base @media: "create" via file upload and read medium', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
@@ -23,16 +23,27 @@ describe('Media: Test crud operations', () => {
             method: 'post'
         }).as('saveData');
 
-        page.uploadImageUsingFileUpload('img/sw-login-background.png', 'sw-login-background.png');
+        runOn('chrome', () => {
+            page.uploadImageUsingFileUpload('img/sw-login-background.png', 'sw-login-background.png');
+        });
+        runOn('firefox', () => {
+            // Upload medium
+            cy.clickContextMenuItem(
+                '.sw-media-upload-v2__button-url-upload',
+                '.sw-media-upload-v2__button-context-menu'
+            );
+            page.uploadImageUsingUrl(`${Cypress.config('baseUrl')}/bundles/administration/static/img/sw-login-background.png`);
+        });
 
         cy.wait('@saveData').then((xhr) => {
+            cy.awaitAndCheckNotification('File has been saved.');
             expect(xhr).to.have.property('status', 204);
         });
         cy.get('.sw-media-base-item__name[title="sw-login-background.png"]')
             .should('be.visible');
     });
 
-    it('@package @content: update and read medium\'s meta data (uploaded via url)', () => {
+    it('@base @media: update and read medium\'s meta data (uploaded via url)', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
@@ -44,12 +55,13 @@ describe('Media: Test crud operations', () => {
 
         // Upload medium
         cy.clickContextMenuItem(
-            '.sw-media-upload__button-url-upload',
-            '.sw-media-upload__button-context-menu'
+            '.sw-media-upload-v2__button-url-upload',
+            '.sw-media-upload-v2__button-context-menu'
         );
         page.uploadImageUsingUrl(`${Cypress.config('baseUrl')}/bundles/administration/static/img/sw-login-background.png`);
         cy.get('.sw-media-base-item__name[title="sw-login-background.png"]')
             .should('be.visible');
+        cy.awaitAndCheckNotification('File has been saved.');
         cy.get('.sw-media-base-item__name[title="sw-login-background.png"]')
             .first()
             .click();
@@ -60,12 +72,12 @@ describe('Media: Test crud operations', () => {
 
         // Verify meta data
         cy.wait('@saveData').then((xhr) => {
-            expect(xhr).to.have.property('status', 200);
+            expect(xhr).to.have.property('status', 204);
         });
         cy.get('input[placeholder="Cypress example title"]').should('be.visible');
     });
 
-    it('@package @content: delete medium', () => {
+    it('@base @media: delete medium', () => {
         const page = new MediaPageObject();
 
         // Request we want to wait for later
@@ -75,9 +87,21 @@ describe('Media: Test crud operations', () => {
             method: 'delete'
         }).as('deleteData');
 
-        page.uploadImageUsingFileUpload('img/sw-login-background.png', 'sw-login-background.png');
+        runOn('chrome', () => {
+            page.uploadImageUsingFileUpload('img/sw-login-background.png', 'sw-login-background.png');
+        });
+        runOn('firefox', () => {
+            // Upload medium
+            cy.clickContextMenuItem(
+                '.sw-media-upload-v2__button-url-upload',
+                '.sw-media-upload-v2__button-context-menu'
+            );
+            page.uploadImageUsingUrl(`${Cypress.config('baseUrl')}/bundles/administration/static/img/sw-login-background.png`);
+        });
 
         // Delete image
+        cy.awaitAndCheckNotification('File has been saved.');
+        cy.get(`${page.elements.mediaItem} ${page.elements.previewItem}`).should('be.visible');
         cy.get(`${page.elements.mediaItem} ${page.elements.previewItem}`).click();
         cy.get('li.quickaction--delete').click();
         cy.get(`${page.elements.modal}__body`).contains('Are you sure you want to delete "sw-login-background.png"?');

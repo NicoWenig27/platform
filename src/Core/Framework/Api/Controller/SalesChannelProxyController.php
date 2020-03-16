@@ -2,13 +2,14 @@
 
 namespace Shopware\Core\Framework\Api\Controller;
 
-use Shopware\Core\Checkout\Cart\Cart;
-use Shopware\Core\Checkout\Cart\CartBehavior;
-use Shopware\Core\Checkout\Cart\CartPersisterInterface;
-use Shopware\Core\Checkout\Cart\CartRuleLoader;
-use Shopware\Core\Checkout\Cart\Exception\CartTokenNotFoundException;
+use Shopware\Administration\Service\AdminOrderCartService;
+use Shopware\Core\Checkout\Cart\Delivery\DeliveryProcessor;
+use Shopware\Core\Checkout\Cart\Price\Struct\CalculatedPrice;
 use Shopware\Core\Checkout\Cart\Processor;
-use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
+use Shopware\Core\Checkout\Cart\Tax\Struct\CalculatedTaxCollection;
+use Shopware\Core\Checkout\Cart\Tax\Struct\TaxRuleCollection;
+use Shopware\Core\Checkout\Promotion\Cart\PromotionCollector;
+use Shopware\Core\Content\Product\Cart\ProductCartProcessor;
 use Shopware\Core\Framework\Api\Exception\InvalidSalesChannelIdException;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
@@ -24,6 +25,7 @@ use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataValidationDefinition;
 use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\PlatformRequest;
+use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextServiceInterface;
@@ -32,12 +34,16 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
 
 /**
  * @RouteScope(scopes={"api"})
@@ -47,6 +53,11 @@ class SalesChannelProxyController extends AbstractController
     private const CUSTOMER_ID = SalesChannelContextService::CUSTOMER_ID;
 
     private const SALES_CHANNEL_ID = 'salesChannelId';
+
+    private const ADMIN_ORDER_PERMISSIONS = [
+        ProductCartProcessor::ALLOW_PRODUCT_PRICE_OVERWRITES => true,
+        DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true,
+    ];
 
     /**
      * @var DataValidator
@@ -74,6 +85,11 @@ class SalesChannelProxyController extends AbstractController
     private $salesChannelRepository;
 
     /**
+     * @var SalesChannelContextFactory
+     */
+    private $salesChannelContextFactory;
+
+    /**
      * @var SalesChannelRequestContextResolver
      */
     private $requestContextResolver;
@@ -84,49 +100,35 @@ class SalesChannelProxyController extends AbstractController
     private $eventDispatcher;
 
     /**
+     * @var AdminOrderCartService
+     */
+    private $adminOrderCartService;
+
+    /**
      * @var SalesChannelContextServiceInterface
      */
     private $contextService;
-
-    /**
-     * @var CartService
-     */
-    private $cartService;
-
-    /**
-     * @var CartPersisterInterface
-     */
-    private $cartPersister;
-
-    /**
-     * @var CartRuleLoader
-     */
-    private $cartRuleLoader;
 
     public function __construct(
         KernelInterface $kernel,
         EntityRepositoryInterface $salesChannelRepository,
         DataValidator $validator,
         SalesChannelContextPersister $contextPersister,
+        SalesChannelContextFactory $salesChannelContextFactory,
         SalesChannelRequestContextResolver $requestContextResolver,
         SalesChannelContextServiceInterface $contextService,
         EventDispatcherInterface $eventDispatcher,
-        CartService $cartService,
-        CartPersisterInterface $cartPersister,
-        Processor $processor,
-        CartRuleLoader $cartRuleLoader
+        AdminOrderCartService $adminOrderCartService
     ) {
         $this->kernel = $kernel;
         $this->salesChannelRepository = $salesChannelRepository;
         $this->validator = $validator;
         $this->contextPersister = $contextPersister;
+        $this->salesChannelContextFactory = $salesChannelContextFactory;
         $this->requestContextResolver = $requestContextResolver;
         $this->contextService = $contextService;
         $this->eventDispatcher = $eventDispatcher;
-        $this->cartService = $cartService;
-        $this->cartPersister = $cartPersister;
-        $this->processor = $processor;
-        $this->cartRuleLoader = $cartRuleLoader;
+        $this->adminOrderCartService = $adminOrderCartService;
     }
 
     /**
@@ -141,21 +143,8 @@ class SalesChannelProxyController extends AbstractController
 
         $salesChannelApiRequest = $this->setUpSalesChannelApiRequest($_path, $salesChannelId, $request, $salesChannel);
 
-        return $this->wrapInSalesChannelApiRoute($salesChannelApiRequest, function () use ($request, $salesChannelId, $salesChannelApiRequest): Response {
-            $response = $this->kernel->handle($salesChannelApiRequest, HttpKernelInterface::SUB_REQUEST);
-            //Process after request handle
-            $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request);
-            $token = $salesChannelContext->getToken();
-
-            try {
-                $cart = $this->cartPersister->load($token, $salesChannelContext);
-                // Recalculate Cart with update prices & tax for live checkout
-                $this->recalculateCartWithPersist($cart, $salesChannelContext, false);
-            } catch (CartTokenNotFoundException $e) {
-                //Token is not a token Cart, continue process
-            }
-
-            return $response;
+        return $this->wrapInSalesChannelApiRoute($salesChannelApiRequest, function () use ($salesChannelApiRequest): Response {
+            return $this->kernel->handle($salesChannelApiRequest, HttpKernelInterface::SUB_REQUEST);
         });
     }
 
@@ -180,6 +169,8 @@ class SalesChannelProxyController extends AbstractController
 
         $this->fetchSalesChannel($salesChannelId, $context);
 
+        $this->persistPermissions($request);
+
         $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request);
 
         $this->updateCustomerToContext($request->get(self::CUSTOMER_ID), $salesChannelContext);
@@ -190,6 +181,54 @@ class SalesChannelProxyController extends AbstractController
         ]));
 
         return $response;
+    }
+
+    /**
+     * @Route("/api/v{version}/_proxy/modify-shipping-costs", name="api.proxy.modify-shipping-costs", methods={"PATCH"})
+     *
+     * @throws InconsistentCriteriaIdsException
+     * @throws InvalidSalesChannelIdException
+     * @throws MissingRequestParameterException
+     */
+    public function modifyShippingCosts(Request $request): JsonResponse
+    {
+        if (!$request->request->has(self::SALES_CHANNEL_ID)) {
+            throw new MissingRequestParameterException(self::SALES_CHANNEL_ID);
+        }
+
+        $salesChannelId = $request->request->get('salesChannelId');
+
+        $salesChannelContext = $this->fetchSalesChannelContext($salesChannelId, $request);
+
+        $calculatedPrice = $this->parseCalculatedPriceByRequest($request);
+
+        $cart = $this->adminOrderCartService->updateShippingCosts($calculatedPrice, $salesChannelContext);
+
+        return new JsonResponse(['data' => $cart]);
+    }
+
+    /**
+     * @Route("/api/v{version}/_proxy/disable-automatic-promotions", name="api.proxy.disable-automatic-promotions", methods={"PATCH"})
+     */
+    public function disableAutomaticPromotions(Request $request): JsonResponse
+    {
+        $contextToken = $this->getContextToken($request);
+
+        $this->adminOrderCartService->addPermission($contextToken, PromotionCollector::SKIP_AUTOMATIC_PROMOTIONS);
+
+        return new JsonResponse();
+    }
+
+    /**
+     * @Route("/api/v{version}/_proxy/enable-automatic-promotions", name="api.proxy.enable-automatic-promotions", methods={"PATCH"})
+     */
+    public function enableAutomaticPromotions(Request $request): JsonResponse
+    {
+        $contextToken = $this->getContextToken($request);
+
+        $this->adminOrderCartService->deletePermission($contextToken, PromotionCollector::SKIP_AUTOMATIC_PROMOTIONS);
+
+        return new JsonResponse();
     }
 
     private function wrapInSalesChannelApiRoute(Request $request, callable $call): Response
@@ -287,29 +326,6 @@ class SalesChannelProxyController extends AbstractController
         return $salesChannelContext;
     }
 
-    private function recalculateCartWithPersist(Cart $cart, SalesChannelContext $context, bool $persist = false): Cart
-    {
-        $behavior = (new CartBehavior())
-            ->setIsRecalculation(true);
-
-        // all prices are now prepared for calculation -  starts the cart calculation
-        $cart = $this->processor->process($cart, $context, $behavior);
-
-        // validate cart against the context rules
-        $validated = $this->cartRuleLoader->loadByCart($context, $cart, $behavior);
-
-        $cart = $validated->getCart();
-
-        if ($persist) {
-            $this->cartPersister->save($cart, $context);
-        }
-
-        //Set Cart to Cache
-        $this->cartService->setCart($cart);
-
-        return $cart;
-    }
-
     private function updateCustomerToContext(string $customerId, SalesChannelContext $context): void
     {
         $data = new DataBag();
@@ -353,5 +369,38 @@ class SalesChannelProxyController extends AbstractController
         );
         $event = new SalesChannelContextSwitchEvent($context, $data);
         $this->eventDispatcher->dispatch($event);
+    }
+
+    private function persistPermissions(Request $request): void
+    {
+        $contextToken = $this->getContextToken($request);
+
+        $payload = $this->contextPersister->load($contextToken);
+
+        if (!in_array(SalesChannelContextService::PERMISSIONS, $payload, true)) {
+            $payload[SalesChannelContextService::PERMISSIONS] = self::ADMIN_ORDER_PERMISSIONS;
+            $this->contextPersister->save($contextToken, $payload);
+        }
+    }
+
+    private function parseCalculatedPriceByRequest(Request $request): CalculatedPrice
+    {
+        $this->validateShippingCostsParameters($request);
+
+        $shippingCosts = $request->get('shippingCosts');
+
+        return new CalculatedPrice($shippingCosts['unitPrice'], $shippingCosts['totalPrice'], new CalculatedTaxCollection(), new TaxRuleCollection());
+    }
+
+    private function validateShippingCostsParameters(Request $request): void
+    {
+        if (!$request->request->has('shippingCosts')) {
+            throw new MissingRequestParameterException('shippingCosts');
+        }
+
+        $validation = new DataValidationDefinition('shipping-cost');
+        $validation->add('unitPrice', new NotBlank(), new Type('numeric'), new GreaterThanOrEqual(['value' => 0]));
+        $validation->add('totalPrice', new NotBlank(), new Type('numeric'), new GreaterThanOrEqual(['value' => 0]));
+        $this->validator->validate($request->request->get('shippingCosts'), $validation);
     }
 }

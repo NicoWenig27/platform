@@ -16,7 +16,7 @@ describe('Product: Test crud operations', () => {
             });
     });
 
-    it('@p @catalogue: create and read product', () => {
+    it('@base @catalogue: create and read product', () => {
         const page = new ProductPageObject();
 
         // Request we want to wait for later
@@ -39,22 +39,25 @@ describe('Product: Test crud operations', () => {
         cy.get('select[name=sw-field--product-taxId]').select('19%');
         cy.get('#sw-price-field-gross').type('10');
 
-        // Add image to product
-        cy.fixture('img/sw-login-background.png').then(fileContent => {
-            cy.get('#files').upload(
-                {
-                    fileContent,
-                    fileName: 'sw-login-background.png',
-                    mimeType: 'image/png'
-                }, {
-                    subjectType: 'input'
-                }
-            );
+
+        runOn('chrome', () => {
+            // Add image to product
+            cy.fixture('img/sw-login-background.png').then(fileContent => {
+                cy.get('#files').upload(
+                    {
+                        fileContent,
+                        fileName: 'sw-login-background.png',
+                        mimeType: 'image/png'
+                    }, {
+                        subjectType: 'input'
+                    }
+                );
+            });
+            cy.get('.sw-product-image__image img')
+                .should('have.attr', 'src')
+                .and('match', /sw-login-background/);
+            cy.awaitAndCheckNotification('File has been saved.');
         });
-        cy.get('.sw-product-image__image img')
-            .should('have.attr', 'src')
-            .and('match', /sw-login-background/);
-        cy.awaitAndCheckNotification('File has been saved.');
 
         // Check net price calculation
         cy.wait('@calculatePrice').then(() => {
@@ -90,7 +93,7 @@ describe('Product: Test crud operations', () => {
         cy.get('.product-detail-price').contains('10.00');
     });
 
-    it('@p @catalogue: update and read product', () => {
+    it('@base @catalogue: update and read product', () => {
         const page = new ProductPageObject();
 
         // Request we want to wait for later
@@ -120,7 +123,7 @@ describe('Product: Test crud operations', () => {
             .contains('What remains of Edith Finch');
     });
 
-    it('@p @catalogue: delete product', () => {
+    it('@base @catalogue: delete product', () => {
         const page = new ProductPageObject();
 
         // Request we want to wait for later

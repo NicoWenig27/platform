@@ -3,7 +3,7 @@ import entityHydrator from '../../helper/code-entity-hydrator.helper';
 import template from './sw-promotion-individualcodes.html.twig';
 import './sw-promotion-individualcodes.scss';
 
-const { mapApiErrors } = Shopware.Component.getComponentHelper();
+const { mapPropertyErrors } = Shopware.Component.getComponentHelper();
 const { Component, Mixin } = Shopware;
 const { string } = Shopware.Utils;
 const Criteria = Shopware.Data.Criteria;
@@ -72,13 +72,13 @@ Component.register('sw-promotion-individualcodes', {
                 {
                     property: 'isRedeemed',
                     dataIndex: 'isRedeemed',
-                    label: this.$tc('sw-promotion.detail.main.general.codes.individual.columnRedeemed'),
+                    label: 'sw-promotion.detail.main.general.codes.individual.columnRedeemed',
                     allowResize: false
                 },
                 {
                     property: 'customerName',
                     dataIndex: 'customerName',
-                    label: this.$tc('sw-promotion.detail.main.general.codes.individual.columnCustomer'),
+                    label: 'sw-promotion.detail.main.general.codes.individual.columnCustomer',
                     allowResize: false
                 }
             ];
@@ -102,7 +102,7 @@ Component.register('sw-promotion-individualcodes', {
             return this.promotion.hasOrders;
         },
 
-        ...mapApiErrors('promotion', ['individualCodePattern'])
+        ...mapPropertyErrors('promotion', ['individualCodePattern'])
     },
     created() {
         this.createdComponent();

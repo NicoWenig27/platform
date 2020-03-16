@@ -3,91 +3,81 @@
 namespace Shopware\Storefront\Pagelet\Header;
 
 use Shopware\Core\Content\Category\CategoryCollection;
-use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
-use Shopware\Core\Content\Category\Service\NavigationLoader;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Content\Category\Service\NavigationLoaderInterface;
+use Shopware\Core\Content\Category\Tree\TreeItem;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
-use Shopware\Core\System\Currency\CurrencyCollection;
+use Shopware\Core\System\Currency\SalesChannel\CurrencyRouteInterface;
 use Shopware\Core\System\Language\LanguageCollection;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
+use Shopware\Core\System\Language\SalesChannel\LanguageRouteInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class HeaderPageletLoader
+class HeaderPageletLoader implements HeaderPageletLoaderInterface
 {
-    /**
-     * @var SalesChannelRepositoryInterface
-     */
-    private $currencyRepository;
-
-    /**
-     * @var SalesChannelRepositoryInterface
-     */
-    private $categoryRepository;
-
-    /**
-     * @var NavigationLoader
-     */
-    private $navigationLoader;
-
     /**
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
 
     /**
-     * @var SalesChannelRepositoryInterface
+     * @var CurrencyRouteInterface
      */
-    private $languageRepository;
+    private $currencyRoute;
+
+    /**
+     * @var LanguageRouteInterface
+     */
+    private $languagePageRoute;
+
+    /**
+     * @var NavigationLoaderInterface
+     */
+    private $navigationLoader;
+
+    /**
+     * @var RequestCriteriaBuilder
+     */
+    private $requestCriteriaBuilder;
 
     public function __construct(
-        SalesChannelRepositoryInterface $languageRepository,
-        SalesChannelRepositoryInterface $currencyRepository,
-        SalesChannelRepositoryInterface $categoryRepository,
-        NavigationLoader $navigationLoader,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        CurrencyRouteInterface $currencyPageRoute,
+        LanguageRouteInterface $languagePageRoute,
+        NavigationLoaderInterface $navigationLoader,
+        RequestCriteriaBuilder $requestCriteriaBuilder
     ) {
-        $this->currencyRepository = $currencyRepository;
-        $this->categoryRepository = $categoryRepository;
-        $this->navigationLoader = $navigationLoader;
         $this->eventDispatcher = $eventDispatcher;
-        $this->languageRepository = $languageRepository;
+        $this->currencyRoute = $currencyPageRoute;
+        $this->languagePageRoute = $languagePageRoute;
+        $this->navigationLoader = $navigationLoader;
+        $this->requestCriteriaBuilder = $requestCriteriaBuilder;
     }
 
     /**
-     * @throws CategoryNotFoundException
-     * @throws InconsistentCriteriaIdsException
      * @throws MissingRequestParameterException
      */
     public function load(Request $request, SalesChannelContext $salesChannelContext): HeaderPagelet
     {
-        $navigationId = $request->get('navigationId', $salesChannelContext->getSalesChannel()->getNavigationCategoryId());
+        $salesChannel = $salesChannelContext->getSalesChannel();
+        $navigationId = $request->get('navigationId', $salesChannel->getNavigationCategoryId());
 
         if (!$navigationId) {
             throw new MissingRequestParameterException('navigationId');
         }
 
-        $category = $this->navigationLoader->load(
-            (string) $navigationId,
-            $salesChannelContext,
-            $salesChannelContext->getSalesChannel()->getNavigationCategoryId(),
-            $salesChannelContext->getSalesChannel()->getNavigationCategoryDepth()
-        );
-
-        $languages = $this->loadLanguages($salesChannelContext);
-
-        $currencies = $this->loadCurrencies($salesChannelContext);
+        $languages = $this->getLanguages($salesChannelContext);
 
         $page = new HeaderPagelet(
-            $category,
+            $this->navigationLoader->load((string) $navigationId, $salesChannelContext, $salesChannel->getNavigationCategoryId(), $salesChannel->getNavigationCategoryDepth()),
             $languages,
-            $currencies,
+            $this->currencyRoute->load(new Request(), $salesChannelContext)->getCurrencies(),
             $languages->get($salesChannelContext->getContext()->getLanguageId()),
             $salesChannelContext->getCurrency(),
-            $this->loadServiceMenu($salesChannelContext)
+            $this->getServiceMenu($salesChannelContext)
         );
 
         $this->eventDispatcher->dispatch(
@@ -97,54 +87,32 @@ class HeaderPageletLoader
         return $page;
     }
 
-    /**
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function loadLanguages(SalesChannelContext $salesChannelContext): LanguageCollection
-    {
-        $criteria = new Criteria();
-        $criteria->addAssociation('translationCode');
-
-        $criteria->addFilter(
-            new EqualsFilter('language.salesChannelDomains.salesChannelId', $salesChannelContext->getSalesChannel()->getId())
-        );
-
-        /** @var LanguageCollection $languages */
-        $languages = $this->languageRepository
-            ->search($criteria, $salesChannelContext)
-            ->getEntities();
-
-        return $languages;
-    }
-
-    /**
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function loadCurrencies(SalesChannelContext $salesChannelContext): CurrencyCollection
-    {
-        /** @var CurrencyCollection $currencyCollection */
-        $currencyCollection = $this->currencyRepository->search(new Criteria(), $salesChannelContext)->getEntities();
-
-        return $currencyCollection;
-    }
-
-    /**
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function loadServiceMenu(SalesChannelContext $salesChannelContext): CategoryCollection
+    private function getServiceMenu(SalesChannelContext $salesChannelContext): CategoryCollection
     {
         $serviceId = $salesChannelContext->getSalesChannel()->getServiceCategoryId();
 
-        if (!$serviceId) {
+        if ($serviceId === null) {
             return new CategoryCollection();
         }
 
-        $criteria = (new Criteria())
-            ->addFilter(new EqualsFilter('category.parentId', $serviceId));
+        $navigation = $this->navigationLoader->load($serviceId, $salesChannelContext, $serviceId, 1);
 
-        /** @var CategoryCollection $categories */
-        $categories = $this->categoryRepository->search($criteria, $salesChannelContext)->getEntities();
+        return new CategoryCollection(array_map(static function (TreeItem $treeItem) {
+            return $treeItem->getCategory();
+        }, $navigation->getTree()));
+    }
 
-        return $categories->sortByPosition();
+    private function getLanguages(SalesChannelContext $context): LanguageCollection
+    {
+        $criteria = new Criteria();
+
+        $criteria->addFilter(
+            new EqualsFilter('language.salesChannelDomains.salesChannelId', $context->getSalesChannel()->getId())
+        );
+
+        $request = new Request();
+        $request->query->replace($this->requestCriteriaBuilder->toArray($criteria));
+
+        return $this->languagePageRoute->load($request, $context)->getLanguages();
     }
 }

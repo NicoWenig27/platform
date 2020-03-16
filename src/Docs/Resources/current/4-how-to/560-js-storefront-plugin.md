@@ -12,11 +12,11 @@ For basic information on how to load own JavaScript or styles from plugins, take
 
 Storefront JavaScript plugins are vanilla JavaScript ES6 classes that extend from our Plugin base class.
 For more background information on JavaScript classes, take a look [here](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes).
-To get started create a `Resources/storefront/example-plugin` folder and put an `example-plugin.plugin.js` file in there.
+To get started create a `Resources/app/storefront/src/example-plugin` folder and put an `example-plugin.plugin.js` file in there.
 Inside that file create and export a ExamplePlugin class that extends the base Plugin class:
 
 ```js
-import Plugin from 'src/script/plugin-system/plugin.class';
+import Plugin from 'src/plugin-system/plugin.class';
 
 export default class ExamplePlugin extends Plugin {
 }
@@ -27,7 +27,7 @@ In your case you add an callback to the onScroll event from the window and check
 Your full plugin now looks like this:
 
 ```js
-import Plugin from 'src/script/plugin-system/plugin.class';
+import Plugin from 'src/plugin-system/plugin.class';
 
 export default class ExamplePlugin extends Plugin {
     init() {
@@ -43,7 +43,7 @@ export default class ExamplePlugin extends Plugin {
 ## Registering your plugin
 
 Next you have to tell Shopware that your plugin should be loaded and executed. Therefore you have to register your plugin in the PluginManager.
-Create a `main.js` file inside your `Resources/storefront` folder and get the PluginManager from the global window object. 
+Create a `main.js` file inside your `Resources/app/storefront/src` folder and get the PluginManager from the global window object. 
 Then register your own plugin:
 
 ```js
@@ -78,17 +78,12 @@ import ExamplePlugin from './example-plugin/example-plugin.plugin';
 // Register them via the existing PluginManager
 const PluginManager = window.PluginManager;
 PluginManager.register('ExamplePlugin', ExamplePlugin, '[data-example-plugin]');
-
-// Necessary for the webpack hot module reloading server
-if (module.hot) {
-    module.hot.accept();
-}
 ```
 
 ## Loading your plugin
 
 You bound your plugin to the css selector "[data-example-plugin]" so you have to add DOM elements with this attribute on the pages you want your plugin to be active.
-Therefore create an `views/page/content/folder` and create an `index.html.twig` template.
+Therefore create an `Resources/views/storefront/page/content/` folder and create an `index.html.twig` template.
 Inside this template extend from the `@Storefront/storefront/page/content/index.html.twig` and overwrite the `base_main_inner` block.
 After the parent content of the blog add an template tag that has the `data-example-plugin` attribute.
 For more information on how template extension works, take a look [here](./250-extending-storefront-block.md).
@@ -113,7 +108,7 @@ In your case define a text option and as a default value use the text you previo
 And instead of the hard coded string inside the `alert()` use your new option value.
 
 ```js
-import Plugin from 'src/script/plugin-system/plugin.class';
+import Plugin from 'src/plugin-system/plugin.class';
 
 export default class ExamplePlugin extends Plugin {
     static options = {
@@ -136,7 +131,7 @@ export default class ExamplePlugin extends Plugin {
 ```
 
 Now you are able to override the text that is prompted to the user from inside your templates.
-Therefore create an `product-detail` folder inside your `views/page` folder and add an `index.html.twig` file inside that folder.
+Therefore create an `product-detail` folder inside your `Resources/views/storefront/page` folder and add an `index.html.twig` file inside that folder.
 In your template extend from `@Storefront/storefront/page/product-detail/index.html.twig` and override the `page_product_detail_content`.
 After the parent content add an template tag with the `data-example-plugin` tag also to activate your plugin on product detail pages.
 Next add an `data-{your-plugin-name-in-kebab-case}-options` (`data-example-plugin-options`) attribute to the DOM element you registered your plugin on (the template tag).
@@ -145,46 +140,74 @@ As the value of this attribute use the options you want to override as a json ob
 ```twig
 {% sw_extends '@Storefront/storefront/page/product-detail/index.html.twig' %}
 
+{% set examplePluginOptions = {
+    text: "Are you not interested in this product?"
+} %}
+
 {% block page_product_detail_content %}
     {{ parent() }}
 
-    <template data-example-plugin data-example-plugin-options='{ "text": "Are you not interested in this product?" }'></template>
+    <template data-example-plugin data-example-plugin-options='{{ examplePluginOptions|json_encode }}'></template>
 {% endblock %}
 ```
 
-## Configuring your plugins script path
+It is best practice to use a variable for the options because this is extendable from plugins.
 
-This can be ignored if you are on version 6.0.0 EA2 or newer. 
+## Modify existing options
 
-You have to tell Shopware where your bundled .js files live, therefore you can implement the `getStorefrontScriptPath()` in your plugin base class.
-By default Shopware will bundle your JavaScript files and put them under `Resources/dist/storefront/js` during the build of the storefront.
+You can use the `replace_recursive` Twig filter for changing existing options.
 
-```php
-<?php declare(strict_types=1);
-
-namespace Swag\JsPlugin;
-
-use Shopware\Core\Framework\Plugin;
-
-class JsPlugin extends Plugin
-{
-    public function getStorefrontScriptPath(): string
-    {
-        return 'Resources/dist/storefront/js';
+```twig
+{% set productSliderOptions = {
+    productboxMinWidth: sliderConfig.elMinWidth.value ? sliderConfig.elMinWidth.value : '',
+    slider: {
+        gutter: 30,
+        autoplayButtonOutput: false,
+        nav: false,
+        mouseDrag: false,
+        controls: sliderConfig.navigation.value ? true : false,
+        autoplay: sliderConfig.rotate.value ? true : false
     }
-}
+} %}
+
+{% block element_product_slider_slider %}
+    <div class="base-slider"
+         data-product-slider="true"
+         data-product-slider-options="{{ productSliderOptions|json_encode }}">
+    </div>
+{% endblock %}
 ```
 
-With version 6.0.0 EA2 the `Resources/dist/storefront/js` is the default path where shopware looks for your js files.
+Now the variable can be overwritten with `replace_recursive`:
+
+```twig
+{% block element_product_slider_slider %}
+    {% set productSliderOptions = productSliderOptions|replace_recursive({
+        slider: {
+            mouseDrag: true
+        }
+    }) %}
+
+    {{ parent() }}
+{% endblock %}
+```
+
+## Plugin script path
+
+For JavaScript you normally would have two locations where your `*.js` files are located.
+You have your `main.js` as an entry point inside of the following directory: `<plugin root>/src/Resources/app/storefront/src`.
+
+By default the compiled js file is saved at
+`<plugin root>/src/Resources/app/storefront/dist/storefront/js/<plugin-name>.js`.
+This file will be recognized automatically by shopware.
+
 
 ## Testing your changes
 
-To see your changes you have to build the storefront. Use the `/psh.phar storefront:build` command and reload your storefront.
+To see your changes you have to build the storefront. Use the `./psh.phar storefront:build` command and reload your storefront.
 If you now scroll to the bottom of your page an alert should appear.
 
 ## Source
 
 There's a GitHub repository available, containing this example source.
 Check it out [here](https://github.com/shopware/swag-docs-js-plugin).
-
-

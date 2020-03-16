@@ -225,14 +225,14 @@ class ChildCountIndexer implements IndexerInterface
             $params['version'] = $versionId;
         }
 
-        $this->connection->executeQuery(
+        $this->connection->executeUpdate(
             $sql,
             $params,
             ['ids' => Connection::PARAM_STR_ARRAY]
         );
 
         $tags = array_map(function ($id) use ($definition) {
-            return $this->cacheKeyGenerator->getEntityTag($id, $definition);
+            return $this->cacheKeyGenerator->getEntityTag($id, $definition->getEntityName());
         }, $parentIds);
 
         $this->cache->invalidateTags($tags);

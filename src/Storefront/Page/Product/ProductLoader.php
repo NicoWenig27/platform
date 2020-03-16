@@ -2,7 +2,6 @@
 
 namespace Shopware\Storefront\Page\Product;
 
-use Shopware\Core\Content\Product\Aggregate\ProductCrossSelling\ProductCrossSellingEntity;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\Exception\ProductNotFoundException;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
@@ -14,9 +13,12 @@ use Shopware\Core\Content\Property\PropertyGroupDefinition;
 use Shopware\Core\Content\Property\PropertyGroupEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class ProductLoader
@@ -31,12 +33,19 @@ class ProductLoader
      */
     private $eventDispatcher;
 
+    /**
+     * @var SystemConfigService
+     */
+    private $systemConfigService;
+
     public function __construct(
         SalesChannelRepositoryInterface $productRepository,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        SystemConfigService $systemConfigService
     ) {
         $this->productRepository = $productRepository;
         $this->eventDispatcher = $eventDispatcher;
+        $this->systemConfigService = $systemConfigService;
     }
 
     /**
@@ -53,10 +62,25 @@ class ProductLoader
             ->addAssociation('manufacturer.media')
             ->addAssociation('cover')
             ->addAssociation('properties.group')
-            ->addAssociation('mainCategories.category')
-            ->addAssociation('crossSellings');
+            ->addAssociation('mainCategories.category');
 
         $criteria->getAssociation('media')->addSorting(new FieldSorting('position'));
+
+        $salesChannelId = $salesChannelContext->getSalesChannel()->getId();
+        $hideCloseoutProductsWhenOutOfStock = $this->systemConfigService->get('core.listing.hideCloseoutProductsWhenOutOfStock', $salesChannelId);
+
+        if ($hideCloseoutProductsWhenOutOfStock) {
+            $criteria->addFilter(
+                new NotFilter(
+                    NotFilter::CONNECTION_AND,
+                    [
+                        new EqualsFilter('product.isCloseout', true),
+                        new EqualsFilter('product.available', false),
+                        new EqualsFilter('product.parentId', null),
+                    ]
+                )
+            );
+        }
 
         $this->eventDispatcher->dispatch(
             new ProductLoaderCriteriaEvent($criteria, $salesChannelContext)
@@ -72,10 +96,6 @@ class ProductLoader
         $product->setSortedProperties(
             $this->sortProperties($product)
         );
-
-        $product->getCrossSellings()->sort(function (ProductCrossSellingEntity $a, ProductCrossSellingEntity $b) {
-            return $a->getPosition() <=> $b->getPosition();
-        });
 
         return $product;
     }

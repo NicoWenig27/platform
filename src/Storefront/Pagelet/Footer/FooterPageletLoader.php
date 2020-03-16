@@ -2,14 +2,12 @@
 
 namespace Shopware\Storefront\Pagelet\Footer;
 
-use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
-use Shopware\Core\Content\Category\Service\NavigationLoader;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
+use Shopware\Core\Content\Category\Service\NavigationLoaderInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
-class FooterPageletLoader
+class FooterPageletLoader implements FooterPageletLoaderInterface
 {
     /**
      * @var EventDispatcherInterface
@@ -17,22 +15,18 @@ class FooterPageletLoader
     private $eventDispatcher;
 
     /**
-     * @var NavigationLoader
+     * @var NavigationLoaderInterface
      */
     private $navigationLoader;
 
     public function __construct(
-        NavigationLoader $navigationLoader,
-        EventDispatcherInterface $eventDispatcher
+        EventDispatcherInterface $eventDispatcher,
+        NavigationLoaderInterface $navigationLoader
     ) {
-        $this->navigationLoader = $navigationLoader;
         $this->eventDispatcher = $eventDispatcher;
+        $this->navigationLoader = $navigationLoader;
     }
 
-    /**
-     * @throws CategoryNotFoundException
-     * @throws InconsistentCriteriaIdsException
-     */
     public function load(Request $request, SalesChannelContext $salesChannelContext): FooterPagelet
     {
         $footerId = $salesChannelContext->getSalesChannel()->getFooterCategoryId();
@@ -44,12 +38,12 @@ class FooterPageletLoader
             $tree = $this->navigationLoader->load($navigationId, $salesChannelContext, $footerId);
         }
 
-        $page = new FooterPagelet($tree);
+        $pagelet = new FooterPagelet($tree);
 
         $this->eventDispatcher->dispatch(
-            new FooterPageletLoadedEvent($page, $salesChannelContext, $request)
+            new FooterPageletLoadedEvent($pagelet, $salesChannelContext, $request)
         );
 
-        return $page;
+        return $pagelet;
     }
 }

@@ -12,5 +12,11 @@ Component.register('sw-admin', {
         return {
             title: this.$tc('global.sw-admin-menu.textShopwareAdmin')
         };
+    },
+
+    computed: {
+        isLoggedIn() {
+            return Shopware.Service('loginService').isLoggedIn();
+        }
     }
 });

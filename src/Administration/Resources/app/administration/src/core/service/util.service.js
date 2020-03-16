@@ -6,6 +6,7 @@ import debounce from 'lodash/debounce';
 import flattenDeep from 'lodash/flattenDeep';
 import uuidV4 from 'uuid/v4';
 import remove from 'lodash/remove';
+import slice from 'lodash/slice';
 
 import {
     deepCopyObject,
@@ -56,9 +57,11 @@ export const dom = {
 export const string = {
     capitalizeString: stringUtils.capitalizeString,
     camelCase: stringUtils.camelCase,
-    md5: stringUtils.md5,
+    kebabCase: stringUtils.kebabCase,
+    md5: md5,
     isEmptyOrSpaces: stringUtils.isEmptyOrSpaces,
-    isUrl: stringUtils.isUrl
+    isUrl: stringUtils.isUrl,
+    isValidIp: stringUtils.isValidIp
 };
 
 export const types = {
@@ -90,7 +93,8 @@ export const sort = {
 
 export const array = {
     flattenDeep: flattenDeep,
-    remove: remove
+    remove: remove,
+    slice: slice
 };
 
 export default {

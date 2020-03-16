@@ -1,5 +1,9 @@
 export default class DateFormatHelper {
     static format(val, options = {}) {
+        if (val === null) {
+            return '';
+        }
+
         const dateObj = new Date(val);
         // eslint-disable-next-line
         if (isNaN(dateObj)) {
@@ -10,7 +14,7 @@ export default class DateFormatHelper {
         const defaultOptions = {
             day: '2-digit',
             month: '2-digit',
-            year: 'numeric',
+            year: 'numeric'
         };
         options = { ...defaultOptions, ...options };
 

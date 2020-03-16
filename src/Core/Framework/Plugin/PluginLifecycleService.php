@@ -2,7 +2,6 @@
 
 namespace Shopware\Core\Framework\Plugin;
 
-use Doctrine\DBAL\Connection;
 use Psr\Cache\CacheItemPoolInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Context;
@@ -70,11 +69,6 @@ class PluginLifecycleService
     private $migrationLoader;
 
     /**
-     * @var Connection
-     */
-    private $connection;
-
-    /**
      * @var AssetService
      */
     private $assetInstaller;
@@ -110,7 +104,6 @@ class PluginLifecycleService
         KernelPluginCollection $pluginCollection,
         ContainerInterface $container,
         MigrationCollectionLoader $migrationLoader,
-        Connection $connection,
         AssetService $assetInstaller,
         CommandExecutor $executor,
         RequirementsValidator $requirementValidator,
@@ -123,7 +116,6 @@ class PluginLifecycleService
         $this->pluginCollection = $pluginCollection;
         $this->container = $container;
         $this->migrationLoader = $migrationLoader;
-        $this->connection = $connection;
         $this->assetInstaller = $assetInstaller;
         $this->executor = $executor;
         $this->requirementValidator = $requirementValidator;
@@ -219,7 +211,9 @@ class PluginLifecycleService
             $this->shopwareVersion,
             $plugin->getVersion(),
             $this->createMigrationCollection($pluginBaseClass),
-            $keepUserData
+            $keepUserData,
+            /* @deprecated tag:v6.3.0 - This default value will change to `true` */
+            false
         );
         $uninstallContext->setAutoMigrate(false);
 
@@ -228,8 +222,8 @@ class PluginLifecycleService
 
         $pluginBaseClass->uninstall($uninstallContext);
 
-        if ($keepUserData === false) {
-            $this->removeMigrations($pluginBaseClass);
+        if (!$uninstallContext->keepMigrations()) {
+            $pluginBaseClass->removeMigrations();
         }
 
         $this->updatePluginData(
@@ -276,7 +270,19 @@ class PluginLifecycleService
 
         $this->systemConfigService->savePluginConfiguration($pluginBaseClass);
 
-        $pluginBaseClass->update($updateContext);
+        try {
+            $pluginBaseClass->update($updateContext);
+        } catch (\Throwable $updateException) {
+            if ($plugin->getActive()) {
+                try {
+                    $this->deactivatePlugin($plugin, $shopwareContext);
+                } catch (\Throwable $deactivateException) {
+                }
+            }
+
+            throw $updateException;
+        }
+
         if ($plugin->getInstalledAt() && $plugin->getActive()) {
             $this->assetInstaller->copyAssetsFromBundle($pluginBaseClassString);
         }
@@ -393,7 +399,20 @@ class PluginLifecycleService
 
         $this->eventDispatcher->dispatch(new PluginPreDeactivateEvent($plugin, $deactivateContext));
 
-        $pluginBaseClass->deactivate($deactivateContext);
+        try {
+            $pluginBaseClass->deactivate($deactivateContext);
+        } catch (\Throwable $exception) {
+            $this->updatePluginData(
+                [
+                    'id' => $plugin->getId(),
+                    'active' => false,
+                ],
+                $shopwareContext
+            );
+
+            throw $exception;
+        }
+
         $this->assetInstaller->removeAssetsOfBundle($pluginBaseClassString);
 
         $plugin->setActive(false);
@@ -463,14 +482,6 @@ class PluginLifecycleService
         }
 
         $context->getMigrationCollection()->migrateInPlace();
-    }
-
-    private function removeMigrations(Plugin $pluginBaseClass): void
-    {
-        $class = $pluginBaseClass->getMigrationNamespace() . '\%';
-        $class = str_replace('\\', '\\\\', $class);
-
-        $this->connection->executeQuery('DELETE FROM migration WHERE class LIKE :class', ['class' => $class]);
     }
 
     private function hasPluginUpdate(string $updateVersion, string $currentVersion): bool

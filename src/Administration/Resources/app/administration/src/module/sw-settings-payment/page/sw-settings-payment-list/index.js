@@ -98,7 +98,7 @@ Component.register('sw-settings-payment-list', {
         onPositionChanged: utils.debounce(function syncPayment(payment) {
             this.payment = payment;
 
-            this.paymentRepository.sync(payment, this.context)
+            this.paymentRepository.sync(payment, Shopware.Context.api)
                 .then(this.getList)
                 .catch(() => {
                     this.getList();
@@ -114,20 +114,20 @@ Component.register('sw-settings-payment-list', {
                 property: 'name',
                 dataIndex: 'name',
                 inlineEdit: 'string',
-                label: this.$tc('sw-settings-payment.list.columnName'),
+                label: 'sw-settings-payment.list.columnName',
                 routerLink: 'sw.settings.payment.detail',
                 width: '250px',
                 primary: true
             }, {
                 property: 'active',
                 inlineEdit: 'string',
-                label: this.$tc('sw-settings-payment.list.columnActive')
+                label: 'sw-settings-payment.list.columnActive'
             }, {
                 property: 'description',
-                label: this.$tc('sw-settings-payment.list.columnDescription')
+                label: 'sw-settings-payment.list.columnDescription'
             }, {
                 property: 'position',
-                label: this.$tc('sw-settings-payment.list.columnPosition')
+                label: 'sw-settings-payment.list.columnPosition'
             }];
         }
     }

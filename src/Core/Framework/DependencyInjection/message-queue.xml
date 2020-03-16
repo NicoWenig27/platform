@@ -7,11 +7,11 @@
     <services>
         <!--Entity Definitions-->
         <service id="Shopware\Core\Framework\MessageQueue\DeadMessage\DeadMessageDefinition">
-            <tag name="shopware.entity.definition" entity="dead_message"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\Framework\MessageQueue\MessageQueueStatsDefinition">
-            <tag name="shopware.entity.definition" entity="message_queue_stats"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <!--  ConnectionFactory -->
@@ -59,6 +59,11 @@
 
         <!--EventSubscriber-->
         <service id="Shopware\Core\Framework\MessageQueue\Subscriber\DeadMessageLoadedSubscriber">
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\MessageQueue\Subscriber\MessageFailedHandler">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
             <tag name="kernel.event_subscriber"/>
         </service>
 

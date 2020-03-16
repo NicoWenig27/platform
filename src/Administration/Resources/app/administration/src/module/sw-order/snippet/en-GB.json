@@ -55,7 +55,10 @@
       "buttonSaveOrder": "Save order",
       "buttonCancelOrder": "Cancel",
       "titleSaveError": "Error",
-      "messageSaveError": "Order could not be saved."
+      "titleFetchError": "Error",
+      "messageSaveError": "Order could not be saved.",
+      "messageSwitchCustomerError": "An error occurred during switching customer",
+      "messageFetchCustomerAddressesError": "An error occurred during fetching customer addresses"
     },
     "createBase": {
       "labelDetailsCard": "Details",
@@ -67,20 +70,28 @@
       "detailsBody": {
         "labelEmail": "Email",
         "labelPhoneNumber": "Phone number",
+        "placeholderEmail": "Enter email address...",
+        "placeholderPhoneNumber": "Enter phone number...",
         "labelBillingAddress": "Billing address",
         "labelShippingAddress": "Shipping address",
-        "placeholder": "Select or add cusomer first..."
+        "placeholder": "Select or add customer first...",
+        "textIdentical": "Billing and shipping address are identical",
+        "buttonAddNewAddress": "Add new address"
       },
       "detailsFooter": {
         "labelSalesChannel": "Sales channel",
         "labelPaymentMethod": "Payment method",
         "labelShippingMethod": "Shipping method",
         "labelOrderLanguage": "Order language",
-        "labelCurrency": "Currency"
+        "labelCurrency": "Currency",
+        "placeholderSalesChannel": "Select Sales Channel...",
+        "placeholderPaymentMethod": "Select payment method...",
+        "placeholderShippingMethod": "Select shipping method...",
+        "placeholderOrderLanguage": "Select order language...",
+        "placeholderCurrency": "Select currency..."
       },
       "cardTitleLineItems": "Items",
       "placeholderSearchBarItem": "Search items...",
-      "labelDeleteOrderCard": "Delete order",
       "columnProductName": "Item",
       "columnQuantity": "Quantity",
       "columnPriceNet": "Price (net)",
@@ -90,6 +101,7 @@
       "columnTotalPrice": "Total",
       "columnTotalPriceGross": "Subtotal",
       "columnTax": "VAT",
+      "textCreditTax": "auto",
       "contextMenuShowProduct": "Show product",
       "messageEmptyItem": "No items added yet",
       "buttonAddProduct" :"Add product",
@@ -99,7 +111,39 @@
       "summaryLabelAmountWithoutTaxes": "Total excluding VAT",
       "summaryLabelAmountTotal": "Total including VAT",
       "summaryLabelShippingCosts": "plus shipping costs",
-      "summaryLabelTaxes": "plus {taxRate}% VAT"
+      "discountLabelShippingCosts": "discount shipping costs",
+      "summaryLabelTaxes": "plus {taxRate}% VAT",
+      "tax": "Included taxes:",
+      "shippingCostsTax": "{taxRate}%: {tax}",
+      "labelAddPromotion": "Add promotion",
+      "placeholderAddPromotion": "Enter promotion code ...",
+      "textInvalidPromotionCode": "Invalid promotion code",
+      "textPromotionDescription": {
+        "cart": {
+          "percentage": "{value}% discount on shopping cart",
+          "absolute": "{value} discount on shopping cart",
+          "absoluteUpto": "Up to {value} discount. ({totalPrice} discount on this cart)",
+          "fixed_unit": "Fixed {value} for each specific product in shopping cart"
+        },
+        "delivery": {
+          "percentage": "{value}% discount on shipping cost",
+          "absolute": "{value} discount on shipping cost",
+          "fixed_unit": "Fixed {value} on shipping cost",
+          "fixed": "Fixed {value} on shipping cost"
+        },
+        "set": {
+          "percentage": "{value}% discount on product set",
+          "absolute": "{value} discount on product set",
+          "fixed_unit": "Fixed {value} for each specific product of product set",
+          "fixed": "Fixed {value} for each product set"
+        },
+        "setgroup": {
+          "percentage": "{value}% discount on set group {groupId}",
+          "absolute": "{value} discount on set group {groupId}",
+          "fixed_unit": "Fixed {value} for each specific product of set group {groupId}",
+          "fixed": "Fixed {value} for each set group {groupId}"
+        }
+      }
     },
     "detailBase": {
       "cardTitleDetails": "Details",
@@ -118,6 +162,7 @@
       "summaryLabelAmountWithoutTaxes": "Total excluding VAT",
       "summaryLabelAmountTotal": "Total including VAT",
       "summaryLabelShippingCosts": "plus shipping costs",
+      "discountLabelShippingCosts": "discount shipping costs",
       "summaryLabelTaxes": "plus {taxRate}% VAT",
       "labelOrderStatus": "Order status",
       "labelPaymentStatus": "Payment status",
@@ -149,11 +194,15 @@
       "labelAffiliateCode": "Affiliate-Code",
       "labelCampaignCode": "Campaign-Code",
       "buttonAddDeliveryAddress" : "Add new address",
-      "labelSameDeliveryAndBillingAddress" : "Billing and shipping address identical",
+      "labelSameDeliveryAndBillingAddress" : "Billing and shipping address are identical",
       "buttonContinueOnVersionedOrder" : "Load",
       "tax": "Included taxes:",
       "shippingCostsTax": "{taxRate}%: {tax}",
-      "placeholderTagSelect": "Search tags..."
+      "placeholderTagSelect": "Search tags...",
+      "placeholderTrackingCodeSelect": "Add tracking codes...",
+      "addTrackingCode": "Click here to add code",
+      "enterValidTrackingCode": "Enter tracking code",
+      "textCreditTax": "auto"
     },
     "detailDeliveries": {
       "cardTitleItems": "Shipment {count}",
@@ -166,8 +215,17 @@
     },
     "addressSelection": {
       "modalTitleEditAddress": "Addresses",
+      "modalTitleSelectAddress": "Change address",
+      "modalTitleAddBillingAddress": "Add new billing address",
+      "modalTitleEditBillingAddress": "Change billing address",
+      "modalTitleAddShippingAddress": "Add new shipping address",
+      "modalTitleEditShippingAddress": "Change shipping address",
       "headlineTabEditAddress" : "Edit address",
-      "headlineTabSelectAddress" :"Select address"
+      "headlineTabSelectAddress" :"Select address",
+      "headlineTabCreateAddress" :"Add address",
+      "currentlySelected" :"Currently selected",
+      "searchAddressToolbarPlaceholder": "Search addresses...",
+      "emptySearchResults": "No addresses found."
     },
     "leavePageModal" : {
       "headline" : "Warning",
@@ -198,6 +256,7 @@
         "alertMessage": "This assignment affects all following orders received through this sales channel.",
         "buttonCreateMailTemplate": "Create email template",
         "buttonAssignMailTemplate": "Assign email template",
+        "buttonNotAssignMailTemplate": "Don't assign an email template",
         "gridColumnType": "Type",
         "gridColumnDescription": "Description"
     },
@@ -241,6 +300,17 @@
     "newCustomerModal": {
       "labelDetails": "Details",
       "labelGuest": "Guest account"
+    },
+    "invalidPromotionModal": {
+      "modalTitle": "Invalid promotion codes will be removed",
+      "modalDescription": "The following invalid promotion codes will be removed",
+      "buttonConfirm": "OK"
+    },
+    "promotionModal": {
+      "labelTitle": "Disable automatic promotions",
+      "message": "The following automatic promotions will be disabled",
+      "messageNoItems": "No automatic promotions yet",
+      "buttonDisable": "Disable"
     }
   }
 }

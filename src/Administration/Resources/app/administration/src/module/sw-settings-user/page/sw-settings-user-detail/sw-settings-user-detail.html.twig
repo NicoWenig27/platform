@@ -19,7 +19,7 @@
                         class="sw-settings-user-detail__save-action"
                         :isLoading="isLoading"
                         :processSuccess="isSaveSuccessful"
-                        :disabled="isLoading || isError"
+                        :disabled="isLoading"
                         variant="primary"
                         @process-finish="saveFinish"
                         v-tooltip.bottom="tooltipSave"
@@ -42,6 +42,7 @@
                                         <sw-text-field
                                             class="sw-settings-user-detail__grid-firstName"
                                             v-model="user.firstName"
+                                            required
                                             :label="$tc('sw-settings-user.user-detail.labelFirstName')">
                                         </sw-text-field>
                                     {% endblock %}
@@ -50,6 +51,8 @@
                                         <sw-text-field
                                             class="sw-settings-user-detail__grid-lastName"
                                             v-model="user.lastName"
+                                            :error="userLastNameError"
+                                            required
                                             :label="$tc('sw-settings-user.user-detail.labelLastName')">
                                         </sw-text-field>
                                     {% endblock %}
@@ -59,6 +62,8 @@
                                             class="sw-settings-user-detail__grid-eMail"
                                             :errorMessage="isEmailUsed ? $tc('sw-settings-user.user-detail.errorEmailUsed') : ''"
                                             v-model="user.email"
+                                            :error="userEmailError"
+                                            required
                                             :label="$tc('sw-settings-user.user-detail.labelEmail')"
                                             @change="checkEmail()">
                                         </sw-text-field>
@@ -69,27 +74,30 @@
                                             class="sw-settings-user-detail__grid-username"
                                             :errorMessage="isUsernameUsed ? $tc('sw-settings-user.user-detail.errorUsernameUsed') : ''"
                                             v-model="user.username"
+                                            :error="userUsernameError"
+                                            required
                                             :label="$tc('sw-settings-user.user-detail.labelUsername')"
                                             @change="checkUsername">
                                         </sw-text-field>
                                     {% endblock %}
 
                                     {% block sw_settings_user_detail_content_media_upload %}
-                                        <sw-upload-store-listener
+                                        <sw-upload-listener
                                             :uploadTag="user.id"
                                             autoUpload
                                             @media-upload-finish="setMediaItem">
-                                        </sw-upload-store-listener>
-                                        <sw-media-upload
+                                        </sw-upload-listener>
+                                        <sw-media-upload-v2
                                             class="sw-settings-user-detail__grid-profile-picture"
                                             :source="avatarMedia"
                                             :label="$tc('sw-settings-user.user-detail.labelProfilePicture')"
                                             :uploadTag="user.id"
                                             :allowMultiSelect="false"
+                                            :sourceContext="user"
                                             variant="regular"
                                             defaultFolder="user"
                                             @media-upload-remove-image="onUnlinkLogo">
-                                        </sw-media-upload>
+                                        </sw-media-upload-v2>
                                     {% endblock %}
 
                                     {% block sw_settings_user_detail_content_password %}
@@ -115,6 +123,8 @@
                                                 class="sw-settings-user-detail__grid-language"
                                                 :label="$tc('sw-settings-user.user-detail.labelLanguage')"
                                                 v-model="user.localeId"
+                                                :error="userLocaleIdError"
+                                                required
                                                 :placeholder="$tc('sw-settings-user.user-detail.labelLanguagePlaceholder')">
                                             <option v-for="language in languages"
                                                     :value="language.locale.id"

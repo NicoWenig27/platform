@@ -16,7 +16,7 @@ use function GuzzleHttp\Psr7\mimetype_from_filename;
 class ThemeLifecycleService
 {
     /**
-     * @var StorefrontPluginRegistry
+     * @var StorefrontPluginRegistryInterface
      */
     private $pluginRegistry;
 
@@ -46,7 +46,7 @@ class ThemeLifecycleService
     private $fileSaver;
 
     public function __construct(
-        StorefrontPluginRegistry $pluginRegistry,
+        StorefrontPluginRegistryInterface $pluginRegistry,
         EntityRepositoryInterface $themeRepository,
         EntityRepositoryInterface $mediaRepository,
         EntityRepositoryInterface $mediaFolderRepository,
@@ -158,7 +158,7 @@ class ThemeLifecycleService
             $config = $configuration->getThemeConfig();
 
             foreach ($config['fields'] as $key => $field) {
-                if ($field['type'] !== 'media') {
+                if (!array_key_exists('type', $field) || $field['type'] !== 'media') {
                     continue;
                 }
 
@@ -239,6 +239,10 @@ class ThemeLifecycleService
             $translations = array_merge_recursive($translations, $this->extractLabels('sections', $config['sections']));
         }
 
+        if (array_key_exists('tabs', $config)) {
+            $translations = array_merge_recursive($translations, $this->extractLabels('tabs', $config['tabs']));
+        }
+
         if (array_key_exists('fields', $config)) {
             $translations = array_merge_recursive($translations, $this->extractLabels('fields', $config['fields']));
         }
@@ -250,8 +254,10 @@ class ThemeLifecycleService
     {
         $labels = [];
         foreach ($data as $key => $item) {
-            foreach ($item['label'] as $locale => $label) {
-                $labels[$locale][$prefix . '.' . $key] = $label;
+            if (array_key_exists('label', $item)) {
+                foreach ($item['label'] as $locale => $label) {
+                    $labels[$locale][$prefix . '.' . $key] = $label;
+                }
             }
         }
 

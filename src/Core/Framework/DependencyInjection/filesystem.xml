@@ -8,6 +8,7 @@
         <!-- Filesystem -->
         <service id="Shopware\Core\Framework\Adapter\Filesystem\FilesystemFactory">
             <argument type="tagged" tag="shopware.filesystem.factory"/>
+            <argument type="tagged" tag="shopware.filesystem.plugin"/>
         </service>
 
         <service class="League\Flysystem\FilesystemInterface" id="shopware.filesystem.public">
@@ -18,6 +19,11 @@
         <service class="League\Flysystem\FilesystemInterface" id="shopware.filesystem.private">
             <factory service="Shopware\Core\Framework\Adapter\Filesystem\FilesystemFactory" method="factory"/>
             <argument>%shopware.filesystem.private%</argument>
+        </service>
+
+        <service class="League\Flysystem\FilesystemInterface" id="shopware.filesystem.temp">
+            <factory service="Shopware\Core\Framework\Adapter\Filesystem\FilesystemFactory" method="factory"/>
+            <argument>%shopware.filesystem.temp%</argument>
         </service>
 
         <service class="Shopware\Core\Framework\Adapter\Filesystem\Adapter\LocalFactory" id="Shopware\Core\Framework\Adapter\Filesystem\FilesystemFactory.local">
@@ -37,5 +43,8 @@
             <argument>media</argument>
         </service>
 
+        <service id="Shopware\Core\Framework\Adapter\Filesystem\Plugin\CopyBatch">
+            <tag name="shopware.filesystem.plugin" />
+        </service>
     </services>
 </container>

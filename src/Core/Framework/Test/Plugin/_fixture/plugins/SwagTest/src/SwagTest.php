@@ -4,6 +4,9 @@ namespace SwagTest;
 
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\Plugin;
+use Shopware\Core\Framework\Plugin\Context\DeactivateContext;
+use Shopware\Core\Framework\Plugin\Context\UninstallContext;
+use Shopware\Core\Framework\Plugin\Context\UpdateContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class SwagTest extends Plugin
@@ -15,6 +18,9 @@ class SwagTest extends Plugin
     public const PLUGIN_OLD_VERSION = '1.0.0';
 
     public const PLUGIN_GERMAN_LABEL = 'Deutscher Pluginname';
+
+    public const THROW_ERROR_ON_UPDATE = 'throw-error-on-update';
+    public const THROW_ERROR_ON_DEACTIVATE = 'throw-error-on-deactivate';
 
     /**
      * @var SystemConfigService
@@ -57,5 +63,34 @@ class SwagTest extends Plugin
     public function manualSetter(EntityRepositoryInterface $categoryRepository): void
     {
         $this->categoryRepository = $categoryRepository;
+    }
+
+    public function uninstall(UninstallContext $uninstallContext): void
+    {
+        if (isset($_SERVER['TEST_KEEP_MIGRATIONS'])) {
+            $uninstallContext->enableKeepMigrations();
+        }
+    }
+
+    public function update(UpdateContext $updateContext): void
+    {
+        if ($updateContext->getContext()->hasExtension(self::THROW_ERROR_ON_UPDATE)) {
+            throw new \BadMethodCallException('Update throws an error');
+        }
+
+        parent::update($updateContext);
+    }
+
+    public function deactivate(DeactivateContext $deactivateContext): void
+    {
+        if ($deactivateContext->getContext()->hasExtension(self::THROW_ERROR_ON_DEACTIVATE)) {
+            throw new \BadFunctionCallException('Deactivate throws an error');
+        }
+        parent::deactivate($deactivateContext);
+    }
+
+    public function getMigrationNamespace(): string
+    {
+        return $_SERVER['FAKE_MIGRATION_NAMESPACE'] ?? parent::getMigrationNamespace();
     }
 }

@@ -14,7 +14,6 @@ use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\LineItem\QuantityInformation;
 use Shopware\Core\Checkout\Cart\Price\QuantityPriceCalculator;
 use Shopware\Core\Checkout\Cart\Price\Struct\QuantityPriceDefinition;
-use Shopware\Core\Content\Product\ProductEntity;
 use Shopware\Core\Content\Product\SalesChannel\Price\ProductPriceDefinitionBuilderInterface;
 use Shopware\Core\Content\Product\SalesChannel\SalesChannelProductEntity;
 use Shopware\Core\Defaults;
@@ -22,6 +21,12 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorInterface
 {
+    public const CUSTOM_PRICE = 'customPrice';
+
+    public const ALLOW_PRODUCT_PRICE_OVERWRITES = 'allowProductPriceOverwrites';
+
+    public const SKIP_PRODUCT_RECALCULATION = 'skipProductRecalculation';
+
     /**
      * @var ProductGatewayInterface
      */
@@ -98,7 +103,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
                 throw new MissingLineItemPriceException($lineItem->getId());
             }
 
-            if ($behavior->isRecalculation()) {
+            if ($behavior->hasPermission(self::ALLOW_PRODUCT_PRICE_OVERWRITES)) {
                 $definition->setQuantity($lineItem->getQuantity());
                 $lineItem->setPrice($this->calculator->calculate($definition, $context));
                 $toCalculate->add($lineItem);
@@ -106,7 +111,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
                 continue;
             }
 
-            /** @var ProductEntity $product */
+            /** @var SalesChannelProductEntity $product */
             $product = $data->get('product-' . $lineItem->getReferencedId());
 
             // container products can not be bought
@@ -116,7 +121,7 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
                 continue;
             }
 
-            $available = $this->getAvailableStock($product, $lineItem);
+            $available = $product->getCalculatedMaxPurchase() ?? $lineItem->getQuantity();
 
             if ($available <= 0 || $available < $product->getMinPurchase()) {
                 $original->remove($lineItem->getId());
@@ -175,9 +180,8 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
         }
 
         $deliveryTime = null;
-        $productDeliveryTime = $product->getDeliveryTime();
-        if ($productDeliveryTime !== null) {
-            $deliveryTime = DeliveryTime::createFromEntity($productDeliveryTime);
+        if ($product->getDeliveryTime() !== null) {
+            $deliveryTime = DeliveryTime::createFromEntity($product->getDeliveryTime());
         }
 
         $lineItem->setDeliveryInformation(
@@ -186,12 +190,16 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
                 (float) $product->getWeight(),
                 $product->getShippingFree(),
                 $product->getRestockTime(),
-                $deliveryTime
+                $deliveryTime,
+                $product->getHeight(),
+                $product->getWidth(),
+                $product->getLength()
             )
         );
 
-        // check if the price has to be updated
-        if (!$this->isPriceComplete($lineItem, $behavior)) {
+        //Check if the price has to be updated
+        if ($this->shouldPriceBeRecalculated($lineItem, $behavior)) {
+            //In Case keep original Price of Product
             $prices = $this->priceDefinitionBuilder->build($product, $context, $lineItem->getQuantity());
 
             $lineItem->setPriceDefinition($prices->getQuantityPrice());
@@ -199,26 +207,17 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
 
         $quantityInformation = new QuantityInformation();
 
-        $productMinPurchase = $product->getMinPurchase();
-        if ($productMinPurchase > 0) {
-            $quantityInformation->setMinPurchase($productMinPurchase);
-        }
+        $quantityInformation->setMinPurchase(
+            $product->getMinPurchase() ?? 1
+        );
 
-        if ($product->getIsCloseout()) {
-            $max = $product->getAvailableStock();
+        $quantityInformation->setMaxPurchase(
+            $product->getCalculatedMaxPurchase()
+        );
 
-            $productMaxPurchase = $product->getMaxPurchase();
-            if ($productMaxPurchase > 0 && $productMaxPurchase < $max) {
-                $max = $productMaxPurchase;
-            }
-
-            $quantityInformation->setMaxPurchase($max);
-        }
-
-        $productPurchaseSteps = $product->getPurchaseSteps();
-        if ($productPurchaseSteps > 0) {
-            $quantityInformation->setPurchaseSteps($productPurchaseSteps);
-        }
+        $quantityInformation->setPurchaseSteps(
+            $product->getPurchaseSteps() ?? 1
+        );
 
         $lineItem->setQuantityInformation($quantityInformation);
 
@@ -284,23 +283,20 @@ class ProductCartProcessor implements CartProcessorInterface, CartDataCollectorI
             && $lineItem->getQuantityInformation() !== null;
     }
 
-    private function isPriceComplete(LineItem $lineItem, CartBehavior $behavior): bool
+    private function shouldPriceBeRecalculated(LineItem $lineItem, CartBehavior $behavior): bool
     {
-        //always update prices for live checkout
-        if (!$behavior->isRecalculation()) {
+        if ($lineItem->getPriceDefinition() !== null
+            && $lineItem->hasExtension(self::CUSTOM_PRICE)
+            && $behavior->hasPermission(self::ALLOW_PRODUCT_PRICE_OVERWRITES)) {
             return false;
         }
 
-        return $lineItem->getPriceDefinition() !== null;
-    }
-
-    private function getAvailableStock(ProductEntity $product, LineItem $lineItem): int
-    {
-        if (!$product->getIsCloseout()) {
-            return $lineItem->getQuantity();
+        if ($lineItem->getPriceDefinition() !== null
+            && $behavior->hasPermission(self::SKIP_PRODUCT_RECALCULATION)) {
+            return false;
         }
 
-        return $product->getAvailableStock();
+        return true;
     }
 
     private function getOptions(SalesChannelProductEntity $product): array

@@ -78,7 +78,7 @@ Component.register('sw-product-detail', {
         },
 
         productRepository() {
-            return this.repositoryFactory.create('product');
+            return this.repositoryFactory.create('product', null, { entityDeprecation: false });
         },
 
         currencyRepository() {
@@ -122,7 +122,10 @@ Component.register('sw-product-detail', {
                 .addFilter(Criteria.equals('isCanonical', true));
 
             criteria.getAssociation('crossSellings')
-                .addSorting(Criteria.sort('position', 'ASC'));
+                .addSorting(Criteria.sort('position', 'ASC'))
+                .getAssociation('assignedProducts')
+                .addSorting(Criteria.sort('position', 'ASC'))
+                .addAssociation('product');
 
             criteria
                 .addAssociation('categories')
@@ -143,7 +146,7 @@ Component.register('sw-product-detail', {
             criteria.addFilter(Criteria.equals('relations.entityName', 'product'));
             criteria
                 .getAssociation('customFields')
-                .addSorting(Criteria.sort('config.customFieldPosition'));
+                .addSorting(Criteria.sort('config.customFieldPosition', 'ASC', true));
 
             return criteria;
         },
@@ -295,6 +298,8 @@ Component.register('sw-product-detail', {
 
                 if (this.product.parentId) {
                     this.loadParentProduct();
+                } else {
+                    Shopware.State.commit('swProductDetail/setParentProduct', {});
                 }
 
                 Shopware.State.commit('swProductDetail/setLoading', ['product', false]);
@@ -465,6 +470,7 @@ Component.register('sw-product-detail', {
                 this.productRepository.save(this.product, Shopware.Context.api).then(() => {
                     this.loadAll().then(() => {
                         Shopware.State.commit('swProductDetail/setLoading', ['product', false]);
+
                         resolve('success');
                     });
                 }).catch((response) => {

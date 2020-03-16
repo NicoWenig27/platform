@@ -9,6 +9,7 @@ import './component/sw-order-delivery-metadata';
 import './component/sw-order-product-select';
 import './component/sw-order-saveable-field';
 import './../sw-customer/component/sw-customer-address-form';
+import './../sw-customer/component/sw-customer-address-form-options';
 import './component/sw-order-address-modal';
 import './component/sw-order-leave-page-modal';
 import './component/sw-order-state-change-modal/sw-order-state-change-modal-attach-documents';
@@ -22,7 +23,11 @@ import './component/sw-order-document-card';
 import './component/sw-order-create-details-header';
 import './component/sw-order-create-details-body';
 import './component/sw-order-create-details-footer';
+import './component/sw-order-create-address-modal';
 import './component/sw-order-new-customer-modal';
+import './component/sw-order-promotion-tag-field';
+import './component/sw-order-create-invalid-promotion-modal';
+import './component/sw-order-create-promotion-modal';
 
 const { Module } = Shopware;
 

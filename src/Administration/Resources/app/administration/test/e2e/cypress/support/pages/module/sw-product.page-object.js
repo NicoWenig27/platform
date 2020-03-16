@@ -1,4 +1,5 @@
-const GeneralPageObject = require('../sw-general.page-object');
+/* global cy */
+import GeneralPageObject from '../sw-general.page-object';
 
 export default class ProductPageObject extends GeneralPageObject {
     constructor() {
@@ -16,10 +17,10 @@ export default class ProductPageObject extends GeneralPageObject {
     createTag(value) {
         cy.get('.sw-product-category-form__tag-field input')
             .type(value);
-        cy.get('.sw-select-result-list').contains(`Add "${value}"`);
+        cy.get('.sw-select-result-list-popover-wrapper').contains(`Add "${value}"`);
         cy.get('.sw-product-category-form__tag-field input')
             .type('{enter}');
-        cy.get('.sw-select-result-list').contains(value);
+        cy.get('.sw-select-result-list-popover-wrapper').contains(value);
         cy.get('.sw-product-category-form__tag-field input').type('{esc}');
     }
 
@@ -31,7 +32,7 @@ export default class ProductPageObject extends GeneralPageObject {
     }
 
 
-    generateVariants(propertyName, optionPosition) {
+    generateVariants(propertyName, optionPosition, totalCount) {
         const optionsIndicator = '.sw-property-search__tree-selection__column-items-selected.sw-grid-column--right span';
         const optionString = optionPosition.length < 1 ? 'option' : 'options';
 
@@ -46,7 +47,7 @@ export default class ProductPageObject extends GeneralPageObject {
             method: 'post'
         }).as('searchCall');
 
-        cy.get('.group_grid__column-name').click();
+        cy.contains(propertyName).click();
 
         for (const entry in Object.values(optionPosition)) { // eslint-disable-line
             if (optionPosition.hasOwnProperty(entry)) {
@@ -56,12 +57,12 @@ export default class ProductPageObject extends GeneralPageObject {
             }
         }
 
-        cy.get(`.sw-grid__row--0 ${optionsIndicator}`)
+        cy.get(`.sw-grid ${optionsIndicator}`)
             .contains(`${optionPosition.length} ${optionString} selected`);
         cy.get('.sw-product-variant-generation__generate-action').click();
         cy.get('.sw-product-modal-variant-generation__notification-modal').should('be.visible');
         cy.get('.sw-product-modal-variant-generation__notification-modal .sw-modal__body')
-            .contains('3 variants will be added');
+            .contains(`${totalCount} variants will be added`);
         cy.get('.sw-product-modal-variant-generation__notification-modal .sw-button--primary')
             .click();
 
@@ -70,7 +71,7 @@ export default class ProductPageObject extends GeneralPageObject {
         });
 
         cy.get('.sw-product-modal-variant-generation__notification-modal').should('not.exist');
-        cy.get('.generate-variant-progress-bar__description').contains('0 of 3 variations generated');
+        cy.get('.generate-variant-progress-bar__description').contains(`0 of ${totalCount} variations generated`);
 
         cy.wait('@searchCall').then((xhr) => {
             expect(xhr).to.have.property('status', 200);

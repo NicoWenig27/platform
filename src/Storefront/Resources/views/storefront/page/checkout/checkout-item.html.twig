@@ -130,7 +130,7 @@
                                                 {% endblock %}
 
                                                 {% block page_checkout_item_delivery_date %}
-                                                    {% if deliveryPosition and deliveryPosition.deliveryDate %}
+                                                    {% if deliveryPosition and deliveryPosition.deliveryDate and shopware.config.core.cart.showDeliveryTime %}
                                                         <div class="cart-item-delivery-date">
                                                             {{ "checkout.lineItemDeliveryDate"|trans({
                                                                 '%earliest%': deliveryPosition.deliveryDate.earliest|format_date('short', locale=app.request.locale),
@@ -176,12 +176,10 @@
                                                            value="frontend.checkout.cart.page">
                                                 {% endblock %}
 
-                                                {% if lineItem.quantityInformation.maxPurchase %}
-                                                    {% if lineItem.deliveryInformation.stock < lineItem.quantityInformation.maxPurchase %}
-                                                        {% set maxQuantity = lineItem.deliveryInformation.stock %}
-                                                    {% else %}
-                                                        {% set maxQuantity = lineItem.quantityInformation.maxPurchase %}
-                                                    {% endif %}
+                                                {# @var quantityInformation \Shopware\Core\Checkout\Cart\LineItem\QuantityInformation #}
+                                                {% set quantityInformation = lineItem.quantityInformation %}
+                                                {% if quantityInformation.maxPurchase %}
+                                                    {% set maxQuantity = quantityInformation.maxPurchase %}
                                                 {% else %}
                                                     {% set maxQuantity = shopware.config.core.cart.maxQuantity %}
                                                 {% endif %}
@@ -263,6 +261,7 @@
                                     {% block page_checkout_item_remove_submit %}
                                         <button type="submit"
                                                 title="{{ "checkout.removeLineItem"|trans|striptags }}"
+                                                data-product-id="{{ lineItem.id }}"
                                                 class="btn btn-light btn-sm cart-item-remove-button">
                                             {% sw_icon 'x' style { 'size': 'sm' } %}
                                         </button>

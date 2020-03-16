@@ -13,6 +13,7 @@ class Context extends Struct
 {
     public const SYSTEM_SCOPE = 'system';
     public const USER_SCOPE = 'user';
+    public const CRUD_API_SCOPE = 'crud';
 
     /**
      * @var string[]
@@ -170,14 +171,19 @@ class Context extends Struct
         return $context;
     }
 
-    public function scope(string $scope, callable $callback): void
+    /**
+     * @return mixed the return value of the provided callback function
+     */
+    public function scope(string $scope, callable $callback)
     {
         $currentScope = $this->getScope();
         $this->scope = $scope;
 
-        $callback($this);
+        $result = $callback($this);
 
         $this->scope = $currentScope;
+
+        return $result;
     }
 
     public function getScope(): string
@@ -212,9 +218,10 @@ class Context extends Struct
 
     public function disableCache(callable $function)
     {
+        $previous = $this->useCache;
         $this->useCache = false;
         $result = $function($this);
-        $this->useCache = true;
+        $this->useCache = $previous;
 
         return $result;
     }

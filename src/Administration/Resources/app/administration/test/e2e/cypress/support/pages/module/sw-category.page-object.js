@@ -1,4 +1,4 @@
-const GeneralPageObject = require('../sw-general.page-object');
+import GeneralPageObject from '../sw-general.page-object';
 
 export default class CategoryPageObject extends GeneralPageObject {
     constructor() {
@@ -12,5 +12,12 @@ export default class CategoryPageObject extends GeneralPageObject {
                 categoryTreeItem: '.sw-tree-item'
             }
         };
+    }
+
+    changeTranslation(language, position) {
+        cy.get('.sw-language-switch').click();
+        cy.get('.sw-field__select-load-placeholder').should('not.exist');
+        cy.get(`.sw-select-option:nth-of-type(${position})`).contains(language).click();
+        cy.get('.sw-field__select-load-placeholder').should('not.exist');
     }
 }

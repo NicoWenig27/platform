@@ -12,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\BoolField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ChildCountField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ChildrenAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\CreatedAtField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\CustomFields;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\DateField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Field;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\FkField;
@@ -22,7 +23,6 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ListingPriceField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextField;
-use Shopware\Core\Framework\DataAbstractionLayer\Field\LongTextWithHtmlField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ObjectField;
@@ -101,7 +101,7 @@ class EntityMapper
                 return ['type' => 'long'];
 
             case $field instanceof ObjectField:
-                return ['type' => 'object'];
+                return ['type' => 'object', 'dynamic' => true];
 
             case $field instanceof PriceField:
                 return self::PRICE_FIELD;
@@ -117,9 +117,11 @@ class EntityMapper
                     ],
                 ];
 
+            case $field instanceof CustomFields:
+                return ['type' => 'object', 'dynamic' => true];
             case $field instanceof JsonField:
                 if (empty($field->getPropertyMapping())) {
-                    return ['type' => 'object'];
+                    return ['type' => 'object', 'dynamic' => true];
                 }
                 $properties = [];
                 foreach ($field->getPropertyMapping() as $nested) {
@@ -129,8 +131,7 @@ class EntityMapper
                 return ['type' => 'object', 'properties' => $properties];
 
             case $field instanceof LongTextField:
-            case $field instanceof LongTextWithHtmlField:
-                return ['type' => 'text'];
+                return $this->createLongTextField();
 
             case $field instanceof TranslatedField:
                 $reference = EntityDefinitionQueryHelper::getTranslatedField($definition, $field);
@@ -142,8 +143,9 @@ class EntityMapper
             case $field instanceof DateField:
                 return self::DATE_FIELD;
 
-            case $field instanceof PasswordField:
             case $field instanceof StringField:
+                return $this->createStringField();
+            case $field instanceof PasswordField:
             case $field instanceof FkField:
             case $field instanceof IdField:
             case $field instanceof VersionField:
@@ -187,5 +189,15 @@ class EntityMapper
         }
 
         return $properties;
+    }
+
+    protected function createStringField(): array
+    {
+        return self::KEYWORD_FIELD;
+    }
+
+    protected function createLongTextField(): array
+    {
+        return ['type' => 'text'];
     }
 }

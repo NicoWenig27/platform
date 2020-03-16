@@ -6,11 +6,11 @@
 
     <services>
         <service id="Shopware\Core\System\Language\LanguageDefinition">
-            <tag name="shopware.entity.definition" entity="language"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\Language\SalesChannel\SalesChannelLanguageDefinition">
-            <tag name="shopware.sales_channel.entity.definition" entity="language"/>
+            <tag name="shopware.sales_channel.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\Language\LanguageValidator">
@@ -34,6 +34,12 @@
 
         <service id="Shopware\Core\System\Language\LanguageExceptionHandler">
             <tag name="shopware.dal.exception_handler"/>
+        </service>
+
+        <service id="Shopware\Core\System\Language\SalesChannel\LanguageRoute" public="true">
+            <argument type="service" id="sales_channel.language.repository"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
+            <argument type="service" id="Shopware\Core\System\Language\SalesChannel\SalesChannelLanguageDefinition"/>
         </service>
     </services>
 </container>

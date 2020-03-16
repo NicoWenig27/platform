@@ -6,43 +6,47 @@
 
     <services>
         <service id="Shopware\Core\System\SalesChannel\SalesChannelDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_translation"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelCountry\SalesChannelCountryDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_country"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelCurrency\SalesChannelCurrencyDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_currency"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_domain"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelLanguage\SalesChannelLanguageDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_language"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelPaymentMethod\SalesChannelPaymentMethodDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_payment_method"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelShippingMethod\SalesChannelShippingMethodDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_shipping_method"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelType\SalesChannelTypeDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_type"/>
+            <tag name="shopware.entity.definition"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelTypeTranslation\SalesChannelTypeTranslationDefinition">
-            <tag name="shopware.entity.definition" entity="sales_channel_type_translation"/>
+            <tag name="shopware.entity.definition"/>
+        </service>
+
+        <service id="Shopware\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsDefinition">
+            <tag name="shopware.entity.definition" entity="sales_channel_analytics" />
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextPersister">
@@ -63,6 +67,7 @@
             <argument type="service" id="country_state.repository"/>
             <argument type="service" id="Shopware\Core\Checkout\Cart\Tax\TaxDetector"/>
             <argument type="tagged" tag="tax.rule_type_filter"/>
+            <argument type="service" id="event_dispatcher"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\Context\SalesChannelContextService">
@@ -84,6 +89,11 @@
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
+        </service>
+
+        <service id="Shopware\Core\System\SalesChannel\SalesChannel\StoreApiController" public="true">
+            <argument type="service" id="Shopware\Core\Framework\Api\ApiDefinition\DefinitionService"/>
+            <argument type="service" id="twig"/>
         </service>
 
         <service id="Shopware\Core\System\SalesChannel\SalesChannel\SalesChannelContextSwitcher">
@@ -119,5 +129,15 @@
             <tag name="shopware.dal.exception_handler"/>
         </service>
 
+        <service id="Shopware\Core\System\SalesChannel\Api\StoreApiResponseListener">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="Shopware\Core\System\SalesChannel\Api\StructEncoder"/>
+        </service>
+
+        <service id="Shopware\Core\System\SalesChannel\Api\StructEncoder">
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter"/>
+            <argument type="service" id="serializer"/>
+        </service>
     </services>
 </container>

@@ -22,12 +22,10 @@ describe('Checkout: Use different taxes in products while checkout', () => {
         return cy.createProductFixture().then(() => {
             return cy.createDefaultFixture('category')
         }).then(() => {
-            return cy.setProductFixtureVisibility('Product name')
-        }).then(() => {
             return cy.fixture('product');
         }).then((result) => {
             product = result;
-            return cy.createCustomerFixture()
+            return cy.createCustomerFixtureStorefront()
         }).then(() => {
             cy.visit('/');
         })
@@ -40,13 +38,11 @@ describe('Checkout: Use different taxes in products while checkout', () => {
         context(`Checkout with ${additionalProduct.name} (${contextDescription})`, () => {
             beforeEach(() => {
                 return cy.createProductFixture(additionalProduct).then(() => {
-                    return cy.setProductFixtureVisibility(additionalProduct.name)
-                }).then(() => {
                     cy.visit('/');
                 })
             });
 
-            it('run checkout', () => {
+            it('@package @checkout: Run checkout', () => {
                 const page = new CheckoutPageObject();
                 const accountPage = new AccountPageObject();
                 let productName = product.name;
@@ -88,8 +84,8 @@ describe('Checkout: Use different taxes in products while checkout', () => {
                 cy.get('.checkout-main').should('be.visible');
                 cy.get('.login-collapse-toggle').click();
                 cy.get(accountPage.elements.loginCard).should('be.visible');
-                cy.get('#loginMail').typeAndCheck('test@example.com');
-                cy.get('#loginPassword').typeAndCheck('shopware');
+                cy.get('#loginMail').typeAndCheckStorefront('test@example.com');
+                cy.get('#loginPassword').typeAndCheckStorefront('shopware');
                 cy.get(`${accountPage.elements.loginSubmit} [type="submit"]`).click();
 
                 // Confirm

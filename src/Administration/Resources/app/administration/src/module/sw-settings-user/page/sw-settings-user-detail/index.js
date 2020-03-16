@@ -1,8 +1,10 @@
+import { email } from 'src/core/service/validation.service';
 import template from './sw-settings-user-detail.html.twig';
 import './sw-settings-user-detail.scss';
 
 const { Component, Mixin } = Shopware;
 const { Criteria } = Shopware.Data;
+const { mapPropertyErrors } = Component.getComponentHelper();
 const { warn } = Shopware.Utils.debug;
 
 Component.register('sw-settings-user-detail', {
@@ -50,6 +52,14 @@ Component.register('sw-settings-user-detail', {
     },
 
     computed: {
+        ...mapPropertyErrors('user', [
+            'firstName',
+            'lastName',
+            'email',
+            'username',
+            'localeId'
+        ]),
+
         identifier() {
             return this.fullName;
         },
@@ -231,6 +241,14 @@ Component.register('sw-settings-user-detail', {
         },
 
         checkEmail() {
+            if (this.user.email && !email(this.user.email)) {
+                this.createNotificationError({
+                    title: this.$tc('sw-settings-user.user-detail.notification.saveError.title'),
+                    message: this.$tc('sw-settings-user.user-detail.notification.notificationInvalidEmailErrorMessage')
+                });
+                return Promise.reject();
+            }
+
             return this.userValidationService.checkUserEmail({
                 email: this.user.email,
                 id: this.user.id
@@ -287,9 +305,7 @@ Component.register('sw-settings-user-detail', {
             let promises = [];
 
             if (this.currentUser.id === this.user.id) {
-                promises = [this.localeRepository.get(this.user.localeId, Shopware.Context.api).then(({ code }) => {
-                    Shopware.State.dispatch('setAdminLocale', code);
-                })];
+                promises = [Shopware.Service('localeHelper').setLocaleWithId(this.user.localeId)];
             }
 
             return Promise.all(promises).then(this.checkEmail().then(() => {
@@ -314,6 +330,8 @@ Component.register('sw-settings-user-detail', {
                     });
                 }
                 return Promise.resolve();
+            }).finally(() => {
+                this.isLoading = false;
             }));
         },
 

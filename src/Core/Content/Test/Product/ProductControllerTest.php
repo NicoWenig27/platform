@@ -111,4 +111,35 @@ class ProductControllerTest extends TestCase
         static::assertEquals('with id', $content['data']['tax']['name']);
         static::assertEquals(17, $content['data']['tax']['taxRate']);
     }
+
+    public function testProductDetailWithInactiveProduct(): void
+    {
+        $productId = Uuid::randomHex();
+        $manufacturerId = Uuid::randomHex();
+        $taxId = Uuid::randomHex();
+
+        $client = $this->getSalesChannelBrowser();
+        $salesChannelId = $this->salesChannelIds[count($this->salesChannelIds) - 1];
+
+        $this->productRepository->create([
+            [
+                'id' => $productId,
+                'productNumber' => Uuid::randomHex(),
+                'name' => 'Test',
+                'stock' => 1,
+                'active' => false,
+                'price' => [['currencyId' => Defaults::CURRENCY, 'gross' => 10, 'net' => 9, 'linked' => false]],
+                'manufacturer' => ['id' => $manufacturerId, 'name' => 'test'],
+                'tax' => ['id' => $taxId, 'taxRate' => 17, 'name' => 'with id'],
+
+                'visibilities' => [
+                    ['salesChannelId' => $salesChannelId, 'visibility' => ProductVisibilityDefinition::VISIBILITY_ALL],
+                ],
+            ],
+        ], Context::createDefaultContext());
+
+        $client->request('GET', '/sales-channel-api/v1/product/' . $productId);
+
+        static::assertSame(404, $client->getResponse()->getStatusCode(), $client->getResponse()->getContent());
+    }
 }

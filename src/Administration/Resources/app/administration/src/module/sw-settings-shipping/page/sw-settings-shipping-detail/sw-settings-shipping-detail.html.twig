@@ -79,11 +79,11 @@
                             {% endblock %}
 
                             {% block sw_settings_shipping_detail_base_content_media_upload %}
-                                <sw-upload-store-listener :uploadTag="uploadTag"
+                                <sw-upload-listener :uploadTag="uploadTag"
                                                           autoUpload
                                                           @media-upload-finish="setMediaItem">
-                                </sw-upload-store-listener>
-                                <sw-media-upload v-if="!isLoading"
+                                </sw-upload-listener>
+                                <sw-media-upload-v2 v-if="!isLoading"
                                                  :uploadTag="uploadTag"
                                                  :source="logoMediaItem"
                                                  class="sw-settings-shipping-detail__logo-image-upload"
@@ -94,7 +94,7 @@
                                                  @media-drop="onDropMedia"
                                                  @media-upload-sidebar-open="openMediaSidebar"
                                                  @media-upload-remove-image="onUnlinkLogo">
-                                </sw-media-upload>
+                                </sw-media-upload-v2>
                             {% endblock %}
                         </sw-container>
 
@@ -108,6 +108,15 @@
                                        :placeholder="$tc('sw-settings-shipping.detail.placeholderDeliveryTime')"
                                        required>
                             </sw-select>
+                        {% endblock %}
+
+                        {% block sw_settings_shipping_detail_base_content_tracking_url_field %}
+                            <sw-field type="text"
+                                      :label="$tc('sw-settings-shipping.detail.labelTrackingUrl')"
+                                      :placeholder="placeholder(shippingMethod, 'trackingUrl', $tc('sw-settings-shipping.detail.placeholderTrackingUrl'))"
+                                      :helpText="$tc('sw-settings-shipping.detail.helpTextTrackingUrl')"
+                                      v-model="shippingMethod.trackingUrl">
+                            </sw-field>
                         {% endblock %}
 
                         {% block sw_settings_shipping_detail_base_content_tags_field %}

@@ -16,6 +16,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Exception\SearchRequestExceptio
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\Filter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Grouping\FieldGrouping;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Parser\AggregationParser;
@@ -62,10 +63,6 @@ class RequestCriteriaBuilder
             $criteria = $this->fromArray($request->request->all(), $criteria, $definition, $context, $request->attributes->getInt('version'));
         }
 
-        if (empty($criteria->getIds()) && $criteria->getLimit() === null) {
-            $criteria->setLimit(10);
-        }
-
         return $criteria;
     }
 
@@ -77,6 +74,37 @@ class RequestCriteriaBuilder
     public function getAllowedLimits(): array
     {
         return $this->allowedLimits;
+    }
+
+    public function toArray(Criteria $criteria): array
+    {
+        $array = [
+            'total-count-mode' => $criteria->getTotalCountMode(),
+        ];
+
+        if ($criteria->getLimit()) {
+            $array['limit'] = $criteria->getLimit();
+        }
+
+        if ($criteria->getOffset()) {
+            $array['offset'] = $criteria->getOffset();
+        }
+
+        if ($criteria->getTerm()) {
+            $array['term'] = $criteria->getTerm();
+        }
+
+        if (count($criteria->getIds())) {
+            $array['ids'] = $criteria->getIds();
+        }
+
+        if (count($criteria->getFilters())) {
+            $array['filter'] = array_map(function (Filter $filter) {
+                return QueryStringParser::toArray($filter);
+            }, $criteria->getFilters());
+        }
+
+        return $array;
     }
 
     private function fromArray(array $payload, Criteria $criteria, EntityDefinition $definition, Context $context, int $apiVersion): Criteria
@@ -93,8 +121,6 @@ class RequestCriteriaBuilder
             $criteria->setIds($ids);
             $criteria->setLimit(null);
         } else {
-            $criteria->setTotalCountMode(Criteria::TOTAL_COUNT_MODE_EXACT);
-
             if (isset($payload['total-count-mode'])) {
                 $criteria->setTotalCountMode((int) $payload['total-count-mode']);
             }
@@ -108,7 +134,9 @@ class RequestCriteriaBuilder
             }
         }
 
-        if (isset($payload['source'])) {
+        if (isset($payload['includes'])) {
+            $criteria->setIncludes($payload['includes']);
+        } elseif (isset($payload['source'])) {
             $criteria->setSource($payload['source']);
         }
 

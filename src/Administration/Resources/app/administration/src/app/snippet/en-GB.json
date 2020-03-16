@@ -3,7 +3,8 @@
     "error-codes": {
       "c1051bb4-d103-4f74-8988-acbcafc7fdc3": "This value should not be blank",
       "INVALID_MEDIA_URL": "Please enter a valid URL to upload a file.",
-      "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "You must choose a type for this rule."
+      "CONTENT__MISSING_RULE_TYPE_EXCEPTION": "You must choose a type for this rule.",
+      "SHOPWARE_INVALID_IP": "Invalid IP address"
     },
     "default": {
       "add": "Add",
@@ -35,6 +36,18 @@
           "title": "Generating thumbnails",
           "message": "No thumbnails remaining. | One thumbnail remaining. | {n} thumbnails remaining.",
           "messageSuccess": "Thumbnails have been generated."
+        },
+        "esIndexing": {
+          "message": "Elasticsearch indexed. | One remaining. | {n} remaining.",
+          "messageSuccess": "Elasticsearch successfully indexed."
+        },
+        "dalIndexing": {
+          "message": "All data indexed. | Indexing data.",
+          "messageSuccess": "Indexing finished."
+        },
+        "warmupIndexing": {
+          "message": "Cache warmed-up. | One page remaining. | Approximately {n} pages remaining..",
+          "messageSuccess": "Cache successfully warmed-up."
         }
       },
       "plugin-updates-listener": {
@@ -98,6 +111,10 @@
       "labelPriceGross": "Price (gross)",
       "labelPriceNet": "Price (net)"
     },
+    "sw-list-price-field": {
+      "labelListPriceGross": "List price (gross)",
+      "labelListPriceNet": "List price (net)"
+    },
     "sw-text-editor": {
       "labelTextLength": "{count} character | {count} characters"
     },
@@ -136,6 +153,9 @@
         },
         "renamingError": {
           "message": "Error saving folder."
+        },
+        "errorInvalidItemName": {
+          "message": "Folder could not be saved: Please enter a valid name."
         }
       }
     },
@@ -224,6 +244,19 @@
       "labelOldFile": "Existing file",
       "labelNewFile": "Uploaded file"
     },
+    "sw-duplicated-media-v2": {
+      "titleModal": "File already exists",
+      "description": "A file with the name \"{fileName}\" already exists.",
+      "buttonReplace": "Replace file",
+      "buttonRename": "Rename file",
+      "buttonSkip": "Skip file",
+      "labelSaveSelection": "Save selection and apply to {count} more.",
+      "labelOptionReplace": "Upload and replace",
+      "labelOptionRename": "Upload and rename",
+      "labelOptionSkip": "Skip file",
+      "labelOldFile": "Existing file",
+      "labelNewFile": "Uploaded file"
+    },
     "sw-media-modal-move": {
       "titleModal": "Move \"{mediaName}\" | Move {count} items",
       "buttonMove": "Move",
@@ -253,7 +286,33 @@
       "fallbackAudioTagSupport": "Your browser does not support the audio tag",
       "textNoMedia": "No media available"
     },
+    "sw-media-preview-v2": {
+      "fallbackVideoTagSupport": "Your browser does not support the video tag",
+      "fallbackAudioTagSupport": "Your browser does not support the audio tag",
+      "textNoMedia": "No media available"
+    },
     "sw-media-upload": {
+      "buttonFileUpload": "Upload file",
+      "buttonUrlUpload": "Upload file from URL",
+      "buttonSwitchToFileUpload": "Upload file from your computer",
+      "buttonSwitchToUrlUpload": "Upload file from url",
+      "buttonOpenMedia": "Open media",
+      "notification": {
+        "success": {
+          "title": "Media upload",
+          "message": "No file has been saved. | File has been saved. | {count} / {total} files have been saved."
+        },
+        "failure": {
+          "message": "Error while uploading file."
+        },
+        "illegalFilename": {
+          "title": "Invalid Filename",
+          "message": "The filename \"{fileName}\" contains invalid characters."
+        }
+      },
+      "caption": "Drag files here to upload"
+    },
+    "sw-media-upload-v2": {
       "buttonFileUpload": "Upload file",
       "buttonUrlUpload": "Upload file from URL",
       "buttonSwitchToFileUpload": "Upload file from your computer",
@@ -314,6 +373,9 @@
     "sw-media-list-selection-item": {
       "buttonRemove": "Remove"
     },
+    "sw-media-list-selection-item-v2": {
+      "buttonRemove": "Remove"
+    },
     "sw-select": {
       "messageNoResults": "No results found for \"{term}\"."
     },
@@ -326,6 +388,18 @@
     },
     "sw-multi-select": {
       "messageNoResults": "No results found for \"{term}\"."
+    },
+    "sw-multi-tag-select": {
+      "enterValidData": "Please enter a valid value",
+      "addData": "Add new entry"
+    },
+    "sw-multi-tag-ip-select": {
+      "enterValidIp": "Please enter a valid IPv4 or IPv6 address",
+      "addIpAdress": "Add IP address"
+    },
+    "sw-multi-ip-select": {
+      "enterValidIp": "Please enter a valid IPv4 or IPv6 address",
+      "addIpAdress": "Add IP address"
     },
     "sw-entity-multi-select": {
       "messageNoResults": "No results found for \"{term}\"."
@@ -430,7 +504,26 @@
         "weightOfCartRule": "Weight of cart",
         "dayOfWeekRule": "Day of the week",
         "lineItemTagRule": "Line item tag",
-        "lineItemPropertyRule": "Line item property"
+        "lineItemPropertyRule": "Line item property",
+        "lineItemIsNewRule": "Line item is new",
+        "lineItemOfManufacturerRule": "Manufacturer",
+        "lineItemPurchasePriceRule": "Line item purchase price",
+        "lineItemCreationDateRule": "Line item with creation date",
+        "lineItemReleaseDateRule": "Line item with release date",
+        "lineItemClearanceSale": "Line item with clearance sale",
+        "lineItemTopsellerRule": "Line item topseller",
+        "lineItemInCategoryRule": "Line item in category",
+        "lineItemTaxationRule": "Line item with tax rate",
+        "lineItemDimensionWidthRule": "Line item width",
+        "lineItemDimensionHeightRule": "Line item height",
+        "lineItemDimensionLengthRule": "Line item length",
+        "lineItemDimensionWeightRule": "Line item weight",
+        "lineItemOfManufacturerRule": "Manufacturer",
+        "lineItemPurchasePriceRule": "Line item purchase price",
+        "lineItemCreationDateRule": "Line item with creation date",
+        "lineItemListPriceRule": "Line item list price",
+        "paymentMethodRule": "Payment method",
+        "shippingMethodRule": "Shipping method"
       }
     },
     "sw-product-image": {
@@ -699,7 +792,13 @@
     "functionSpecialShortcutSaveDetailViewLinux": "Linux: Save detail view",
     "keyboardShortcutSpecialShortcutSaveDetailViewLinux": "ALT-S",
     "functionSpecialShortcutCancelDetailView": "Cancel detail view",
-    "keyboardShortcutSpecialShortcutCancelDetailView": "ESC"
+    "keyboardShortcutSpecialShortcutCancelDetailView": "ESC",
+    "functionSpecialShortcutClearCacheWindows": "Windows: Cache clear",
+    "keyboardShortcutSpecialShortcutClearCacheWindows": "ALT-C",
+    "functionSpecialShortcutClearCacheMac": "Mac: Cache clear",
+    "keyboardShortcutSpecialShortcutClearCacheMac": "CONTROL-C",
+    "functionSpecialShortcutClearCacheLinux": "Linux: Cache clear",
+    "keyboardShortcutSpecialShortcutClearCacheLinux": "ALT-C"
   },
   "sw-discard-changes-modal": {
     "title": "Discard unsaved changes?",
@@ -711,6 +810,7 @@
   },
   "sw-maintain-currencies-modal": {
     "title": "Currency dependent pricing",
-    "columnPrice": "Prices (gross / net)"
+    "columnPrice": "Prices (gross / net)",
+    "columnListPriceHeader": "List prices (gross / net)"
   }
 }

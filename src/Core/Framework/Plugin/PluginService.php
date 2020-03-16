@@ -3,6 +3,7 @@
 namespace Shopware\Core\Framework\Plugin;
 
 use Composer\IO\IOInterface;
+use Composer\Package\CompletePackageInterface;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepositoryInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
@@ -14,10 +15,13 @@ use Shopware\Core\Framework\Plugin\Exception\PluginComposerJsonInvalidException;
 use Shopware\Core\Framework\Plugin\Exception\PluginNotFoundException;
 use Shopware\Core\Framework\Plugin\Util\PluginFinder;
 use Shopware\Core\Framework\Plugin\Util\VersionSanitizer;
+use Shopware\Core\Framework\ShopwareHttpException;
 use Shopware\Core\System\Language\LanguageEntity;
 
 class PluginService
 {
+    public const COMPOSER_AUTHOR_ROLE_MANUFACTURER = 'Manufacturer';
+
     /**
      * @var string
      */
@@ -96,13 +100,7 @@ class PluginService
 
             $pluginVersion = $this->versionSanitizer->sanitizePluginVersion($info->getVersion());
             $extra = $info->getExtra();
-
-            $authors = null;
-            $composerAuthors = $info->getAuthors();
-            if ($composerAuthors !== null) {
-                $authorNames = array_column($info->getAuthors(), 'name');
-                $authors = implode(', ', $authorNames);
-            }
+            $authors = $this->getAuthors($info);
             $license = $info->getLicense();
             $pluginIconPath = $extra['plugin-icon'] ?? 'src/Resources/config/plugin.png';
 
@@ -139,11 +137,14 @@ class PluginService
                         $this->changelogService->getLocaleFromChangelogFile($file),
                         $shopwareContext
                     );
+                    if ($languageId === '') {
+                        continue;
+                    }
 
                     try {
                         $pluginData['translations'][$languageId]['changelog'] = $this->changelogService->parseChangelog($file);
-                    } catch (PluginChangelogInvalidException $e) {
-                        $errors->add($e);
+                    } catch (PluginChangelogInvalidException $changelogInvalidException) {
+                        $errors->add($changelogInvalidException);
                     }
                 }
             }
@@ -168,8 +169,14 @@ class PluginService
             $plugins[] = $pluginData;
         }
 
-        if ($plugins) {
-            $this->pluginRepo->upsert($plugins, $shopwareContext);
+        if ($plugins !== []) {
+            foreach ($plugins as $plugin) {
+                try {
+                    $this->pluginRepo->upsert([$plugin], $shopwareContext);
+                } catch (ShopwareHttpException $exception) {
+                    $errors->set($plugin['name'], $exception);
+                }
+            }
         }
 
         // delete plugins, which are in storage but not in filesystem anymore
@@ -237,5 +244,27 @@ class PluginService
         }
 
         return file_get_contents($pluginIconPath);
+    }
+
+    private function getAuthors(CompletePackageInterface $info): ?string
+    {
+        $authors = null;
+        /** @var array|null $composerAuthors */
+        $composerAuthors = $info->getAuthors();
+
+        if ($composerAuthors !== null) {
+            $manufacturersAuthors = array_filter($composerAuthors, static function (array $author): bool {
+                return ($author['role'] ?? '') === self::COMPOSER_AUTHOR_ROLE_MANUFACTURER;
+            });
+
+            if (empty($manufacturersAuthors)) {
+                $manufacturersAuthors = $composerAuthors;
+            }
+
+            $authorNames = array_column($manufacturersAuthors, 'name');
+            $authors = implode(', ', $authorNames);
+        }
+
+        return $authors;
     }
 }

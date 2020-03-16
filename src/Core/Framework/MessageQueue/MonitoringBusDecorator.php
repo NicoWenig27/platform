@@ -38,13 +38,21 @@ class MonitoringBusDecorator implements MessageBusInterface
     {
         $messageName = $this->getMessageName($message);
 
-        if ($this->isIncoming($message)) {
-            $this->decrementMessageQueueSize($messageName);
-        } else {
+        if (!$this->isIncoming($message)) {
             $this->incrementMessageQueueSize($messageName);
         }
 
-        return $this->innerBus->dispatch($message);
+        try {
+            $ret = $this->innerBus->dispatch($message);
+
+            if ($this->isIncoming($message)) {
+                $this->decrementMessageQueueSize($messageName);
+            }
+
+            return $ret;
+        } catch (\Exception $e) {
+            throw $e;
+        }
     }
 
     /**
@@ -65,14 +73,14 @@ class MonitoringBusDecorator implements MessageBusInterface
 
     private function incrementMessageQueueSize(string $name): void
     {
-        $this->connection->executeQuery('
+        $this->connection->executeUpdate('
             INSERT INTO `message_queue_stats` (`id`, `name`, `size`, `created_at`)
             VALUES (:id, :name, 1, :createdAt)
             ON DUPLICATE KEY UPDATE `size` = `size` +1, `updated_at` = :createdAt
         ', [
             'id' => Uuid::randomBytes(),
             'name' => $name,
-            'createdAt' => date(Defaults::STORAGE_DATE_TIME_FORMAT),
+            'createdAt' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
         ]);
     }
 

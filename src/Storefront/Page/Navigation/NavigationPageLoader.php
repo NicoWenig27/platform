@@ -3,29 +3,16 @@
 namespace Shopware\Storefront\Page\Navigation;
 
 use Shopware\Core\Content\Category\CategoryEntity;
-use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
-use Shopware\Core\Content\Cms\DataResolver\ResolverContext\EntityResolverContext;
-use Shopware\Core\Content\Cms\Exception\PageNotFoundException;
-use Shopware\Core\Content\Cms\SalesChannel\SalesChannelCmsPageLoaderInterface;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
-use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
-use Shopware\Core\System\SalesChannel\Entity\SalesChannelRepositoryInterface;
+use Shopware\Core\Content\Category\SalesChannel\CategoryRouteInterface;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
-use Shopware\Storefront\Page\GenericPageLoader;
+use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 class NavigationPageLoader
 {
     /**
-     * @var SalesChannelCmsPageLoaderInterface
-     */
-    private $cmsPageLoader;
-
-    /**
-     * @var GenericPageLoader
+     * @var GenericPageLoaderInterface
      */
     private $genericLoader;
 
@@ -35,35 +22,20 @@ class NavigationPageLoader
     private $eventDispatcher;
 
     /**
-     * @var EntityDefinition
+     * @var CategoryRouteInterface
      */
-    private $categoryDefinition;
-
-    /**
-     * @var SalesChannelRepositoryInterface
-     */
-    private $categoryRepository;
+    private $cmsPageRoute;
 
     public function __construct(
-        SalesChannelCmsPageLoaderInterface $cmsPageLoader,
-        GenericPageLoader $genericLoader,
+        GenericPageLoaderInterface $genericLoader,
         EventDispatcherInterface $eventDispatcher,
-        EntityDefinition $categoryDefinition,
-        SalesChannelRepositoryInterface $categoryRepository
+        CategoryRouteInterface $cmsPageRoute
     ) {
-        $this->cmsPageLoader = $cmsPageLoader;
         $this->genericLoader = $genericLoader;
         $this->eventDispatcher = $eventDispatcher;
-        $this->categoryDefinition = $categoryDefinition;
-        $this->categoryRepository = $categoryRepository;
+        $this->cmsPageRoute = $cmsPageRoute;
     }
 
-    /**
-     * @throws CategoryNotFoundException
-     * @throws InconsistentCriteriaIdsException
-     * @throws MissingRequestParameterException
-     * @throws PageNotFoundException
-     */
     public function load(Request $request, SalesChannelContext $context): NavigationPage
     {
         $page = $this->genericLoader->load($request, $context);
@@ -71,21 +43,14 @@ class NavigationPageLoader
 
         $navigationId = $request->get('navigationId', $context->getSalesChannel()->getNavigationCategoryId());
 
-        $category = $this->loadCategory($navigationId, $context);
+        $category = $this->cmsPageRoute
+            ->load($navigationId, $request, $context)
+            ->getCategory();
 
-        $pageId = $category->getCmsPageId();
-
-        if ($pageId) {
-            $resolverContext = new EntityResolverContext($context, $request, $this->categoryDefinition, $category);
-
-            $pages = $this->cmsPageLoader->load($request, new Criteria([$pageId]), $context, $category->getSlotConfig(), $resolverContext);
-
-            if (!$pages->has($pageId)) {
-                throw new PageNotFoundException($pageId);
-            }
-
-            $page->setCmsPage($pages->get($pageId));
+        if ($category->getCmsPage()) {
             $this->loadMetaData($category, $page);
+
+            $page->setCmsPage($category->getCmsPage());
         }
 
         $this->eventDispatcher->dispatch(
@@ -108,19 +73,5 @@ class NavigationPageLoader
         $metaInformation->setMetaTitle((string) $metaTitle);
 
         $metaInformation->setMetaKeywords((string) $category->getKeywords());
-    }
-
-    private function loadCategory(string $categoryId, SalesChannelContext $context): CategoryEntity
-    {
-        $criteria = new Criteria([$categoryId]);
-        $criteria->addAssociation('media');
-
-        $category = $this->categoryRepository->search($criteria, $context)->get($categoryId);
-
-        if (!$category) {
-            throw new CategoryNotFoundException($categoryId);
-        }
-
-        return $category;
     }
 }

@@ -30,7 +30,9 @@ use Shopware\Core\System\Currency\CurrencyEntity;
 use Shopware\Core\System\Language\LanguageCollection;
 use Shopware\Core\System\Language\LanguageEntity;
 use Shopware\Core\System\NumberRange\Aggregate\NumberRangeSalesChannel\NumberRangeSalesChannelCollection;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelAnalytics\SalesChannelAnalyticsEntity;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainCollection;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelTranslation\SalesChannelTranslationCollection;
 use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelType\SalesChannelTypeEntity;
 use Shopware\Core\System\SystemConfig\SystemConfigCollection;
@@ -303,6 +305,31 @@ class SalesChannelEntity extends Entity
      * @var ProductExportCollection|null
      */
     protected $productExports;
+
+    /**
+     * @var bool
+     */
+    protected $hreflangActive;
+
+    /**
+     * @var string|null
+     */
+    protected $hreflangDefaultDomainId;
+
+    /**
+     * @var SalesChannelDomainEntity|null
+     */
+    protected $hreflangDefaultDomain;
+
+    /**
+     * @var string
+     */
+    protected $analyticsId;
+
+    /**
+     * @var SalesChannelAnalyticsEntity
+     */
+    protected $analytics;
 
     public function getMailHeaderFooter(): ?MailHeaderFooterEntity
     {
@@ -838,5 +865,55 @@ class SalesChannelEntity extends Entity
     public function setNavigationCategoryDepth(int $navigationCategoryDepth): void
     {
         $this->navigationCategoryDepth = $navigationCategoryDepth;
+    }
+
+    public function isHreflangActive(): bool
+    {
+        return $this->hreflangActive;
+    }
+
+    public function setHreflangActive(bool $hreflangActive): void
+    {
+        $this->hreflangActive = $hreflangActive;
+    }
+
+    public function getHreflangDefaultDomainId(): ?string
+    {
+        return $this->hreflangDefaultDomainId;
+    }
+
+    public function setHreflangDefaultDomainId(?string $hreflangDefaultDomainId): void
+    {
+        $this->hreflangDefaultDomainId = $hreflangDefaultDomainId;
+    }
+
+    public function getHreflangDefaultDomain(): ?SalesChannelDomainEntity
+    {
+        return $this->hreflangDefaultDomain;
+    }
+
+    public function setHreflangDefaultDomain(?SalesChannelDomainEntity $hreflangDefaultDomain): void
+    {
+        $this->hreflangDefaultDomain = $hreflangDefaultDomain;
+    }
+
+    public function getAnalyticsId(): ?string
+    {
+        return $this->analyticsId;
+    }
+
+    public function setAnalyticsId(?string $analyticsId): void
+    {
+        $this->analyticsId = $analyticsId;
+    }
+
+    public function getAnalytics(): ?SalesChannelAnalyticsEntity
+    {
+        return $this->analytics;
+    }
+
+    public function setAnalytics(?SalesChannelAnalyticsEntity $analytics): void
+    {
+        $this->analytics = $analytics;
     }
 }

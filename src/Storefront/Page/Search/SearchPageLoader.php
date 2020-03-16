@@ -3,39 +3,39 @@
 namespace Shopware\Storefront\Page\Search;
 
 use Shopware\Core\Content\Category\Exception\CategoryNotFoundException;
-use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchGatewayInterface;
+use Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRouteInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Framework\Page\StorefrontSearchResult;
-use Shopware\Storefront\Page\GenericPageLoader;
+use Shopware\Storefront\Page\GenericPageLoaderInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 class SearchPageLoader
 {
     /**
-     * @var GenericPageLoader
+     * @var GenericPageLoaderInterface
      */
     private $genericLoader;
-
-    /**
-     * @var ProductSearchGatewayInterface
-     */
-    private $searchGateway;
 
     /**
      * @var EventDispatcherInterface
      */
     private $eventDispatcher;
 
+    /**
+     * @var ProductSearchRouteInterface
+     */
+    private $productSearchRoute;
+
     public function __construct(
-        GenericPageLoader $genericLoader,
-        ProductSearchGatewayInterface $searchGateway,
+        GenericPageLoaderInterface $genericLoader,
+        ProductSearchRouteInterface $productSearchRoute,
         EventDispatcherInterface $eventDispatcher
     ) {
         $this->genericLoader = $genericLoader;
-        $this->searchGateway = $searchGateway;
+        $this->productSearchRoute = $productSearchRoute;
         $this->eventDispatcher = $eventDispatcher;
     }
 
@@ -53,7 +53,7 @@ class SearchPageLoader
             throw new MissingRequestParameterException('search');
         }
 
-        $result = $this->searchGateway->search($request, $salesChannelContext);
+        $result = $this->productSearchRoute->load($request, $salesChannelContext)->getListingResult();
 
         $page->setListing($result);
         $page->setSearchResult(StorefrontSearchResult::createFrom($result));
