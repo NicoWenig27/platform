@@ -20,6 +20,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextService;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
+use Shopware\Core\System\StateMachine\Aggregation\StateMachineTransition\StateMachineTransitionActions;
 use Shopware\Core\System\StateMachine\StateMachineRegistry;
 use Shopware\Core\System\StateMachine\Transition;
 
@@ -183,6 +184,30 @@ class ProductStockIndexerTest extends TestCase
         static::assertTrue($product->getAvailable());
         static::assertSame(4, $product->getAvailableStock());
         static::assertSame(5, $product->getStock());
+    }
+
+    public function testAvailableAfterCancel(): void
+    {
+        $context = Context::createDefaultContext();
+        $initialStock = 12;
+        $orderQuantity = 8;
+
+        $productId = $this->createProduct([
+            'stock' => $initialStock,
+        ]);
+        $orderId = $this->orderProduct($productId, $orderQuantity);
+
+        /** @var ProductEntity $product */
+        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+
+        static::assertSame($initialStock - $orderQuantity, $product->getAvailableStock());
+
+        $this->transitionOrder($orderId, StateMachineTransitionActions::ACTION_CANCEL);
+
+        /** @var ProductEntity $product */
+        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+
+        static::assertSame($initialStock, $product->getAvailableStock());
     }
 
     public function testStockUpdatedAfterOrderCompleted(): void
@@ -462,6 +487,32 @@ class ProductStockIndexerTest extends TestCase
         $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
         // only not completed orders are considered by the stock indexer
         static::assertSame(4, $product->getStock());
+    }
+
+    public function testOrderCanceled(): void
+    {
+        $context = Context::createDefaultContext();
+
+        $productId = $this->createProduct([
+            'stock' => 5,
+        ]);
+        $orderId = $this->orderProduct($productId, 1);
+
+        /** @var ProductEntity $product */
+        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+        static::assertSame(5, $product->getStock());
+        static::assertSame(4, $product->getAvailableStock());
+
+        $this->transitionOrder($orderId, 'cancel');
+
+        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+        static::assertSame(5, $product->getStock());
+        static::assertSame(5, $product->getAvailableStock());
+
+        $this->transitionOrder($orderId, 'reopen');
+        $product = $this->productRepository->search(new Criteria([$productId]), $context)->first();
+        static::assertSame(5, $product->getStock());
+        static::assertSame(4, $product->getAvailableStock());
     }
 
     private function createCustomer(): string

@@ -48,12 +48,47 @@
         "warmupIndexing": {
           "message": "Cache warmed-up. | One page remaining. | Approximately {n} pages remaining..",
           "messageSuccess": "Cache successfully warmed-up."
+        },
+        "productStream": {
+          "title": "Indexing product streams",
+          "message": "Product streams indexed. | Indexing product streams | {n} product streams remaining",
+          "messageSuccess": "Product streams indexed successfully"
+        },
+        "category":  {
+          "title": "Indexing categories",
+          "message": "Categories indexed. | Indexing categories | {n} categories remaining",
+          "messageSuccess": "Categories indexed successfully"
+        },
+        "media": {
+          "title": "Indexing media",
+          "message": "Media indexed. | Indexing media | {n} media remaining",
+          "messageSuccess": "Media indexed successfully"
+        },
+        "salesChannel": {
+          "title": "Indexing sales channels",
+          "message": "Sales channel indexed. | Indexing sales channel | {n} sales channel remaining",
+          "messageSuccess": "Sales channel indexed successfully"
+        },
+        "rule":  {
+          "title": "Indexing rules",
+          "message": "Rules indexed. | Indexing rules | {n} rules remaining",
+          "messageSuccess": "Rules indexed successfully"
+        },
+        "product": {
+          "title": "Indexing products",
+          "message": "Products indexed. | Indexing products | {n} products remaining",
+          "messageSuccess": "Products indexed successfully"
+        },
+        "promotion": {
+          "title": "Indexing promotions",
+          "message": "Promotions indexed. | Indexing promotions | {n} promotions remaining",
+          "messageSuccess": "Promotions indexed successfully"
         }
       },
       "plugin-updates-listener": {
         "updatesAvailableTitle": "Update(s) available",
         "updatesAvailableMessage": "Download the latest versions of your plugins now."
-       },
+      },
       "shopware-updates-listener": {
         "updatesAvailableTitle": "A new Shopware version {version} is available",
         "updatesAvailableMessage": "Start the auto-updater to begin the update",
@@ -89,8 +124,8 @@
     },
     "sw-field-copyable": {
       "tooltip": {
-        "wasCopied": "was copied",
-        "canCopy": "copy to clipboard"
+        "wasCopied": "Copied to clipboard.",
+        "canCopy": "Copy to clipboard."
       }
     },
     "sw-file-input": {
@@ -118,7 +153,7 @@
     "sw-text-editor": {
       "labelTextLength": "{count} character | {count} characters"
     },
-    "sw-tag-field":{
+    "sw-tag-field": {
       "title": "Tags",
       "listItemAdd": "Add \"{term}\"",
       "placeholder": "Search tags..."
@@ -198,9 +233,9 @@
         },
         "successOverall": {
           "message": {
-            "media": "No file has been deleted. | A file has been deleted. | {count} / {total} files have been deleted.",
-            "folder": "No folder has been deleted. | A folder has been deleted. | {count} / {total} folders have been deleted.",
-            "mediaAndFolder": "No file or folder has been deleted. | A file or a folder has been deleted. | {count} / {total} files or folders have been deleted."
+            "media": "No file has been deleted. | File has been deleted. | {count} / {total} files have been deleted.",
+            "folder": "No folder has been deleted. | Folder has been deleted. | {count} / {total} folders have been deleted.",
+            "mediaAndFolder": "No file or folder has been deleted. | File or folder has been deleted. | {count} / {total} files or folders have been deleted."
           }
         },
         "errorOverall": {
@@ -214,7 +249,7 @@
     },
     "sw-media-modal-folder-dissolve": {
       "titleModal": "Dissolve folder",
-      "dissolveMessage":"Are you sure you want to dissolve \"{folderName}\" ? | Are you sure you want to dissolve {count} folders?",
+      "dissolveMessage": "Are you sure you want to dissolve \"{folderName}\" ? | Are you sure you want to dissolve {count} folders?",
       "buttonDissolve": "Dissolve",
       "notification": {
         "successSingle": {
@@ -338,7 +373,7 @@
       "upload": "Upload",
       "example": "https://www.example.com",
       "labelFileExtension": "File extension",
-      "missingFileExtension": "The URL does not contain a file extension. Please enter a file extension above."
+      "missingFileExtension": "The URL does not contain a file extension. Please specify the file extension below."
     },
     "sw-media-modal-folder-settings": {
       "labelSettings": "Settings",
@@ -429,13 +464,13 @@
       "labelShowResultsInModule": "Show results in module({count})"
     },
     "sw-tagged-field": {
-      "text-default-placeholder": "Enter Taste benutzen um die Werte einzufügen."
+      "text-default-placeholder": "Press the enter key to add values."
     },
     "sw-condition": {
       "operator": {
-        "lowerThanEquals": "Lower than equals",
+        "lowerThanEquals": "Is lower than / equal to",
         "equals": "Is equal to",
-        "greaterThanEquals": "Is greater than/equal to",
+        "greaterThanEquals": "Is greater than / equal to",
         "lowerThan": "Is less than",
         "greaterThan": "Is greater than",
         "notEquals": "Is not equal to",
@@ -455,7 +490,7 @@
         "currencyRule": "Currency",
         "billingCountryRule": "Billing country",
         "billingStreetRule": "Billing street",
-        "billingZipCodeRule": "Billing zip code",
+        "billingZipCodeRule": "Billing postal code",
         "customerGroupRule": "Customer group",
         "customerNumberRule": "Customer number",
         "differentAddressesRule": "Different addresses",
@@ -465,7 +500,7 @@
         "daysSinceLastOrderRule": "Days since last order",
         "shippingCountryRule": "Shipping country",
         "shippingStreetRule": "Shipping street",
-        "shippingZipCodeRule": "Shipping zip code",
+        "shippingZipCodeRule": "Shipping postal code",
         "cartAmountRule": "Cart amount",
         "goodsCountRule": "Goods count",
         "goodsPriceRule": "Goods price",
@@ -504,6 +539,7 @@
         "weightOfCartRule": "Weight of cart",
         "dayOfWeekRule": "Day of the week",
         "lineItemTagRule": "Line item tag",
+        "alwaysValidRule": "Always valid",
         "lineItemPropertyRule": "Line item property",
         "lineItemIsNewRule": "Line item is new",
         "lineItemOfManufacturerRule": "Manufacturer",
@@ -518,9 +554,6 @@
         "lineItemDimensionHeightRule": "Line item height",
         "lineItemDimensionLengthRule": "Line item length",
         "lineItemDimensionWeightRule": "Line item weight",
-        "lineItemOfManufacturerRule": "Manufacturer",
-        "lineItemPurchasePriceRule": "Line item purchase price",
-        "lineItemCreationDateRule": "Line item with creation date",
         "lineItemListPriceRule": "Line item list price",
         "paymentMethodRule": "Payment method",
         "shippingMethodRule": "Shipping method"
@@ -611,7 +644,7 @@
       "buttonVariantSecondary": "Secondary",
       "buttonVariantPrimarySmall": "Primary (small)",
       "buttonVariantSecondarySmall": "Secondary (small)",
-      "placeholder": "Enter URL",
+      "placeholder": "Enter URL...",
       "linkTo": "Link to",
       "insert": "Insert"
     },
@@ -619,7 +652,7 @@
       "addHeading": "Add table heading",
       "cols": "Columns",
       "rows": "Rows",
-      "editInfo": "Table can be extended afterwards"
+      "editInfo": "Table can still be extended later."
     }
   },
   "sw-tree": {
@@ -657,14 +690,14 @@
   },
   "sw-property-assignment": {
     "columnGroup": "Property",
-    "columnOptions": "Options",
+    "columnOptions": "Values",
     "messageEmptyTitle": "No properties yet",
     "messageEmptySubline": "To add properties, visit the properties module."
   },
   "sw-language-info": {
-    "infoTextChildLanguage": "\"{entityDescription}\" displayed in the language <span>\"{language}\"</span>, which inherits from",
-    "infoTextRootLanguage": "\"{entityDescription}\" displayed in the root language <span>\"{language}\"</span>. Fallback is the system default language",
-    "infoTextNewEntity": "\"{entityDescription}\" is displayed in the system default language. New data should always be maintained in the default language of the system."
+    "infoTextChildLanguage": "\"{entityDescription}\" displayed in the content language <span>\"{language}\"</span>, inheriting from",
+    "infoTextRootLanguage": "\"{entityDescription}\" displayed in the content language <span>\"{language}\"</span>. Fallback is the system default language",
+    "infoTextNewEntity": "\"{entityDescription}\" is displayed in the system default language. Always maintain new data in your chosen system default language."
   },
   "sw-language-switch": {
     "messageModalUnsavedChanges": "There are unsaved changes in the current language. Do you want to save them now?",
@@ -674,7 +707,7 @@
   "sw-inheritance-warning": {
     "infoTextInheritedField": "{moduleName} has inherited fields. Meaning that as long as the inherited state is active the content will be inherited. Inherited fields can be unlinked by clicking the link symbol. Clicking the symbol again will set the inherited state back."
   },
-  "sw-license-violation":{
+  "sw-license-violation": {
     "title": "Plugin warning(s)",
     "reload": "Reload",
     "alert-text": "We have detected a license violation for at least one of your plugins in this installation. To fix the license violation and avoid legal consequences, book the plugin subscription after or buy/rent the plugin (depending on the type of violation). You are not using the plugin anymore? Then delete it completely from the Plugin Manager. If none of these measure are taken, shopware AG reserves the right to charge for the license violation.",
@@ -693,7 +726,7 @@
     "placeholderSelect": "Search for...",
     "titleModalUnsavedChanges": "Unsaved changes",
     "titleModalButtonRevertUnsavedChanges": "Discard changes",
-    "labelDefaultOption": "All sales channel"
+    "labelDefaultOption": "All Sales Channels"
   },
   "sw-config-form-renderer": {
     "placeholder": "Please fill in {name}...",
@@ -724,7 +757,7 @@
     "title": "Keyboard shortcuts",
     "iconTooltip": "Press `{key}` to show a list of available shortcuts",
     "modalTitle": "Keyboard shortcuts",
-    "sectionAddingItems": "Adding Items",
+    "sectionAddingItems": "Adding items",
     "sectionNavigation": "Navigation",
     "sectionSpecialShortcuts": "Special shortcuts",
     "function": "Function",
@@ -741,9 +774,9 @@
     "keyboardShortcutAddProperties": "A P R",
     "functionAddManufacturer": "Add manufacturer",
     "keyboardShortcutAddManufacturer": "A M",
-    "functionAddRule": "Add Rule",
+    "functionAddRule": "Add rule",
     "keyboardShortcutAddRule": "A R",
-    "functionAddSaleschannel": "Add sales channel",
+    "functionAddSaleschannel": "Add Sales Channel",
     "keyboardShortcutAddSaleschannel": "A S",
     "functionGoToDashboard": "Go to dashboard",
     "keyboardShortcutGoToDashboard": "G H",
@@ -763,13 +796,13 @@
     "keyboardShortcutGoToCustomers": "G U",
     "functionGoToShoppingExperience": "Go to Shopping Experiences",
     "keyboardShortcutGoToShoppingExperience": "G E",
-    "functionGoToMedia": "Go to Media",
+    "functionGoToMedia": "Go to media",
     "keyboardShortcutGoToMedia": "G M E",
     "functionGoToPromotion": "Go to promotions",
     "keyboardShortcutGoToPromotion": "G P O",
     "functionGoToNewsletterRecipients": "Go to newsletter recipients",
     "keyboardShortcutGoToNewsletterRecipients": "G N",
-    "functionGoToSettingsListing": "Go to settings listing",
+    "functionGoToSettingsListing": "Go to settings",
     "keyboardShortcutGoToSettingsListing": "G S",
     "functionGoToSnippets": "Go to snippets",
     "keyboardShortcutGoToSnippets": "G S N",
@@ -784,7 +817,7 @@
     "functionSpecialShortcutFocusSearch": "Focus search",
     "keyboardShortcutSpecialShortcutFocusSearch": "F",
     "functionSpecialShortcutShortcutListing": "Shortcut listing",
-    "keyboardShortcutSpecialShortcutShortcutListing": "SHIFT-?",
+    "keyboardShortcutSpecialShortcutShortcutListing": "Shift-?",
     "functionSpecialShortcutSaveDetailViewWindows": "Windows: Save detail view",
     "keyboardShortcutSpecialShortcutSaveDetailViewWindows": "ALT-S",
     "functionSpecialShortcutSaveDetailViewMac": "Mac: Save detail view",

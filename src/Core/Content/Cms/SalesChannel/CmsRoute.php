@@ -31,7 +31,8 @@ class CmsRoute implements CmsRouteInterface
      *      path="/cms/{id}",
      *      description="Resolves a cms page",
      *      operationId="readCms",
-     *      tags={"Store API"},
+     *      tags={"Store API", "Content"},
+     *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Response(
      *          response="200",
      *          description="The loaded cms page",
@@ -43,7 +44,7 @@ class CmsRoute implements CmsRouteInterface
      *     ),
      * )
      *
-     * @Route("/store-api/v{version}/cms/{id}", name="shop-api.cms.detail", methods={"GET", "POST"})
+     * @Route("/store-api/v{version}/cms/{id}", name="store-api.cms.detail", methods={"GET", "POST"})
      */
     public function load(string $id, Request $request, SalesChannelContext $context): CmsRouteResponse
     {

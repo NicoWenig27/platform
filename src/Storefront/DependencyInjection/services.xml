@@ -31,6 +31,10 @@
             <argument type="service" id="request_stack"/>
         </service>
 
+        <service id="Shopware\Storefront\Framework\Routing\MaintenanceModeResolver">
+            <argument type="service" id="request_stack"/>
+        </service>
+
         <service id="Shopware\Storefront\Framework\Routing\StorefrontRouteScope">
             <tag name="shopware.route_scope"/>
         </service>
@@ -109,6 +113,7 @@
             <argument type="service" id="Shopware\Storefront\Framework\Csrf\CsrfPlaceholderHandler" />
             <argument type="service" id="Shopware\Core\Content\Seo\HreflangLoaderInterface" />
             <argument>%kernel.debug%</argument>
+            <argument type="service" id="Shopware\Storefront\Framework\Routing\MaintenanceModeResolver"/>
 
             <tag name="kernel.event_subscriber"/>
         </service>
@@ -269,7 +274,7 @@
         <service id="Shopware\Storefront\Page\Account\Profile\AccountProfilePageLoader">
             <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="sales_channel.salutation.repository"/>
+            <argument type="service" id="Shopware\Core\System\Salutation\SalesChannel\SalutationRoute"/>
         </service>
 
         <service id="Shopware\Storefront\Page\Account\PaymentMethod\AccountPaymentMethodPageLoader">
@@ -281,13 +286,14 @@
         <service id="Shopware\Storefront\Page\Account\Overview\AccountOverviewPageLoader">
             <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="order.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\AccountOrderRoute"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder"/>
         </service>
 
         <service id="Shopware\Storefront\Page\Account\Order\AccountOrderPageLoader">
             <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
             <argument type="service" id="event_dispatcher"/>
-            <argument type="service" id="order.repository"/>
+            <argument type="service" id="Shopware\Core\Checkout\Order\SalesChannel\AccountOrderRoute"/>
         </service>
 
         <service id="Shopware\Storefront\Page\Account\Login\AccountLoginPageLoader">

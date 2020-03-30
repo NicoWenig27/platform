@@ -123,10 +123,16 @@
         <!-- Converter -->
         <service id="Shopware\Core\Framework\Api\Converter\ConverterRegistry">
             <argument type="tagged" tag="shopware.api.converter"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\Converter\DefaultApiConverter"/>
         </service>
 
         <service id="Shopware\Core\Framework\Api\Converter\ApiVersionConverter">
             <argument type="service" id="Shopware\Core\Framework\Api\Converter\ConverterRegistry"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Api\Converter\DefaultApiConverter">
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry"/>
+            <argument type="service" id="request_stack"/>
         </service>
 
         <!-- Api version -->
@@ -201,6 +207,7 @@
             <argument type="service" id="cache.object"/>
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IndexerMessageSender"/>
             <argument type="service" id="Shopware\Storefront\Framework\Cache\CacheWarmer\CacheWarmer"/>
+            <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry"/>
             <call method="setContainer">
                 <argument type="service" id="service_container"/>
             </call>
@@ -211,7 +218,9 @@
         <service id="Shopware\Core\Framework\Api\OAuth\ClientRepository">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
         </service>
-        <service id="Shopware\Core\Framework\Api\OAuth\RefreshTokenRepository"/>
+        <service id="Shopware\Core\Framework\Api\OAuth\RefreshTokenRepository">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+        </service>
 
         <service id="Shopware\Core\Framework\Api\OAuth\ScopeRepository">
             <argument type="tagged" tag="shopware.oauth.scope"/>
@@ -280,6 +289,11 @@
             <argument type="service" id="Shopware\Core\Framework\Api\OAuth\RefreshTokenRepository"/>
             <argument type="service" id="Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory"/>
             <argument type="service" id="Shopware\Core\Framework\Routing\RouteScopeRegistry"/>
+        </service>
+
+        <service id="Shopware\Core\Framework\Api\EventListener\Authentication\UserCredentialsChangedSubscriber">
+            <tag name="kernel.event_subscriber"/>
+            <argument type="service" id="Shopware\Core\Framework\Api\OAuth\RefreshTokenRepository"/>
         </service>
 
         <service id="Shopware\Core\Framework\Api\Controller\UserController" public="true">

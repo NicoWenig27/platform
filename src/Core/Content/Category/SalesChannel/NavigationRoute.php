@@ -58,52 +58,11 @@ class NavigationRoute implements NavigationRouteInterface
 
     /**
      * @OA\Get(
-     *      path="/navigation",
+     *      path="/navigation/{requestActiveId}/{requestRootId}",
      *      description="Loads all available navigations",
      *      operationId="readNavigation",
      *      tags={"Store API", "Navigation"},
-     *      @OA\Parameter(
-     *          parameter="limit",
-     *          name="limit",
-     *          in="query",
-     *          description="Limit",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="offset",
-     *          name="offset",
-     *          in="query",
-     *          description="Offset",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="term",
-     *          name="term",
-     *          in="query",
-     *          description="The term to search for",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="filter",
-     *          name="filter",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="aggregations",
-     *          name="aggregations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="associations",
-     *          name="associations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
+     *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Parameter(
      *          parameter="buildTree",
      *          name="buildTree",
@@ -122,11 +81,11 @@ class NavigationRoute implements NavigationRouteInterface
     public function load(
         string $requestActiveId,
         string $requestRootId,
-        int $depth = 2,
         Request $request,
         SalesChannelContext $context
     ): NavigationRouteResponse {
         $buildTree = $request->query->getBoolean('buildTree', true);
+        $depth = $request->query->getInt('depth', 2);
         $activeId = $this->resolveAliasId($requestActiveId, $context->getSalesChannel());
         $rootId = $this->resolveAliasId($requestRootId, $context->getSalesChannel());
 

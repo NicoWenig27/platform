@@ -7,6 +7,9 @@ use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Update\Exception\UpdateFailedException;
 use Shopware\Core\Framework\Update\Services\Download;
 
+/**
+ * @group needsWebserver
+ */
 class DownloadTest extends TestCase
 {
     use IntegrationTestBehaviour;
@@ -28,7 +31,6 @@ class DownloadTest extends TestCase
         }
 
         foreach ($this->testFiles as $testFile) {
-            echo 'Unlink ' . $testFile;
             unlink($testFile);
             @unlink($testFile . '.part');
         }

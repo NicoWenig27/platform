@@ -501,6 +501,35 @@ class Criteria extends Struct
         return $this->includes;
     }
 
+    public function getApiAlias(): string
+    {
+        return 'dal_criteria';
+    }
+
+    public function useIdSorting(): bool
+    {
+        if (empty($this->getIds())) {
+            return false;
+        }
+
+        // manual sorting provided
+        if (!empty($this->getSorting())) {
+            return false;
+        }
+
+        // result will be sorted by interpreted search term and the calculated ranking
+        if (!empty($this->getTerm())) {
+            return false;
+        }
+
+        // result will be sorted by calculated ranking
+        if (!empty($this->getQueries())) {
+            return false;
+        }
+
+        return true;
+    }
+
     private function collectFields(array $parts): array
     {
         $fields = [];

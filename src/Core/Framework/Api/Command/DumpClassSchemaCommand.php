@@ -82,7 +82,7 @@ class DumpClassSchemaCommand extends Command
                 /** @var ClassConstFetch $classConst */
                 $classConst = $returnStatement->expr;
 
-                return (string) $classConst->name;
+                return (string) $classConst->class;
             }
         }
 

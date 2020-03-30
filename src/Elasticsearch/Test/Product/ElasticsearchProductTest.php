@@ -219,6 +219,39 @@ class ElasticsearchProductTest extends TestCase
     /**
      * @depends testIndexing
      */
+    public function testUpdate(TestDataCollection $ids): void
+    {
+        $this->ids = $ids;
+        $context = Context::createDefaultContext();
+
+        $this->productRepository->upsert([
+            $this->createProduct('u7', 'update', 't3', 'm3', 300, '2021-12-10 11:59:00', 200, 300, []),
+        ], $context);
+
+        $criteria = new Criteria();
+        $criteria->addFilter(new EqualsFilter('productNumber', 'u7'));
+
+        // indexing message is still in queue, search should not match
+        $result = $this->productRepository->searchIds($criteria, $context);
+        static::assertCount(0, $result->getIds());
+
+        // handle indexing message, afterwards the search should match
+        $this->runWorker();
+        $result = $this->productRepository->searchIds($criteria, $context);
+        static::assertCount(1, $result->getIds());
+
+        $this->productRepository->delete([['id' => $ids->get('u7')]], $context);
+        $result = $this->productRepository->searchIds($criteria, $context);
+        static::assertCount(1, $result->getIds());
+
+        $this->runWorker();
+        $result = $this->productRepository->searchIds($criteria, $context);
+        static::assertCount(0, $result->getIds());
+    }
+
+    /**
+     * @depends testIndexing
+     */
     public function testEmptySearch(TestDataCollection $data): void
     {
         $searcher = $this->createEntitySearcher();
@@ -1284,6 +1317,78 @@ class ElasticsearchProductTest extends TestCase
 
         $products = $searcher->search($this->productDefinition, $criteria, $data->getContext());
         static::assertSame(0, $products->getTotal());
+    }
+
+    /**
+     * @depends testIndexing
+     */
+    public function testTotalWithGroupFieldAndPostFilter(TestDataCollection $data): void
+    {
+        $searcher = $this->createEntitySearcher();
+        // check simple equals filter
+        $criteria = new Criteria($data->prefixed('p'));
+        $criteria->addGroupField(new FieldGrouping('stock'));
+        $criteria->addPostFilter(new EqualsFilter('manufacturerId', $data->get('m2')));
+
+        $products = $searcher->search($this->productDefinition, $criteria, $data->getContext());
+
+        static::assertEquals(3, $products->getTotal());
+        static::assertCount(3, $products->getIds());
+        static::assertContains($data->get('p2'), $products->getIds());
+        static::assertContains($data->get('p3'), $products->getIds());
+        static::assertContains($data->get('p4'), $products->getIds());
+    }
+
+    /**
+     * @depends testIndexing
+     */
+    public function testIdsSorting(TestDataCollection $data): void
+    {
+        $searcher = $this->createEntitySearcher();
+
+        $expected = [
+            $data->get('p2'),
+            $data->get('p3'),
+            $data->get('p1'),
+            $data->get('p4'),
+            $data->get('p5'),
+        ];
+
+        // check simple equals filter
+        $criteria = new Criteria($expected);
+
+        $criteria->addFilter(new RangeFilter('stock', [
+            RangeFilter::GTE => 0,
+        ]));
+
+        $ids = $searcher->search($this->productDefinition, $criteria, $data->getContext());
+
+        static::assertEquals($expected, $ids->getIds());
+    }
+
+    /**
+     * @depends testIndexing
+     */
+    public function testSorting(TestDataCollection $data): void
+    {
+        $searcher = $this->createEntitySearcher();
+
+        $expected = [
+            $data->get('p4'),
+            $data->get('p5'),
+            $data->get('p6'),
+            $data->get('p2'),
+            $data->get('p1'),
+            $data->get('p3'),
+        ];
+
+        // check simple equals filter
+        $criteria = new Criteria($data->prefixed('p'));
+        $criteria->addSorting(new FieldSorting('name'));
+
+        $ids = $searcher->search($this->productDefinition, $criteria, $data->getContext());
+
+        static::assertEquals($expected, $ids->getIds());
     }
 
     protected function getDiContainer(): ContainerInterface

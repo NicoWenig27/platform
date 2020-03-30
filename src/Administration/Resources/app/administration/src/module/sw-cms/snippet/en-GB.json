@@ -12,10 +12,10 @@
     },
     "sorting": {
       "labelSort": "Sort by:",
-      "labelSortByCreatedAsc": "Creation date, asc.",
-      "labelSortByCreatedDsc": "Creation date, desc.",
-      "labelSortByUpdatedAsc": "Modification date, asc.",
-      "labelSortByUpdatedDsc": "Modification date, desc.",
+      "labelSortByCreatedAsc": "Creation date, ascending",
+      "labelSortByCreatedDsc": "Creation date, descending",
+      "labelSortByUpdatedAsc": "Modification date, ascending",
+      "labelSortByUpdatedDsc": "Modification date, descending",
       "labelSortByAllPages": "All types",
       "labelSortByShopPages": "Shop pages",
       "labelSortByLandingPages": "Landing pages",
@@ -112,7 +112,7 @@
         "mappingEmptyPreview": "No preview available.",
         "addBlocks": "Add blocks via drag & drop",
         "labelNavigation": "Navigation",
-        "lockedNotification": "This layout is a locked default layout template you can use for your content. You can not edit this template. If you want to adapt the layout to your needs, you can duplicate it and alter just the duplicate. ",
+        "lockedNotification": "This is a locked default layout you may use for your content from the get-go. Note that you cannot edit this template! If you want to adapt the layout to your needs, just duplicate the layout and alter the duplicate.",
         "headlineEmptyState": "Space for creativity",
         "claimEmptyState": "Create new layouts by choosing a section. Start by choosing a section type, drag & drop blocks into any section and fill in your content."
       },
@@ -230,7 +230,7 @@
         "config": {
           "label": {
             "selection": "Product",
-            "layoutType": "layout type",
+            "layoutType": "Layout type",
             "layoutTypeStandard": "Standard",
             "layoutTypeImage": "Big image",
             "layoutTypeMinimal": "Minimal content"
@@ -339,13 +339,13 @@
             "action": "Action",
             "email": "Email address*",
             "firstName": "First name*",
-            "lastName" : "Last name*",
+            "lastName": "Last name*",
             "message": "Your message*",
             "newsletterSubmit": "Continue",
             "phone": "Phone number",
             "privacy": "Privacy",
             "salutation": "Salutation*",
-            "salutationUndisclosed" : "Prefer not to disclose",
+            "salutationUndisclosed": "Prefer not to disclose",
             "send": "Send",
             "subject": "Subject line*",
             "subscribeToNewsletter": "Subscribe to newsletter"

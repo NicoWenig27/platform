@@ -53,7 +53,7 @@ class ProductSearchRoute implements ProductSearchRouteInterface
      * @OA\Get(
      *      path="/search",
      *      description="Search",
-     *      operationId="searchSuggest",
+     *      operationId="searchPage",
      *      tags={"Store API","Search"},
      *      @OA\Parameter(
      *          name="search",
@@ -67,7 +67,7 @@ class ProductSearchRoute implements ProductSearchRouteInterface
      *          @OA\JsonContent(ref="#/definitions/ProductListingResult")
      *     )
      * )
-     * @Route("/store-api/v{version}/search", name="shop-api.search", methods={"POST"})
+     * @Route("/store-api/v{version}/search", name="store-api.search", methods={"POST"})
      */
     public function load(Request $request, SalesChannelContext $context): ProductSearchRouteResponse
     {

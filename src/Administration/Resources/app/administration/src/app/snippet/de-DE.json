@@ -48,10 +48,45 @@
         "warmupIndexing": {
           "message": "Cache wurde aufgewärmt. | Eine Seite übrig. | Circa {n} Seiten übrig.",
           "messageSuccess": "Cache-Aufwärmen wurde beendet."
+        },
+        "productStream": {
+          "title": "Dynamische Produktgruppen Indexierung",
+          "message": "Dynamische Produktgruppen indexiert. | Ein dynamische Produktgruppe übrig | Circa {n} dynamische Produktgruppe übrig",
+          "messageSuccess": "Dynamische Produktgruppen Indexierung wurde beendet"
+        },
+        "category":  {
+          "title": "Kategorie Indexierung",
+          "message": "Kategorien indexiert. | Ein Kategorie übrig | Circa {n} Kategorien übrig",
+          "messageSuccess": "Kategorie Indexierung wurde beendet"
+        },
+        "media": {
+          "title": "Medien Indexierung",
+          "message": "Medien indexiert. | Ein Media übrig | Circa {n} Medien übrig",
+          "messageSuccess": "Medien Indexierung wurde beendet"
+        },
+        "salesChannel": {
+          "title": "Sales Channel Indexierung",
+          "message": "Sales Channel indexiert. | Ein Sales Channel übrig | Circa {n} Sales Channel übrig",
+          "messageSuccess": "Sales Channel Indexierung wurde beendet"
+        },
+        "rule":  {
+          "title": "Regel Indexierung",
+          "message": "Regeln indexiert. | Ein Regel übrig | Circa {n} Regeln übrig",
+          "messageSuccess": "Regel Indexierung wurde beendet"
+        },
+        "product": {
+          "title": "Produkt Indexierung",
+          "message": "Produkte indexiert. | Ein Produkt übrig | Circa {n} Produkte übrig",
+          "messageSuccess": "Produkt Indexierung wurde beendet"
+        },
+        "promotion": {
+          "title": "Promotion Indexierung",
+          "message": "Promotions indexiert. | Ein Promotion übrig | Circa {n} Promotions übrig",
+          "messageSuccess": "Promotions Indexierung wurde beendet"
         }
       },
       "plugin-updates-listener": {
-        "updatesAvailableTitle": "Plugin-Updates verfügbar.",
+        "updatesAvailableTitle": "Updates verfügbar.",
         "updatesAvailableMessage": "Für einige Plugins stehen Updates bereit."
       },
       "shopware-updates-listener": {
@@ -89,8 +124,8 @@
     },
     "sw-field-copyable": {
       "tooltip": {
-        "wasCopied": "wurde kopiert",
-        "canCopy": "in Zwischenablage kopieren"
+        "wasCopied": "In Zwischenablage kopiert.",
+        "canCopy": "In Zwischenablage kopieren."
       }
     },
     "sw-file-input": {
@@ -118,7 +153,7 @@
     "sw-text-editor": {
       "labelTextLength": "{count} Zeichen | {count} Zeichen"
     },
-    "sw-tag-field":{
+    "sw-tag-field": {
       "title": "Tags",
       "listItemAdd": "\"{term}\" hinzufügen",
       "placeholder": "Tags durchsuchen ..."
@@ -137,7 +172,7 @@
       "labelClose": "Schließen"
     },
     "sw-media-field": {
-      "labelToggleSearchExisting": "Medien durchsuchen",
+      "labelToggleSearchExisting": "Medien durchsuchen ...",
       "labelToggleUploadNew": "Neue Medien hochladen",
       "labelUnlink": "Verknüpfung aufheben"
     },
@@ -237,7 +272,7 @@
       "buttonReplace": "Datei ersetzen",
       "buttonRename": "Datei umbennen",
       "buttonSkip": "Datei überspringen",
-      "labelSaveSelection": "Auswahl merken und für {count} weitere anwenden",
+      "labelSaveSelection": "Auswahl merken und für {count} weitere anwenden.",
       "labelOptionReplace": "Hochladen und ersetzen",
       "labelOptionRename": "Hochladen und umbenennen",
       "labelOptionSkip": "Datei überspringen",
@@ -384,7 +419,7 @@
     },
     "sw-single-select": {
       "messageNoResults": "Es wurden keine Ergebnisse für \"{term}\" gefunden.",
-      "valuePlaceholder": "Bitte auswählen"
+      "valuePlaceholder": "Bitte auswählen ..."
     },
     "sw-multi-select": {
       "messageNoResults": "Es wurden keine Ergebnisse für \"{term}\" gefunden."
@@ -413,9 +448,9 @@
     "sw-search-bar": {
       "messageNoResults": "Es wurden keine Ergebnisse für \"{term}\" gefunden.",
       "messageNoTypeResults": "Es wurde kein passender Typ gefunden.",
-      "placeholderSearchField": "Finde Produkte, Kunden, Bestellungen",
+      "placeholderSearchField": "Finde Produkte, Kunden, Bestellungen ...",
       "placeholderTypeSearchField": "Durchsuche alle {entity} ...",
-      "placeholderShortcutInfo": "Tipp: Nutze die \"f\" Taste, um die Suche schneller zu öffnen."
+      "placeholderShortcutInfo": "Tipp: Über die \"f\"-Taste, kannst Du die Suche schneller öffnen."
     },
     "sw-search-bar-item": {
       "typeLabelCustomer": "Kunde",
@@ -426,10 +461,10 @@
       "typeLabelCms": "CMS"
     },
     "sw-search-more-results": {
-        "labelShowResultsInModule": "Ergebnisse im Modul anzeigen({count})"
+      "labelShowResultsInModule": "Ergebnisse im Modul anzeigen ({count})"
     },
     "sw-tagged-field": {
-      "text-default-placeholder": "Enter Taste benutzen um die Werte einzufügen."
+      "text-default-placeholder": "Enter-Taste benutzen, um die Werte einzufügen."
     },
     "sw-condition": {
       "operator": {
@@ -446,10 +481,10 @@
       "dataErrorMessage": "Es wurden nicht alle Pflichtfelder befüllt.",
       "condition": {
         "dateRangeRule": {
-          "label":  "Datumsbereich",
+          "label": "Datumsbereich",
           "useTime": "Zeit verwenden"
         },
-        "placeholder": "Bedingung wählen",
+        "placeholder": "Bedingungen durchsuchen ...",
         "orderCountRule": "Anzahl Bestellungen",
         "salesChannelRule": "Verkaufskanal",
         "currencyRule": "Währung",
@@ -499,11 +534,12 @@
         "deleteAllConditions": "Alle entfernen",
         "createBefore": "Davor erstellen",
         "createAfter": "Danach erstellen",
-        "hasDeliveryFreeItemRule": "Versandfreie Artikel",
+        "hasDeliveryFreeItemRule": "Versandkostenfrei",
         "timeRangeRule": "Zeitraum",
         "weightOfCartRule": "Warenkorb Gewicht",
         "dayOfWeekRule": "Wochentag",
         "lineItemTagRule": "Positionen mit Tag",
+        "alwaysValidRule": "Immer zutreffend",
         "lineItemPropertyRule": "Positionen mit Eigenschaften",
         "lineItemIsNewRule": "Neuheiten",
         "lineItemOfManufacturerRule": "Hersteller",
@@ -518,9 +554,6 @@
         "lineItemDimensionHeightRule": "Positionen mit Höhe",
         "lineItemDimensionLengthRule": "Positionen mit Länge",
         "lineItemDimensionWeightRule": "Positionen mit Gewicht",
-        "lineItemOfManufacturerRule": "Hersteller",
-        "lineItemPurchasePriceRule": "Positionen Einkaufspreis",
-        "lineItemCreationDateRule": "Positionen mit Erstelldatum",
         "lineItemListPriceRule": "Positionen mit Streichpreis",
         "paymentMethodRule": "Zahlungsart",
         "shippingMethodRule": "Versandart"
@@ -611,7 +644,7 @@
       "buttonVariantSecondary": "Sekundär",
       "buttonVariantPrimarySmall": "Primär (klein)",
       "buttonVariantSecondarySmall": "Sekundär (klein)",
-      "placeholder": "URL eingeben",
+      "placeholder": "URL eingeben ...",
       "linkTo": "Link zu",
       "insert": "Einfügen"
     },
@@ -657,13 +690,13 @@
   },
   "sw-property-assignment": {
     "columnGroup": "Eigenschaft",
-    "columnOptions": "Optionen",
+    "columnOptions": "Ausprägungen",
     "messageEmptyTitle": "Noch keine Eigenschaften",
     "messageEmptySubline": "Zum Anlegen von Gruppen gehe ins Eigenschaften-Modul."
   },
   "sw-language-info": {
-    "infoTextChildLanguage": "Darstellung von \"{entityDescription}\" in der Sprache \"{language}\". Diese erbt von",
-    "infoTextRootLanguage": "Darstellung von \"{entityDescription}\" in der Sprache \"{language}\". Der Fallback ist die Systemstandardsprache",
+    "infoTextChildLanguage": "Darstellung von \"{entityDescription}\" in der Sprache <span>\"{language}\"</span>. Diese erbt von",
+    "infoTextRootLanguage": "Darstellung von \"{entityDescription}\" in der Sprache <span>\"{language}\"</span>. Der Fallback ist die System-Standardsprache.",
     "infoTextNewEntity": "\"{entityDescription}\" wird in der Systemstandardsprache angezeigt. Neue Daten müssen in der Standardsprache immer gepflegt sein."
   },
   "sw-language-switch": {
@@ -674,7 +707,7 @@
   "sw-inheritance-warning": {
     "infoTextInheritedField": "{moduleName} hat vererbte Felder. Das bedeutet, dass solange der vererbte Zustand aktiv ist, der Inhalt vererbt wird. Vererbte Felder können durch Anklicken des Link-Symbols aufgelöst werden. Ein erneuter Klick auf das Symbol setzt den vererbten Zustand wieder zurück."
   },
-  "sw-license-violation":{
+  "sw-license-violation": {
     "title": "Plugin Warnungen",
     "reload": "Neu laden",
     "alert-text": "Für mindestens eines Deiner installierten Plugins in dieser Installation liegt eine Lizenzverletzung vor. Buche die Plugin-Subscription nach oder Kaufe/Miete das Plugin (je nach Art des Verstoßes), um die Lizenzverletzung zu beheben und rechtliche Konsequenzen zu vermeiden. Nutzt Du das Plugin nicht mehr? Dann lösche es vollständig aus dem Plugin-Manager. Falls keiner dieser Schritte vorgenommen wird, behält die Shopware AG sich vor, die Lizenzverletzung zu berechnen.",
@@ -706,7 +739,7 @@
     "en-GB": "Englisch"
   },
   "sw-rule-modal": {
-    "modalTitleNew": "Neue Globale Regel erstellen",
+    "modalTitleNew": "Neue globale Regel erstellen",
     "labelDescription": "Beschreibung",
     "placeholderDescription": "Lege eine Beschreibung für diese Regel fest ...",
     "labelName": "Name",
@@ -715,7 +748,8 @@
     "placeholderPriority": "Lege eine Priorität für diese Regel fest ...",
     "messageSaveSuccess": "Die Regel \"{name}\" wurde erfolgreich gespeichert.",
     "ruleCard": "Bedingungen",
-    "messageSaveError": "Beim Speichern der Regel \"{name}\" ist ein Fehler aufgetreten."
+    "messageSaveError": "Beim Speichern der Regel \"{name}\" ist ein Fehler aufgetreten.",
+    "modalTitleModify": "Globale Regel anpassen"
   },
   "sw-select-rule-create": {
     "addNewRule": "Neue Regel erstellen..."
@@ -802,7 +836,7 @@
   },
   "sw-discard-changes-modal": {
     "title": "Ungespeicherte Änderungen verwerfen?",
-    "message": "Du hast ungespeicherte Änderungen, möchtest Du die Seite verlassen und diese verwerfen?",
+    "message": "Es gibt ungespeicherte Änderungen. Möchtest Du die Seite verlassen und die Änderungen verwerfen?",
     "actions": {
       "discard": "Änderungen verwerfen",
       "keepEditing": "Weiter bearbeiten"

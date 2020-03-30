@@ -1,5 +1,6 @@
 [titleEn]: <>(SalesChannel-API controller)
 [metaDescriptionEn]: <>(This HowTo will give you a brief introduction on how to setup a custom SalesChannel-API controller with your plugin.)
+[hash]: <>(article:how_to_sales_channel_api_controller)
 
 This HowTo will give you a brief introduction on how to setup a custom SalesChannel-API controller with your plugin.
 Read [here](./../3-api/060-sales-channel-api.md) for more information about the SalesChannel-API.
@@ -57,6 +58,7 @@ Here's an example of what the controller could then look like:
 
 namespace Swag\SalesChannelApiController\Controller;
 
+use Shopware\Core\Framework\Routing\Annotation\RouteScope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -64,6 +66,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class MyController extends AbstractController
 {
     /**
+     * @RouteScope(scopes={"sales-channel-api"})
      * @Route("/sales-channel-api/v1/swag/my-sales-channel-api-action", name="sales-channel-api.action.swag.my-sales-channel-api-action", methods={"GET"})
      */
     public function myFirstApi(): JsonResponse

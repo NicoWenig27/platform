@@ -5,9 +5,11 @@ namespace Shopware\Core\Framework\Api\Controller;
 use Shopware\Core\Framework\Api\Sync\SyncBehavior;
 use Shopware\Core\Framework\Api\Sync\SyncOperation;
 use Shopware\Core\Framework\Api\Sync\SyncResult;
-use Shopware\Core\Framework\Api\Sync\SyncService;
+use Shopware\Core\Framework\Api\Sync\SyncServiceInterface;
 use Shopware\Core\Framework\Context;
+use Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexerRegistry;
 use Shopware\Core\Framework\Routing\Annotation\RouteScope;
+use Shopware\Core\Framework\Struct\ArrayEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,11 +30,11 @@ class SyncController extends AbstractController
     private $serializer;
 
     /**
-     * @var SyncService
+     * @var SyncServiceInterface
      */
     private $syncService;
 
-    public function __construct(SyncService $syncService, Serializer $serializer)
+    public function __construct(SyncServiceInterface $syncService, Serializer $serializer)
     {
         $this->serializer = $serializer;
         $this->syncService = $syncService;
@@ -53,6 +55,11 @@ class SyncController extends AbstractController
         // fail immediately or add any unexpected errors to our exception list
         /** @var bool $failOnError */
         $failOnError = filter_var($request->headers->get('fail-on-error', 'true'), FILTER_VALIDATE_BOOLEAN);
+
+        $useMessageQueue = $request->headers->has('message-queue-indexing');
+        if ($useMessageQueue) {
+            $context->addExtension(EntityIndexerRegistry::USE_INDEXING_QUEUE, new ArrayEntity());
+        }
 
         $behavior = new SyncBehavior($failOnError);
 

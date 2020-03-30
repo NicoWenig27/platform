@@ -46,6 +46,9 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
+/**
+ * @internal
+ */
 class VersionManager
 {
     /**
@@ -133,9 +136,9 @@ class VersionManager
     {
         $writeResults = $this->entityWriter->upsert($definition, $rawData, $writeContext);
 
-        $parents = $this->resolveParents($definition, $rawData);
+        $mappings = $this->resolveRelations($definition, $rawData, $writeResults);
 
-        $writeResults = $this->addParentResults($writeResults, $parents);
+        $writeResults = $this->addParentResults($writeResults, $mappings);
 
         $this->writeAuditLog($writeResults, $writeContext);
 
@@ -147,9 +150,9 @@ class VersionManager
         /** @var EntityWriteResult[] $writeResults */
         $writeResults = $this->entityWriter->insert($definition, $rawData, $writeContext);
 
-        $parents = $this->resolveParents($definition, $rawData);
+        $mappings = $this->resolveRelations($definition, $rawData, $writeResults);
 
-        $writeResults = $this->addParentResults($writeResults, $parents);
+        $writeResults = $this->addParentResults($writeResults, $mappings);
 
         $this->writeAuditLog($writeResults, $writeContext);
 
@@ -160,9 +163,9 @@ class VersionManager
     {
         $writeResults = $this->entityWriter->update($definition, $rawData, $writeContext);
 
-        $parents = $this->resolveParents($definition, $rawData);
+        $mappings = $this->resolveRelations($definition, $rawData, $writeResults);
 
-        $writeResults = $this->addParentResults($writeResults, $parents);
+        $writeResults = $this->addParentResults($writeResults, $mappings);
 
         $this->writeAuditLog($writeResults, $writeContext);
 
@@ -212,9 +215,11 @@ class VersionManager
             $versionData['name'] = $name;
         }
 
-        $this->entityWriter->upsert($this->versionDefinition, [$versionData], $context);
+        $context->scope(Context::SYSTEM_SCOPE, function ($context) use ($versionData): void {
+            $this->entityWriter->upsert($this->versionDefinition, [$versionData], $context);
+        });
 
-        $affected = $this->clone($definition, $primaryKey['id'], $primaryKey['id'], $versionId, $context, false);
+        $affected = $this->cloneEntity($definition, $primaryKey['id'], $primaryKey['id'], $versionId, $context, false, false);
 
         $versionContext = $context->createWithVersionId($versionId);
 
@@ -235,6 +240,11 @@ class VersionManager
 
         $readCriteria = new Criteria($commitIds->getIds());
         $readCriteria->addAssociation('data');
+
+        $readCriteria
+            ->getAssociation('data')
+            ->addSorting(new FieldSorting('autoIncrement'));
+
         $commits = $this->entityReader->read($this->versionCommitDefinition, $readCriteria, $writeContext->getContext());
 
         $allChanges = [];
@@ -352,13 +362,19 @@ class VersionManager
         }
     }
 
-    public function clone(
+    public function clone(EntityDefinition $definition, string $id, string $newId, string $versionId, WriteContext $context, bool $cloneChildren = true): array
+    {
+        return $this->cloneEntity($definition, $id, $newId, $versionId, $context, $cloneChildren, true);
+    }
+
+    private function cloneEntity(
         EntityDefinition $definition,
         string $id,
         string $newId,
         string $versionId,
         WriteContext $context,
-        bool $cloneChildren = true
+        bool $cloneChildren = true,
+        bool $writeAuditLog = false
     ): array {
         $criteria = new Criteria([$id]);
         $this->addCloneAssociations($definition, $criteria, $cloneChildren);
@@ -381,6 +397,10 @@ class VersionManager
         $versionContext->scope(Context::SYSTEM_SCOPE, function (WriteContext $context) use ($definition, $data, &$result): void {
             $result = $this->entityWriter->insert($definition, [$data], $context);
         });
+
+        if ($writeAuditLog) {
+            $this->writeAuditLog($result, $versionContext);
+        }
 
         return $result;
     }
@@ -690,12 +710,8 @@ class VersionManager
         }
     }
 
-    private function addParentResults(array $writeResults, ?array $parents): array
+    private function addParentResults(array $writeResults, array $parents): array
     {
-        if (!$parents) {
-            return $writeResults;
-        }
-
         foreach ($parents as $entity => $primaryKeys) {
             if (!isset($writeResults[$entity])) {
                 $writeResults[$entity] = [];
@@ -709,7 +725,7 @@ class VersionManager
         return $writeResults;
     }
 
-    private function resolveParents(EntityDefinition $definition, array $rawData): ?array
+    private function resolveParents(EntityDefinition $definition, array $rawData): array
     {
         if ($definition instanceof MappingEntityDefinition) {
             return $this->resolveMappingParents($definition, $rawData);
@@ -718,7 +734,7 @@ class VersionManager
         $parent = $definition->getParentDefinition();
 
         if (!$parent) {
-            return null;
+            return [];
         }
 
         $fkField = $definition->getFields()->filter(function (Field $field) use ($parent) {
@@ -918,5 +934,42 @@ class VersionManager
         $parentPropertyName = \array_map('ucfirst', $parentPropertyName);
 
         return \lcfirst(\implode($parentPropertyName)) . 'Id';
+    }
+
+    private function resolveRelations(EntityDefinition $definition, array $rawData, array $writeResults): array
+    {
+        $parents = $this->resolveParents($definition, $rawData);
+
+        /** @var EntityWriteResult[] $result */
+        foreach ($writeResults as $entity => $result) {
+            $definition = $this->registry->getByEntityName($entity);
+
+            if (!$definition instanceof MappingEntityDefinition) {
+                continue;
+            }
+
+            $ids = array_map(function (EntityWriteResult $result) {
+                return $result->getPrimaryKey();
+            }, $result);
+
+            if (empty($ids)) {
+                continue;
+            }
+
+            $fkFields = $definition->getFields()->filterInstance(FkField::class);
+
+            if ($fkFields->count() <= 0) {
+                continue;
+            }
+
+            /** @var FkField $field */
+            foreach ($fkFields as $field) {
+                $reference = $field->getReferenceDefinition()->getEntityName();
+
+                $parents[$reference] = array_merge($parents[$reference] ?? [], array_column($ids, $field->getPropertyName()));
+            }
+        }
+
+        return $parents;
     }
 }

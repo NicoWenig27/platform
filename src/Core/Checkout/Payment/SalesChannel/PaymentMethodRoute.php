@@ -50,48 +50,7 @@ class PaymentMethodRoute implements PaymentMethodRouteInterface
      *      description="Loads all available payment methods",
      *      operationId="readPaymentMethod",
      *      tags={"Store API", "Payment Method"},
-     *      @OA\Parameter(
-     *          parameter="limit",
-     *          name="limit",
-     *          in="query",
-     *          description="Limit",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="offset",
-     *          name="offset",
-     *          in="query",
-     *          description="Offset",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="term",
-     *          name="term",
-     *          in="query",
-     *          description="The term to search for",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="filter",
-     *          name="filter",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="aggregations",
-     *          name="aggregations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="associations",
-     *          name="associations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
+     *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Parameter(
      *          parameter="onlyAvailable",
      *          name="onlyAvailable",
@@ -102,10 +61,10 @@ class PaymentMethodRoute implements PaymentMethodRouteInterface
      *      @OA\Response(
      *          response="200",
      *          description="All available payment methods",
-     *          @OA\JsonContent(ref="#/components/schemas/payment_method_flat")
+     *          @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/payment_method_flat"))
      *     )
      * )
-     * @Route("/store-api/v{version}/payment-method", name="shop-api.payment.method", methods={"GET", "POST"})
+     * @Route("/store-api/v{version}/payment-method", name="store-api.payment.method", methods={"GET", "POST"})
      */
     public function load(Request $request, SalesChannelContext $context): PaymentMethodRouteResponse
     {

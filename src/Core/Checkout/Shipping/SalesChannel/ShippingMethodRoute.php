@@ -49,55 +49,21 @@ class ShippingMethodRoute implements ShippingMethodRouteInterface
      *      description="Loads all available shipping methods",
      *      operationId="readShippingMethod",
      *      tags={"Store API", "Shipping Method"},
+     *      @OA\Parameter(name="Api-Basic-Parameters"),
      *      @OA\Parameter(
-     *          parameter="limit",
-     *          name="limit",
-     *          in="query",
-     *          description="Limit",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="offset",
-     *          name="offset",
-     *          in="query",
-     *          description="Offset",
-     *          @OA\Schema(type="integer"),
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="term",
-     *          name="term",
-     *          in="query",
-     *          description="The term to search for",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="filter",
-     *          name="filter",
+     *          parameter="onlyAvailable",
+     *          name="onlyAvailable",
      *          in="query",
      *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="aggregations",
-     *          name="aggregations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
-     *      ),
-     *      @OA\Parameter(
-     *          parameter="associations",
-     *          name="associations",
-     *          in="query",
-     *          description="Encoded SwagQL in JSON",
-     *          @OA\Schema(type="string")
+     *          @OA\Schema(type="int")
      *      ),
      *      @OA\Response(
      *          response="200",
      *          description="All available shipping methods",
-     *          @OA\JsonContent(ref="#/components/schemas/payment_method_flat")
+     *          @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/shipping_method_flat"))
      *     )
      * )
-     * @Route("/store-api/v{version}/shipping-method", name="shop-api.shipping.method", methods={"GET", "POST"})
+     * @Route("/store-api/v{version}/shipping-method", name="store-api.shipping.method", methods={"GET", "POST"})
      */
     public function load(Request $request, SalesChannelContext $context): ShippingMethodRouteResponse
     {
@@ -114,6 +80,10 @@ class ShippingMethodRoute implements ShippingMethodRouteInterface
 
         /** @var ShippingMethodCollection $shippingMethods */
         $shippingMethods = $this->shippingMethodRepository->search($shippingMethodsCriteria, $context)->getEntities();
+
+        if ($request->query->getBoolean('onlyAvailable', false)) {
+            $shippingMethods = $shippingMethods->filterByActiveRules($context);
+        }
 
         return new ShippingMethodRouteResponse($shippingMethods);
     }

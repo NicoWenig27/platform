@@ -241,9 +241,12 @@ To get the diff between two versions, go to https://github.com/shopware/platform
         * Added method `runUploads`
         * Added method `_startUpload`
       * Added possibility to add tabs to Theme Manager
-      * Deprecated method `getFields`, use `getStructuredFields` instead
-      * Added method `getStructuredFields` to themeApiService
+          * Deprecated method `getFields`, use `getStructuredFields` instead
+          * Deprecated data `themeFields`, use `structuredThemeFields` instead
+          * Added method `getStructuredFields` to themeApiService
     * Added new component `sw-order-create-promotion-modal` which can be used to display the automatic promotions will be disabled before click to the button disable
+    * Added an error notification for user when he deletes a customer group that has a SalesChannel and/or a customer assigned to it.
+    * Added `bulk-modal-cancel`, `bulk-modal-delete-items`, `delete-modal-cancel` and `delete-modal-delete-item` slots to `sw-entity-listing.html.twig`
 
     * Removed `v-fixed` directive in `sw-entity-single-select` of `sw-order-product-select`
     * The `fixed` directive is now deprecated and will be removed with version 6.4
@@ -257,6 +260,8 @@ To get the diff between two versions, go to https://github.com/shopware/platform
     * Moved "Salutation" settings-item from settings-index page to navigation sidebar
     * Add automatic versions to HttpClient. You can override the default version in the config argument
     * Add `Hide products after clearance` option in `Setting -> Shop -> Listing`
+    * Add `Listing` tab in the `Storefront presentation` modal to configure the variant preselection
+    * Updated Node Dependencies
 
 * Core    
     * The `Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter` no longer supports `||` and `&&`.
@@ -332,7 +337,6 @@ To get the diff between two versions, go to https://github.com/shopware/platform
     * Added new `\Shopware\Core\Framework\Plugin\BundleConfigGenerator` to generate webpack bundle config and moved the according logic from `\Shopware\Core\Framework\Plugin\BundleConfigDumper` to the new class
     * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::$source`, use `\Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria::$includes` instead
     * Added a `dynamic_mapping` for elasticsearch fields which converts all none mapped string fields to keyword fields instead of text fields. This allows developers to filter to customFields or none mapped associations with elasticsearch.
-    
     * We changed the PaymentHandlerRegistry: This change uses the handler identifier as formatted handler identifier in case it is not splittable by \\. Furthermore the PaymentHandlerRegistry retrieves the payment handlers via the tagged_locator selector which include the id of the payment handler. This change allows paymentHandler to use different ids while using the same Class
     * Deprecated `\Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry:__construct()` TypeHint for both parameters will be changed to ServiceProviderInterface 
     * Deprecated `\Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerRegistry:addHandler()` will be removed in 6.3.0
@@ -340,11 +344,73 @@ To get the diff between two versions, go to https://github.com/shopware/platform
     * Added `defineProtections` method on `\Shopware\Core\Framework\DataAbstractionLayer\EntityDefinition`, which allows to define entity based protections
     * Deprecated `\Shopware\Core\Framework\Routing\RouteScopeInterface` use abstract class `\Shopware\Core\Framework\Routing\AbstractRouteScope` instead
     * Changed `\Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder` to not set default limit for the api listing
+    * Added new `\Shopware\Core\Content\ContactForm\SalesChannel\ContactFormRoute` route to make the contact form available using the Store-API
+    * Added new `\Shopware\Core\Checkout\Payment\SalesChannel\PaymentMethodRoute` to provide payment methods about the new api route `/store-api/v1/payment-method`
+    * Added new `\Shopware\Core\Checkout\Shipping\SalesChannel\ShippingMethodRoute` to provide shipping methods about the new api route `/store-api/v1/shipping-method`
+    * Added new `\Shopware\Core\System\Currency\SalesChannel\CurrencyRoute` to provide currencies about the new api route `/store-api/v1/currency`
+    * Added new `\Shopware\Core\System\Language\SalesChannel\LanguageRoute` to provide languages about the new api route `/store-api/v1/language`
+    * Added new `\Shopware\Core\Content\Category\SalesChannel\CategoryRoute` to provide category page with resolved cms about the new api route `/store-api/v1/category/{categoryId}`
+    * Added new `\Shopware\Core\Content\Cms\SalesChannel\CmsRoute` to provide resolved cms page about the new api route `/store-api/v1/cms/{uuid}`
+    * Added new `\Shopware\Core\Content\Category\SalesChannel\NavigationRoute` to provide navigation tree of a category about the new api route `/store-api/v1/navigation/{categoryId}`
+        * Following alias can be used instead the uuid
+            * `main-navigation`
+            * `service-navigation`
+            * `footer-navigation`
+    * Added new `\Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingRoute` to provide listing results about the new api route `/store-api/v1/product-listing/{categoryId}`
+    * Added new `\Shopware\Core\Content\Product\SalesChannel\Search\ProductSearchRoute` to provide search page results about the new api route `/store-api/v1/search?term=MyKeyword`
+    * Added new `\Shopware\Core\Content\Product\SalesChannel\Suggest\ProductSuggestRoute` to provide search suggest results about the new api route `/store-api/v1/search-suggest?term=MyKeyword`
+    * Added new `\Shopware\Core\Content\Seo\SalesChannel\SeoUrlRoute` to make seo urls available about the new api route `/store-api/v1/seo-url`
+    * Added new header `sw-include-seo-urls` for the store-api to enrich the seo urls in the response
+    * Added new `\Shopware\Core\System\Salutation\SalesChannel\SalutationRoute` to provide all available salutations with the new api route `/store-api/v1/account/order`
+    * Added new `\Shopware\Core\Checkout\Order\SalesChannel\AccountOrderRoute` to provide taken orders of the logged-in customer with the new api route `/store-api/v1/account/order`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\ChangeCustomerProfileRoute` to allow changing profile information of the logged-in customer with the new api route `/store-api/v1/account/change-profile`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\ChangeEmailRoute` to allow changing email of the logged-in customer with the new api route `/store-api/v1/account/change-email`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\ChangePasswordRoute` to allow changing password of the logged-in customer with the new api route `/store-api/v1/account/change-password`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\ChangePaymentMethodRoute` to allow changing payment-method of the logged-in customer with the new api route `/store-api/v1/account/change-payment-method/{uuid}`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\CustomerRoute` to provide information about the current logged-in customer with the new api route `/store-api/v1/account/customer`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\LoginRoute` to login as customer and obtain a context-token with the new api route `/store-api/v1/account/login`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\LogoutRoute` to login as customer and obtain a context-token with the new api route `/store-api/v1/account/logout`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\SendPasswordRecoveryMailRoute` to send a new password recovery mail with the new api route `/store-api/v1/account/send-recovery-mail`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\ResetPasswordRoute` to process the reset password form with the new api route `/store-api/v1/account/reset-password`
+    * Added new `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterSubscribeRoute` to subscribe to the newsletter with the new api route `/store-api/v1/newsletter/subscribe`
+    * Added new `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterUnsubscribeRoute` to unsubscribe to the newsletter with the new api route `/store-api/v1/newsletter/unsubscribe`
+    * Added new `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute` to confirm the newsletter registration with the new api route `/store-api/v1/newsletter/confirm`
+    * Added new `\Shopware\Core\Content\Newsletter\SalesChannel\NewsletterConfirmRoute` to confirm the newsletter registration with the new api route `/store-api/v1/newsletter/confirm`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterRoute` to register a new customer with the new api route `/store-api/v1/account/register`
+    * Added new `\Shopware\Core\Checkout\Customer\SalesChannel\RegisterConfirmRoute` to confirm a double optin registration with the new api route `/store-api/v1/account/register-confirm`
+    * Added `\Shopware\Core\Framework\Api\Converter\DefaultApiConverter` to handle deprecated fields from DAL in the api versions
+        * When the new field and the old field is send, the converter will prefer the new field
+        * Added new header `sw-ignore-deprecations` to ignore deprecations and receive all fields
+        * This header is used now in all api calls in the administration
     
-* Storefront	
-    * Deprecated `$connection->executeQuery()` for write operations
-
-* Storefront    
+    
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerRegistry` use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerRegistry` instead
+    * Added `\Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection::getPayloadsProperty` function which allows to extract a property value of all line item payloads.
+    * Added `\Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection::filterByType` function which allows to filter the line item collection by the provided line item type
+    * Deprecated `\Shopware\Core\Checkout\Promotion\DataAbstractionLayer\Indexing\PromotionExclusionIndexer`, use \Shopware\Core\Checkout\Promotion\DataAbstractionLayer\PromotionExclusionUpdater instead
+    * Deprecated `\Shopware\Core\Checkout\Promotion\DataAbstractionLayer\Indexing\PromotionRedemptionIndexer`, use \Shopware\Core\Checkout\Promotion\DataAbstractionLayer\PromotionRedemptionUpdater instead
+    * Deprecated `\Shopware\Core\Content\Category\DataAbstractionLayer\Indexing\BreadcrumbIndexer`, use `\Shopware\Core\Content\Category\DataAbstractionLayer\CategoryBreadcrumbUpdater` instead
+    * Deprecated `\Shopware\Core\Content\Media\DataAbstractionLayer\Indexing\MediaFolderConfigIndexer`, use `\Shopware\Core\Content\Media\DataAbstractionLayer\MediaFolderConfigurationIndexer` instead
+    * Deprecated `\Shopware\Core\Content\Media\DataAbstractionLayer\Indexing\MediaFolderSizeIndexer`, use `\Shopware\Core\Content\Media\DataAbstractionLayer\MediaFolderConfigurationIndexer` instead
+    * Deprecated `\Shopware\Core\Content\Media\DataAbstractionLayer\Indexing\MediaThumbnailIndexer`, use `\Shopware\Core\Content\Media\DataAbstractionLayer\MediaIndexer` instead
+    * Deprecated `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ProductCategoryTreeIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\ProductCategoryDenormalizer` instead
+    * Deprecated `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ProductListingPriceIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ListingPriceUpdater` instead
+    * Deprecated `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ProductRatingAverageIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\RatingAverageUpdater` instead
+    * Deprecated `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\ProductStockIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\StockUpdater` instead
+    * Deprecated `\Shopware\Core\Content\Product\DataAbstractionLayer\Indexing\VariantListingIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\VariantListingUpdater` instead
+    * Deprecated `\Shopware\Core\Content\Product\SearchKeyword\ProductSearchKeywordIndexer`, use `\Shopware\Core\Content\Product\DataAbstractionLayer\SearchKeywordUpdater` instead
+    * Deprecated `\Shopware\Core\Content\ProductStream\DataAbstractionLayer\Indexing\ProductStreamIndexer`, use `\Shopware\Core\Content\ProductStream\DataAbstractionLayer\ProductStreamIndexer` instead
+    * Deprecated `\Shopware\Core\Content\Rule\DataAbstractionLayer\Indexing\RulePayloadIndexer`, use `\Shopware\Core\Content\Rule\DataAbstractionLayer\RuleIndexer` instead
+    * Deprecated `\Shopware\Core\Content\Seo\DataAbstractionLayer\Indexing\SeoUrlIndexer`, use `\Shopware\Core\Content\Seo\SeoUrlUpdater` instead
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\ChildCountIndexer`, use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\ChildCountUpdater` instead
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\InheritanceIndexer`, use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\InheritanceUpdater` instead
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\ManyToManyIdFieldIndexer`, use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\ManyToManyIdFieldUpdater` instead
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\Indexer\TreeIndexer`, use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\TreeUpdater` instead
+    * Deprecated `\Shopware\Elasticsearch\Framework\Indexing\EntityIndexer`, use `\Shopware\Elasticsearch\Framework\Indexing\ElasticsearchIndexer` instead
+    * Deprecated `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\IndexerInterface`, use `\Shopware\Core\Framework\DataAbstractionLayer\Indexing\EntityIndexer` instead
+    * Fixed a bug when the criteria contains a list of ids and no sortings, queries or a term, the search result will be sorted by the provided ids
+* Storefront
+    Deprecated `$connection->executeQuery()` for write operations
     * The `theme.json` now supports a new option for the `style` files. The placeholder `@StorefrontBootstrap` gives you the ability to use the Bootstrap SCSS without the Shopware Storefront "skin":
         ```json
         {
@@ -370,7 +436,8 @@ To get the diff between two versions, go to https://github.com/shopware/platform
     * All javascript plugin options can now be overwritten in Twig
     * Added `Shopware\Storefront\Event\ThemeCompilerEnrichScssVariablesEvent` to be able to add custom SCSS variables.
     * When `Hide products after clearance` is enabled, products marked as on "clearance sale" are hidden, as soon as their stock depletes back to 0
-
+    * We have removed the fallback mechanism of `theme.json` for the `views` array. If `@Storefront` or `@Plugins` are not defined in the `views` array, they will not be added automatically.
+    * It is now possible to inherited several themes from each other. Themes that are not defined in the `views` array of the active theme are excluded from template inheritance.
 **Removals**
 
 * Administration

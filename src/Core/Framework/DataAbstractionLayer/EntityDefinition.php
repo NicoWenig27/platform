@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer;
 
+use Shopware\Core\Content\Seo\SeoUrl\SeoUrlDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityProtection\EntityProtectionCollection;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\AssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ChildCountField;
@@ -14,7 +15,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\PrimaryKey;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\Runtime;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\JsonField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\LockedField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToManyIdField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
+use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToManyAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ParentAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ReferenceVersionField;
@@ -269,6 +272,9 @@ abstract class EntityDefinition
         return $this->getFields()->getChildrenAssociationField() !== null;
     }
 
+    /**
+     * @deprecated tag:v6.3.0 - Only used in child count indexer to detect indexing requirements. Child count will be indexed by specific entity indexers now
+     */
     public function isChildCountAware(): bool
     {
         return $this->getFields()->get('childCount') instanceof ChildCountField;
@@ -299,6 +305,9 @@ abstract class EntityDefinition
         return $this->getFields()->has('whitelistIds');
     }
 
+    /**
+     * @deprecated tag:v6.3.0 - Only used in tree indexer to detect indexing requirements. Tree will be indexed by specific entity indexers now
+     */
     public function isTreeAware(): bool
     {
         return $this->isParentAware()
@@ -306,11 +315,26 @@ abstract class EntityDefinition
                 || $this->getFields()->filterInstance(TreeLevelField::class)->count() > 0);
     }
 
+    /**
+     * @deprecated tag:v6.3.0 - Only used to disable old indexing process
+     */
+    public function hasManyToManyIdFields(): bool
+    {
+        return $this->getFields()->filterInstance(ManyToManyIdField::class)->count() > 0;
+    }
+
     public function isLockAware(): bool
     {
         $field = $this->getFields()->get('locked');
 
         return $field && $field instanceof LockedField;
+    }
+
+    public function isSeoAware(): bool
+    {
+        $field = $this->getFields()->get('seoUrls');
+
+        return $field instanceof OneToManyAssociationField && $field->getReferenceClass() === SeoUrlDefinition::class;
     }
 
     protected function getParentDefinitionClass(): ?string

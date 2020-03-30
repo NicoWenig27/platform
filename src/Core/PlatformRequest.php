@@ -20,6 +20,12 @@ final class PlatformRequest
     public const HEADER_LANGUAGE_ID = 'sw-language-id';
     public const HEADER_INHERITANCE = 'sw-inheritance';
     public const HEADER_VERSION_ID = 'sw-version-id';
+    public const HEADER_INCLUDE_SEO_URLS = 'sw-include-seo-urls';
+
+    /**
+     * This header is used in the administration to get all fields
+     */
+    public const HEADER_IGNORE_DEPRECATIONS = 'sw-api-compatibility';
 
     /**
      * Context attributes
